@@ -1,0 +1,262 @@
+import { buildWeightedScore, getReviewWeight } from "./ownershipDetection.js";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../config.js";
+// ─────────────────────────────────────────────────────────────
+// ProRated — Supabase Integration
+// Replace the two constants below with your actual values from
+// Supabase → Project Settings → API
+// ─────────────────────────────────────────────────────────────
+
+
+
+
+// ── Lightweight fetch wrapper (no SDK needed) ─────────────────
+const sb = async (path, options = {}) => {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": SUPABASE_ANON_KEY,
+      "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+      ...(options.prefer ? { "Prefer": options.prefer } : {}),
+      ...options.headers,
+    },
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Supabase error: ${err}`);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+};
+
+// ── Normalize address for consistent lookup ───────────────────
+export const normalizeAddress = (address) =>
+  address.toLowerCase().trim().replace(/\s+/g, " ");
+
+// ── Fetch all reviews for an address ─────────────────────────
+export const fetchReviewsForAddress = async (address) => {
+  try {
+    const normalized = normalizeAddress(address);
+    const data = await sb(
+      `/reviews?address=ilike.${encodeURIComponent("%" + normalized.split(",")[0] + "%")}&order=created_at.desc`,
+      { method: "GET" }
+    );
+    return data || [];
+  } catch (err) {
+    console.warn("[ProRated] Could not fetch reviews:", err.message);
+    return [];
+  }
+};
+
+// ── Save a new review ─────────────────────────────────────────
+export const saveReview = async (formData) => {
+  // Accept both naming conventions from ReviewPage
+  const address    = formData.address;
+  const street     = formData.street  || address?.split(",")[0]?.trim();
+  const city       = formData.city    || address?.split(",")[1]?.trim();
+  const state      = formData.state   || address?.split(",")[2]?.trim()?.split(" ")[0];
+  const zip        = formData.zip     || address?.split(",")[2]?.trim()?.split(" ")[1];
+  const trade      = formData.trade;
+  const tags       = formData.tags   || [];
+  const reviewText = formData.review_text || formData.text || "";
+  const overall    = formData.overall_score ?? formData.overall ?? 0;
+
+  // Accept flat scores OR nested ratings object
+  const ratings = formData.ratings || {};
+  const access        = formData.access        ?? ratings.access        ?? 0;
+  const payment       = formData.payment       ?? ratings.payment       ?? 0;
+  const timeline      = formData.timeline      ?? ratings.timeline      ?? 0;
+  const communication = formData.communication ?? ratings.communication ?? 0;
+  const obstacles     = formData.obstacles     ?? ratings.obstacles     ?? 0;
+
+  const contractorName     = formData.contractor_name     || formData.contractorName     || "Anonymous";
+  const contractorInitials = formData.contractor_initials || formData.contractorInitials || "PR";
+
+  // Get the live session token from localStorage — anon key alone may not satisfy RLS
+  let authToken = SUPABASE_ANON_KEY;
+  try {
+    const storageKey = Object.keys(localStorage).find(k => k.includes("auth-token") || k.includes("supabase.auth"));
+    if (storageKey) {
+      const stored = JSON.parse(localStorage.getItem(storageKey));
+      const token = stored?.access_token || stored?.currentSession?.access_token;
+      if (token) authToken = token;
+    }
+  } catch {}
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/reviews`, {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${authToken}`,
+        "Prefer": "return=minimal",
+      },
+      body: JSON.stringify({
+        address:             normalizeAddress(address),
+        street, city, state, zip,
+        user_id:             formData.userId || formData.user_id || null,
+        contractor_name:     contractorName,
+        contractor_initials: contractorInitials,
+        trade,
+        overall_score:       overall,
+        access_score:        access,
+        payment_score:       payment,
+        timeline_score:      timeline,
+        communication_score: communication,
+        obstacles_score:     obstacles,
+        tags:                Array.isArray(tags) ? tags : [],
+        work_category:       formData.work_category  || null,
+        work_item:           formData.work_item       || null,
+        work_label:          formData.work_label      || null,
+        property_type:       formData.property_type  || null,
+        review_text:         reviewText,
+        helpful_count:       0,
+      }),
+    });
+    clearTimeout(timeout);
+    if (!res.ok) {
+      const errText = await res.text().catch(() => res.status);
+      console.error("[ProRated] saveReview HTTP error:", res.status, errText);
+      throw new Error(`Save failed (${res.status}): ${errText}`);
+    }
+    return { success: true };
+  } catch (err) {
+    const msg = err.name === "AbortError"
+      ? "Request timed out — please check your connection and try again."
+      : err.message;
+    console.error("[ProRated] saveReview failed:", msg);
+    throw new Error(msg);
+  }
+};
+
+// ── Update an existing review ─────────────────────────────────
+export const updateReview = async (reviewId, formData) => {
+  try {
+    const { overall, ratings, tags, text: reviewText, workCategory, workItem, workLabel } = formData;
+    await sb(`/reviews?id=eq.${reviewId}`, {
+      method: "PATCH",
+      prefer: "return=minimal",
+      body: JSON.stringify({
+        overall_score:       overall,
+        access_score:        ratings.access,
+        payment_score:       ratings.payment,
+        timeline_score:      ratings.timeline,
+        communication_score: ratings.communication,
+        obstacles_score:     ratings.obstacles,
+        tags,
+        review_text:         reviewText,
+        work_category:       workCategory || null,
+        work_item:           workItem || null,
+        work_label:          workLabel || null,
+        updated_at:          new Date().toISOString(),
+      }),
+    });
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+};
+
+// ── Fetch reviews by user ──────────────────────────────────────
+export const fetchMyReviews = async (userId) => {
+  try {
+    const data = await sb(
+      `/reviews?user_id=eq.${userId}&order=created_at.desc`,
+      { method: "GET" }
+    );
+    return data || [];
+  } catch { return []; }
+};
+
+// ── Increment helpful count ───────────────────────────────────
+export const incrementHelpful = async (reviewId) => {
+  try {
+    // Fetch current count first
+    const rows = await sb(`/reviews?id=eq.${reviewId}&select=helpful_count`);
+    if (!rows?.length) return;
+    const current = rows[0].helpful_count || 0;
+    await sb(`/reviews?id=eq.${reviewId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ helpful_count: current + 1 }),
+    });
+  } catch (err) {
+    console.warn("[ProRated] Could not update helpful count:", err.message);
+  }
+};
+
+// ── Format a Supabase row into the shape the app expects ──────
+export const formatStoredReview = (row) => ({
+  id:                  row.id,
+  contractorName:      row.contractor_name,
+  contractorInitials:  row.contractor_initials,
+  trade:               row.trade,
+  date:                row.created_at?.split("T")[0],
+  created_at:          row.created_at,
+  overallScore:        row.overall_score,
+  tags:                row.tags || [],
+  text:                row.review_text,
+  helpfulCount:        row.helpful_count || 0,
+  weight:              getReviewWeight(row.created_at),
+  fromDatabase:        true,
+});
+
+// ── Build address ratings from stored reviews ─────────────────
+export const buildRatingsFromReviews = (reviews) => {
+  if (!reviews.length) return null;
+  const avg = (key) =>
+    reviews.reduce((sum, r) => sum + (r[key] || 0), 0) / reviews.length;
+
+  return {
+    access:        parseFloat(avg("access_score").toFixed(1)),
+    payment:       parseFloat(avg("payment_score").toFixed(1)),
+    timeline:      parseFloat(avg("timeline_score").toFixed(1)),
+    communication: parseFloat(avg("communication_score").toFixed(1)),
+    obstacles:     parseFloat(avg("obstacles_score").toFixed(1)),
+  };
+};
+
+// ── Build a full address result from stored reviews ───────────
+export const buildAddressFromReviews = (address, storedRows) => {
+  const reviews = storedRows.map(formatStoredReview);
+
+  // Use age-weighted scoring — older reviews count less
+  const weighted = buildWeightedScore(storedRows);
+  const ratings = weighted ? {
+    access:        weighted.access,
+    payment:       weighted.payment,
+    timeline:      weighted.timeline,
+    communication: weighted.communication,
+    obstacles:     weighted.obstacles,
+  } : buildRatingsFromReviews(storedRows);
+
+  const overallScore = weighted?.overall ||
+    parseFloat((storedRows.reduce((a, b) => a + (b.overall_score || 0), 0) / storedRows.length).toFixed(1));
+
+  // Collect most common tags
+  const tagCounts = {};
+  storedRows.forEach(r => (r.tags || []).forEach(t => {
+    tagCounts[t] = (tagCounts[t] || 0) + 1;
+  }));
+  const topTags = Object.entries(tagCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([t]) => t);
+
+  const first = storedRows[0];
+  return {
+    street:      first.street || address.split(",")[0]?.trim(),
+    city:        first.city   || address.split(",")[1]?.trim(),
+    state:       first.state  || "AL",
+    zip:         first.zip    || "",
+    overallScore,
+    reviewCount: reviews.length,
+    ratings,
+    tags:        topTags,
+    reviews,
+    fromDatabase: true,
+  };
+};

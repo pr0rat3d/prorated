@@ -1,0 +1,819 @@
+// ─────────────────────────────────────────────────────────────
+// ProRated — Translations
+// Add more languages by adding a new key (e.g. "pt" for Portuguese)
+// ─────────────────────────────────────────────────────────────
+
+export const translations = {
+
+  en: {
+    // ── Nav ────────────────────────────────────────────────────
+    nav: {
+      search:    "Search",
+      review:    "Review",
+      dashboard: "Dashboard",
+      signUp:    "Sign up free",
+      tagline:   "Bidding Made Better",
+    },
+
+    // ── Bottom Nav ─────────────────────────────────────────────
+    bottomNav: {
+      home:      "Home",
+      search:    "Search",
+      review:    "Review",
+      dashboard: "Dashboard",
+      more:      "More",
+    },
+
+    // ── Home Page ──────────────────────────────────────────────
+    home: {
+      badge:        "Built for trade professionals · Verified by license",
+      headline1:    "Know the job site",
+      headline2:    "before you bid.",
+      subheadline:  "Residential job site reviews by professionals, for professionals. Verified intel so there are no surprises.",
+      searchPlaceholder: "Enter any job site address...",
+      searchBtn:    "Search",
+      tryLabel:     "Try:",
+      resultsFound: "result found",
+      resultsFoundPlural: "results found",
+      newSearch:    "← New search",
+      stat1value:   "12,400+",
+      stat1label:   "Addresses rated",
+      stat2value:   "5 Categories",
+      stat2label:   "Per job site",
+      stat3value:   "Verified Only",
+      stat3label:   "Contractor reviews",
+      ctaTitle:     "Worked a job recently?",
+      ctaBody:      "Rate it in 60 seconds. Help the next trade professional bid smarter.",
+      ctaBtn:       "Leave a review →",
+      errorMsg:     "Couldn't look up that address. Please try again.",
+      loading:      "Looking up job site history...",
+    },
+
+    // ── Address Card ───────────────────────────────────────────
+    addressCard: {
+      contractorReviews: "contractor reviews",
+      flagged:      "Flagged",
+      filterBy:     "Filter by trade:",
+      allTrades:    "All trades",
+      noReviews:    "No reviews for this trade yet.",
+      showFewer:    "↑ Show fewer",
+      showMore:     "more review",
+      showMorePlural: "more reviews",
+      workedHere:   "Worked here? Share your experience.",
+      writeReview:  "+ Review",
+      save:         "🔖 Save",
+      saved:        "✓ Saved",
+    },
+
+    // ── Rating Categories ──────────────────────────────────────
+    categories: {
+      access:        "Access & Parking",
+      payment:       "Payment Reliability",
+      timeline:      "Timeline Respect",
+      communication: "Customer Communication",
+      obstacles:     "Job Site Obstacles",
+    },
+
+    // ── Issue Tags ─────────────────────────────────────────────
+    tags: {
+      steep_driveway: "Steep driveway",
+      no_parking:     "No parking",
+      tight_access:   "Tight access",
+      aggressive_dog: "Aggressive dog",
+      scope_creep:    "Scope creep",
+      slow_payment:   "Slow payment",
+      micromanager:   "Micromanager",
+      old_systems:    "Old wiring/plumbing",
+      hoa:            "HOA restrictions",
+      unsafe:         "Unsafe conditions",
+      pays_well:      "Pays on time",
+      easy_access:    "Easy access",
+      great_owner:    "Great homeowner",
+      clear_scope:    "Scope was clear",
+      poor_comms:     "Poor communication",
+      great_comms:    "Great communication",
+      delayed_start:  "Delayed start date",
+      site_hazards:   "Site hazards",
+    },
+
+    // ── Review Card ────────────────────────────────────────────
+    reviewCard: {
+      verified:   "✓ VERIFIED",
+      helpful:    "Helpful",
+    },
+
+    // ── Review Page ────────────────────────────────────────────
+    reviewPage: {
+      title:        "Rate a job site",
+      subtitle:     "Help the next trade professional know what they're walking into before they bid.",
+      step1:        "Address & trade",
+      step2:        "Ratings",
+      step3:        "Details",
+      addressLabel: "Job site address",
+      addressPlaceholder: "123 Main St, City, State ZIP",
+      tradeLabel:   "Your trade",
+      licenseLabel: "Contractor license #",
+      licenseNote:  "Required for verification. Never shown publicly.",
+      licensePlaceholder: "e.g. AL-C-12345",
+      nextStep:     "Next: Rate the job site →",
+      overallLabel: "Overall rating",
+      overallNote:  "How would you rate this job site overall?",
+      ratings: ["", "Avoid", "Below average", "Average", "Good", "Excellent"],
+      rateEach:     "Rate each factor",
+      back:         "← Back",
+      nextDetails:  "Next: Add details →",
+      flagLabel:    "Flag issues",
+      flagNote:     "Select everything that applied at this job site.",
+      writeLabel:   "Write it up",
+      writeOptional:"(optional)",
+      writePlaceholder: "Steep driveway, poor communication on start date...",
+      summaryTitle: "Review summary",
+      summaryAddress: "Address",
+      summaryTrade: "Trade",
+      summaryOverall: "Overall rating",
+      submitBtn:    "Submit review ✓",
+      submitting:   "Submitting...",
+      successTitle: "Review submitted!",
+      searchBtn:    "Search addresses",
+      leaveAnother: "Leave another",
+    },
+
+    // ── Dashboard ──────────────────────────────────────────────
+    dashboard: {
+      myReviews:        "My Reviews",
+      savedAddresses:   "Saved Addresses",
+      profile:          "Profile",
+      reviewsSubmitted: "Reviews",
+      trustScore:       "Trust Score",
+      helpful:          "Helpful",
+      watching:         "Watching",
+      saved:            "Saved",
+      newReview:    "+ New review",
+      logOut:       "Log out",
+      reviews:      "Reviews",
+      submitted:    "Submitted",
+      helpfulVotes: "Helpful votes",
+      fromPeers:    "From peers",
+      reviewerRating: "Reviewer rating",
+      addReview:    "Add a review",
+      signInToSave: "Sign in to save addresses",
+      signInBody:   "Create a free account to watch addresses and get notified of new reviews.",
+      noSaved:      "No saved addresses yet",
+      noSavedBody:  "Search for a job site and tap the bookmark icon to save it here.",
+      searchBtn:    "Search addresses",
+      signUpFree:   "Sign up free",
+      accountDetails: "Account details",
+      editProfile:  "Edit profile",
+      freePlan:     "Free · 25 lookups/month",
+      loginPrompt:  "Create your trade professional profile",
+      loginBody:    "Sign up to track your reviews, save addresses, and build your trust score.",
+    },
+
+    // ── Footer ─────────────────────────────────────────────────
+
+    // ── Pricing Page ───────────────────────────────────────────
+    pricing: {
+      title:        "Simple, transparent pricing",
+      subtitle:     "Start free. Upgrade for unlimited lookups and full intel on every job site.",
+      billingLabel: "Choose billing period:",
+      monthly:      "Monthly",
+      annual:       "Annual",
+      free:         "Free",
+      pro:          "Pro",
+      perMonth:     "/month",
+      perYear:      "/year",
+      billedAnnual: "Billed annually",
+      savesYou:     "saves you",
+      getStarted:   "Get started free",
+      currentPlan:  "Your current plan",
+      upgradeNow:   "Upgrade now →",
+      cancelAny:    "Cancel anytime · Secure payment via Stripe",
+      faqTitle:     "Common questions",
+    },
+
+    // ── Contact Page ───────────────────────────────────────────
+    contact: {
+      title:        "Contact Us",
+      subtitle:     "We respond within 1-2 business days",
+      general:      "General",
+      privacy:      "Privacy",
+      support:      "Support",
+      sendMessage:  "Send a message",
+      yourName:     "Your name",
+      yourEmail:    "Your email",
+      subject:      "Subject",
+      message:      "Message",
+      howHelp:      "How can we help?",
+      send:         "Send message →",
+      sending:      "Sending...",
+      sentTitle:    "Message sent!",
+      sentBody:     "We'll get back to you within 1-2 business days.",
+      back:         "Back →",
+    },
+
+    // ── Review Disclaimer ──────────────────────────────────────
+    disclaimer: {
+      title:        "Before you review",
+      body1:        "Please note the review being added is for informational purposes only. Each review is vetted to ensure bad language, hate speech, discrimination, and personal attacks against property owners are removed.",
+      body2:        "You are rating the service, experience, and conditions around your job — not an entity.",
+      rule1:        "No hate speech or slurs",
+      rule2:        "No personal attacks on homeowners",
+      rule3:        "No competitor disparagement",
+      rule4:        "Rate what you experienced, not who you met",
+      continue:     "I understand — continue →",
+      cancel:       "Cancel",
+      milestone25:  "Congratulations on your 25th review!",
+      milestone50:  "Congratulations on your 50th review!",
+      milestone100: "Congratulations on your 100th review!",
+      milestone250: "Congratulations on your 250th review!",
+      milestone500: "Congratulations on your 500th review!",
+      milestone1000:"Congratulations on your 1,000th review!",
+      reminder:     "As a reminder...",
+    },
+
+    // ── Verification States ────────────────────────────────────
+    verification: {
+      pendingTitle:   "Verification in progress",
+      pendingBody:    "Your contractor license is being verified — usually takes less than 24 hours.",
+      pendingBrowse:  "You can browse while you wait:",
+      pendingCan1:    "✓ Search any job site address",
+      pendingCan2:    "✓ View contractor ratings",
+      pendingCan3:    "✓ Save addresses to your watchlist",
+      pendingCan4:    "✓ Browse Local Points of Interest",
+      pendingBtn:     "← Browse addresses",
+      rejectedTitle:  "Verification unsuccessful",
+      rejectedBody:   "Please contact us to appeal your verification.",
+      rejectedBtn:    "Contact us →",
+      reviewsUnlock:  "Reviews unlock after verification",
+    },
+
+    // ── Local Points of Interest ───────────────────────────────
+    nearby: {
+      title:        "Local Points of Interest",
+      subtitle:     "Supplies & Food",
+      supplies:     "🏗️ Supplies",
+      food:         "🍽️ Food",
+      radiusLabel:  "miles",
+      suppliersNear:"Suppliers within {radius} miles of this job site",
+      foodNear:     "Breakfast & lunch spots within {radius} miles",
+      noSuppliers:  "No suppliers found within {radius} miles.",
+      noFood:       "No food spots found within {radius} miles.",
+      findingSuppliers: "Finding nearby suppliers within {radius} miles...",
+      findingFood:  "Finding nearby food spots within {radius} miles...",
+      seeAll:       "See all",
+      upgradeFor:   "Upgrade to Pro · $9.99/mo",
+      upgrade:      "Upgrade →",
+      open:         "OPEN",
+      closed:       "CLOSED",
+      miAway:       "mi away",
+    },
+
+
+    // ── Terms & Privacy ────────────────────────────────────────
+    terms: {
+      title:        "Terms of Service",
+      updated:      "Last updated: January 2025",
+      summary:      "Plain English Summary",
+      contact:      "Contact hello@prorated.app →",
+    },
+    privacy: {
+      title:        "Privacy Policy",
+      updated:      "Last updated: January 2025",
+      promise:      "Our Core Promise",
+      contact:      "Contact hello@prorated.app →",
+    },
+
+    // ── Review gate screens ────────────────────────────────────
+    reviewGate: {
+      loginTitle:   "Sign in to leave a review",
+      loginBody:    "ProRated is a verified trade professional platform. Create a free account to rate job sites.",
+      createBtn:    "Create free account →",
+      signInBtn:    "Sign in",
+      pendingTitle: "Reviews unlock after verification",
+      pendingBody:  "Your contractor license is being verified — usually takes less than 24 hours. You can search and browse addresses while you wait.",
+      pendingWhat:  "What you can do while waiting:",
+      pendingCan1:  "✓ Search any job site address",
+      pendingCan2:  "✓ View contractor ratings",
+      pendingCan3:  "✓ Save addresses to your watchlist",
+      pendingCan4:  "✓ Browse Local Points of Interest",
+      pendingBtn:   "← Browse addresses",
+      rejectedTitle:"Verification unsuccessful",
+      rejectedBody: "Please contact us to appeal your verification.",
+      rejectedBtn:  "Contact us →",
+    },
+
+    // ── Dashboard upgrade card ─────────────────────────────────
+    upgrade: {
+      title:     "🚀 Upgrade to Pro",
+      body:      "Unlimited lookups · $9.99/mo or $99.99/yr",
+      btn:       "View plans →",
+    },
+
+
+    // ── Signup / Login Page ────────────────────────────────────
+    // ── Pricing page extras ────────────────────────────────────
+    pricingExtra: {
+      perYear:          "/year",
+      billedAnnually:   "Billed annually",
+      savesPerYear:     "saves you",
+      orSaveWith:       "Or save {savings}% with annual billing",
+      upgradeMonthly:   "Upgrade — $9.99/month →",
+      upgradeAnnual:    "Upgrade — $99.99/year →",
+      yourPlan:         "Your current plan:",
+      proUnlimited:     "Unlimited lookups · All features unlocked",
+      freeLimit:        "lookups/month · Upgrade for unlimited access",
+      openingCheckout:  "Opening checkout...",
+    },
+
+
+    merch: {
+      title:        "ProRated Gear",
+      comingSoon:   "Coming Soon",
+      notifyBtn:    "Notify Me",
+      notifyTitle:  "Be first when the store opens",
+      notifyDone:   "You're on the list — we'll reach out soon!",
+      bulkTitle:    "Association & bulk orders",
+    },
+    blog: {
+      title:        "ProRated Blog",
+      subtitle:     "Practical guides for Alabama trade professionals",
+      readMore:     "Read article →",
+      backBtn:      "← All Articles",
+      cta:          "Ready to bid smarter?",
+      ctaSub:       "Join verified Alabama contractors on ProRated — free to create an account.",
+      ctaBtn:       "Create Free Account →",
+    },
+    support: {
+      searchPlaceholder: "Search for answers...",
+      stillNeed:    "Still need help?",
+      emailBtn:     "📧 Email Support",
+      contactBtn:   "Contact Page →",
+    },
+    resources: {
+      title:        "Resources & Tutorials",
+      subtitle:     "Short video guides to help you get the most out of ProRated",
+      comingSoon:   "Tutorial videos coming soon",
+      available:    "Available Now",
+      soon:         "Coming Soon",
+      readPref:     "Prefer reading over watching?",
+      visitSupport: "Visit Support Center →",
+    },
+    footer: {
+      about:    "About",
+      terms:    "Terms",
+      privacy:  "Privacy",
+      contact:  "Contact",
+      copy:     "© 2025 ProRated · Bidding Made Better",
+    },
+
+    // ── Offline / Install banners ──────────────────────────────
+    banners: {
+      offline:      "📡 You're offline — recently viewed addresses are still available",
+      installTitle: "Add ProRated to your home screen",
+      installBody:  "Instant access on every job site — works offline",
+      installBtn:   "Install App",
+      notNow:       "Not now",
+      iosTitle:     "Install ProRated on your iPhone",
+      iosTap:       "Tap",
+      iosShare:     "Share",
+      iosThen:      "then",
+      iosAdd:       "\"Add to Home Screen\"",
+      iosInstall:   "to install",
+    },
+
+    // ── Auth / Signup ──────────────────────────────────────────
+    auth: {
+      welcomeBack:    "Welcome back",
+      joinTitle:      "Join ProRated",
+      loginTab:       "Pro Login",
+      signupTab:      "Sign up",
+      signUpFree:     "Sign up free",
+      signInSubtitle: "Sign in to your trade professional account",
+      signUpSubtitle: "Free for trade professionals. Verified by license.",
+      tradeLicense:   "Trade & license",
+      primaryTrade:   "Primary trade",
+      licenseCorrect: "My license is correct — continue anyway",
+      validFormats:   "Valid formats:",
+      creating:       "Creating account...",
+      createBtn:      "Create account ✓",
+      signingIn:      "Signing in...",
+      signInBtn:      "Sign in →",
+    },
+  },
+
+  es: {
+    nav: {
+      search:    "Buscar",
+      review:    "Reseña",
+      dashboard: "Panel",
+      signUp:    "Registrarse gratis",
+      tagline:   "Mejora tu propuesta",
+    },
+
+    bottomNav: {
+      home:      "Inicio",
+      search:    "Buscar",
+      review:    "Reseña",
+      dashboard: "Panel",
+      more:      "Más",
+    },
+
+    home: {
+      badge:        "Para contratistas · Verificado por licencia",
+      headline1:    "Conoce el trabajo",
+      headline2:    "antes de cotizar.",
+      subheadline:  "Reseñas de sitios residenciales por profesionales, para profesionales. Información verificada para que no haya sorpresas.",
+      searchPlaceholder: "Ingresa la dirección del sitio de trabajo...",
+      searchBtn:    "Buscar",
+      tryLabel:     "Prueba:",
+      resultsFound: "resultado encontrado",
+      resultsFoundPlural: "resultados encontrados",
+      newSearch:    "← Nueva búsqueda",
+      stat1value:   "12,400+",
+      stat1label:   "Direcciones calificadas",
+      stat2value:   "5 Categorías",
+      stat2label:   "Por sitio de trabajo",
+      stat3value:   "Solo verificados",
+      stat3label:   "Reseñas de contratistas",
+      ctaTitle:     "¿Terminaste un trabajo?",
+      ctaBody:      "Calificalo en 60 segundos. Ayuda al próximo contratista a cotizar mejor.",
+      ctaBtn:       "Dejar una reseña →",
+      errorMsg:     "No se pudo encontrar esa dirección. Por favor intenta de nuevo.",
+      loading:      "Buscando historial del sitio de trabajo...",
+    },
+
+    addressCard: {
+      contractorReviews: "reseñas de contratistas",
+      flagged:      "Marcado",
+      filterBy:     "Filtrar por oficio:",
+      allTrades:    "Todos los oficios",
+      noReviews:    "Sin reseñas para este oficio todavía.",
+      showFewer:    "↑ Mostrar menos",
+      showMore:     "reseña más",
+      showMorePlural: "reseñas más",
+      workedHere:   "¿Trabajaste aquí? Comparte tu experiencia.",
+      writeReview:  "+ Reseña",
+      save:         "🔖 Guardar",
+      saved:        "✓ Guardado",
+    },
+
+    categories: {
+      access:        "Acceso y Estacionamiento",
+      payment:       "Confiabilidad de Pago",
+      timeline:      "Respeto al Cronograma",
+      communication: "Comunicación con el Cliente",
+      obstacles:     "Obstáculos en el Sitio",
+    },
+
+    tags: {
+      steep_driveway: "Entrada muy inclinada",
+      no_parking:     "Sin estacionamiento",
+      tight_access:   "Acceso estrecho",
+      aggressive_dog: "Perro agresivo",
+      scope_creep:    "Alcance del trabajo creció",
+      slow_payment:   "Pago lento",
+      micromanager:   "Cliente controlador",
+      old_systems:    "Cableado/plomería vieja",
+      hoa:            "Restricciones de HOA",
+      unsafe:         "Condiciones inseguras",
+      pays_well:      "Paga a tiempo",
+      easy_access:    "Acceso fácil",
+      great_owner:    "Excelente propietario",
+      clear_scope:    "Alcance claro",
+      poor_comms:     "Mala comunicación",
+      great_comms:    "Excelente comunicación",
+      delayed_start:  "Inicio retrasado",
+      site_hazards:   "Peligros en el sitio",
+    },
+
+    reviewCard: {
+      verified:   "✓ VERIFICADO",
+      helpful:    "Útil",
+    },
+
+    reviewPage: {
+      title:        "Califica un sitio de trabajo",
+      subtitle:     "Ayuda al próximo contratista a saber qué espera antes de cotizar.",
+      step1:        "Dirección y oficio",
+      step2:        "Calificaciones",
+      step3:        "Detalles",
+      addressLabel: "Dirección del sitio de trabajo",
+      addressPlaceholder: "123 Calle Principal, Ciudad, Estado CP",
+      tradeLabel:   "Tu oficio",
+      licenseLabel: "# de licencia de contratista",
+      licenseNote:  "Requerido para verificación. Nunca se muestra públicamente.",
+      licensePlaceholder: "ej. AL-C-12345",
+      nextStep:     "Siguiente: Calificar el sitio →",
+      overallLabel: "Calificación general",
+      overallNote:  "¿Cómo calificarías este sitio de trabajo en general?",
+      ratings: ["", "Evitar", "Por debajo del promedio", "Promedio", "Bueno", "Excelente"],
+      rateEach:     "Califica cada factor",
+      back:         "← Atrás",
+      nextDetails:  "Siguiente: Agregar detalles →",
+      flagLabel:    "Marcar problemas",
+      flagNote:     "Selecciona todo lo que aplicó en este sitio de trabajo.",
+      writeLabel:   "Escribe tu experiencia",
+      writeOptional:"(opcional)",
+      writePlaceholder: "Entrada muy inclinada, mala comunicación sobre la fecha de inicio...",
+      summaryTitle: "Resumen de reseña",
+      summaryAddress: "Dirección",
+      summaryTrade: "Oficio",
+      summaryOverall: "Calificación general",
+      submitBtn:    "Enviar reseña ✓",
+      submitting:   "Enviando...",
+      successTitle: "¡Reseña enviada!",
+      searchBtn:    "Buscar direcciones",
+      leaveAnother: "Dejar otra",
+    },
+
+    auth: {
+      welcomeBack:  "Bienvenido de vuelta",
+      joinTitle:    "Únete a ProRated",
+      loginSub:     "Inicia sesión en tu cuenta profesional",
+      signupSub:    "Gratis para profesionales del oficio. Verificado por licencia.",
+      signUp:       "Registrarse",
+      logIn:        "Pro Login",
+      basicInfo:    "Información básica",
+      namePlaceholder:     "Nombre completo",
+      emailPlaceholder:    "Correo electrónico",
+      phonePlaceholder:    "Teléfono (opcional)",
+      passwordPlaceholder: "Crear contraseña (6+ caracteres)",
+      continueBtn:  "Continuar →",
+      tradeLabel:   "Oficio y licencia",
+      primaryTrade: "Oficio principal",
+      statePlaceholder:   "Estado (ej. AL)",
+      licensePlaceholder: "# de licencia de contratista",
+      licenseNote:  "🔒 Licencia usada solo para verificación — nunca se muestra públicamente.",
+      createBtn:    "Crear cuenta ✓",
+      creating:     "Creando cuenta...",
+      signingIn:    "Iniciando sesión...",
+      signInBtn:    "Iniciar sesión →",
+      noAccount:    "¿Sin cuenta?",
+      signUpFree:   "Regístrate gratis",
+      welcomeTitle: "¡Bienvenido a ProRated!",
+      welcomeBody:  "Tu cuenta está activa. Comienza a buscar sitios de trabajo o deja tu primera reseña.",
+      searchBtn:    "Buscar direcciones",
+      leaveReview:  "Dejar una reseña",
+      wrongPassword: "Correo o contraseña incorrectos.",
+    },
+
+    dashboard: {
+      newReview:    "+ Nueva reseña",
+      logOut:       "Cerrar sesión",
+      reviews:      "Reseñas",
+      submitted:    "Enviadas",
+      helpfulVotes: "Votos útiles",
+      fromPeers:    "De colegas",
+      saved:        "Guardados",
+      watching:     "Vigilando",
+      trustScore:   "Puntaje de confianza",
+      reviewerRating: "Calificación",
+      myReviews:    "Mis Reseñas",
+      savedAddresses: "Direcciones Guardadas",
+      profile:      "Perfil",
+      addReview:    "Agregar reseña",
+      signInToSave: "Inicia sesión para guardar direcciones",
+      signInBody:   "Crea una cuenta gratis para vigilar direcciones y recibir notificaciones.",
+      noSaved:      "Sin direcciones guardadas",
+      noSavedBody:  "Busca un sitio de trabajo y toca el marcador para guardarlo aquí.",
+      searchBtn:    "Buscar direcciones",
+      signUpFree:   "Regístrate gratis",
+      accountDetails: "Datos de cuenta",
+      editProfile:  "Editar perfil",
+      freePlan:     "Plan gratis · 3 búsquedas/mes",
+      loginPrompt:  "Crea tu perfil de contratista",
+      loginBody:    "Regístrate para rastrear tus reseñas, guardar direcciones y construir tu puntaje.",
+    },
+
+
+    // ── Pricing Page ───────────────────────────────────────────
+    pricing: {
+      title:        "Precios simples y transparentes",
+      subtitle:     "Empieza gratis. Mejora para búsquedas ilimitadas e información completa.",
+      billingLabel: "Elige el período de facturación:",
+      monthly:      "Mensual",
+      annual:       "Anual",
+      free:         "Gratis",
+      pro:          "Pro",
+      perMonth:     "/mes",
+      perYear:      "/año",
+      billedAnnual: "Facturado anualmente",
+      savesYou:     "te ahorra",
+      getStarted:   "Empieza gratis",
+      currentPlan:  "Tu plan actual",
+      upgradeNow:   "Mejorar ahora →",
+      cancelAny:    "Cancela cuando quieras · Pago seguro con Stripe",
+      faqTitle:     "Preguntas frecuentes",
+    },
+
+    // ── Contact Page ───────────────────────────────────────────
+    contact: {
+      title:        "Contáctanos",
+      subtitle:     "Respondemos en 1-2 días hábiles",
+      general:      "General",
+      privacy:      "Privacidad",
+      support:      "Soporte",
+      sendMessage:  "Enviar un mensaje",
+      yourName:     "Tu nombre",
+      yourEmail:    "Tu correo",
+      subject:      "Asunto",
+      message:      "Mensaje",
+      howHelp:      "¿Cómo podemos ayudarte?",
+      send:         "Enviar mensaje →",
+      sending:      "Enviando...",
+      sentTitle:    "¡Mensaje enviado!",
+      sentBody:     "Te responderemos en 1-2 días hábiles.",
+      back:         "Volver →",
+    },
+
+    // ── Review Disclaimer ──────────────────────────────────────
+    disclaimer: {
+      title:        "Antes de escribir tu reseña",
+      body1:        "Esta reseña es solo para fines informativos. Cada reseña es revisada para garantizar que no contenga lenguaje inapropiado, discurso de odio, discriminación ni ataques personales contra propietarios.",
+      body2:        "Estás calificando el servicio, la experiencia y las condiciones del trabajo — no a una persona.",
+      rule1:        "Sin discurso de odio ni insultos",
+      rule2:        "Sin ataques personales a propietarios",
+      rule3:        "Sin críticas a competidores",
+      rule4:        "Califica lo que experimentaste, no a quién conociste",
+      continue:     "Entiendo — continuar →",
+      cancel:       "Cancelar",
+      milestone25:  "¡Felicitaciones por tu reseña número 25!",
+      milestone50:  "¡Felicitaciones por tu reseña número 50!",
+      milestone100: "¡Felicitaciones por tu reseña número 100!",
+      milestone250: "¡Felicitaciones por tu reseña número 250!",
+      milestone500: "¡Felicitaciones por tu reseña número 500!",
+      milestone1000:"¡Felicitaciones por tu reseña número 1,000!",
+      reminder:     "Como recordatorio...",
+    },
+
+    // ── Verification States ────────────────────────────────────
+    verification: {
+      pendingTitle:   "Verificación en progreso",
+      pendingBody:    "Tu licencia de contratista está siendo verificada — generalmente toma menos de 24 horas.",
+      pendingBrowse:  "Mientras esperas puedes:",
+      pendingCan1:    "✓ Buscar cualquier dirección de trabajo",
+      pendingCan2:    "✓ Ver calificaciones de contratistas",
+      pendingCan3:    "✓ Guardar direcciones en tu lista",
+      pendingCan4:    "✓ Explorar puntos de interés locales",
+      pendingBtn:     "← Explorar direcciones",
+      rejectedTitle:  "Verificación fallida",
+      rejectedBody:   "Por favor contáctanos para apelar tu verificación.",
+      rejectedBtn:    "Contáctanos →",
+      reviewsUnlock:  "Las reseñas se activan después de la verificación",
+    },
+
+    // ── Local Points of Interest ───────────────────────────────
+    nearby: {
+      title:        "Puntos de Interés Locales",
+      subtitle:     "Suministros y Comida",
+      supplies:     "🏗️ Suministros",
+      food:         "🍽️ Comida",
+      radiusLabel:  "millas",
+      suppliersNear:"Proveedores a {radius} millas del sitio de trabajo",
+      foodNear:     "Desayuno y almuerzo a {radius} millas",
+      noSuppliers:  "No se encontraron proveedores a {radius} millas.",
+      noFood:       "No se encontraron restaurantes a {radius} millas.",
+      findingSuppliers: "Buscando proveedores a {radius} millas...",
+      findingFood:  "Buscando restaurantes a {radius} millas...",
+      seeAll:       "Ver todos",
+      upgradeFor:   "Mejora a Pro · $9.99/mes",
+      upgrade:      "Mejorar →",
+      open:         "ABIERTO",
+      closed:       "CERRADO",
+      miAway:       "mi de distancia",
+    },
+
+
+    // ── Terms & Privacy ────────────────────────────────────────
+    terms: {
+      title:        "Términos de Servicio",
+      updated:      "Última actualización: enero 2025",
+      summary:      "Resumen en lenguaje claro",
+      contact:      "Contactar hello@prorated.app →",
+    },
+    privacy: {
+      title:        "Política de Privacidad",
+      updated:      "Última actualización: enero 2025",
+      promise:      "Nuestra Promesa Principal",
+      contact:      "Contactar hello@prorated.app →",
+    },
+
+    // ── Review gate screens ────────────────────────────────────
+    reviewGate: {
+      loginTitle:   "Inicia sesión para dejar una reseña",
+      loginBody:    "ProRated es una plataforma exclusiva para contratistas verificados. Crea una cuenta gratuita para calificar sitios de trabajo.",
+      createBtn:    "Crear cuenta gratis →",
+      signInBtn:    "Pro Login",
+      pendingTitle: "Las reseñas se activan después de la verificación",
+      pendingBody:  "Tu licencia de contratista está siendo verificada — generalmente toma menos de 24 horas. Puedes buscar y explorar direcciones mientras esperas.",
+      pendingWhat:  "Lo que puedes hacer mientras esperas:",
+      pendingCan1:  "✓ Buscar cualquier dirección de trabajo",
+      pendingCan2:  "✓ Ver calificaciones de contratistas",
+      pendingCan3:  "✓ Guardar direcciones en tu lista",
+      pendingCan4:  "✓ Explorar puntos de interés locales",
+      pendingBtn:   "← Explorar direcciones",
+      rejectedTitle:"Verificación fallida",
+      rejectedBody: "Por favor contáctanos para apelar tu verificación.",
+      rejectedBtn:  "Contáctanos →",
+    },
+
+    // ── Dashboard upgrade card ─────────────────────────────────
+    upgrade: {
+      title:     "🚀 Mejora a Pro",
+      body:      "Búsquedas ilimitadas · $9.99/mes o $99.99/año",
+      btn:       "Ver planes →",
+    },
+
+
+    // ── Signup / Login Page ────────────────────────────────────
+    // ── Pricing page extras ────────────────────────────────────
+    pricingExtra: {
+      perYear:          "/año",
+      billedAnnually:   "Facturado anualmente",
+      savesPerYear:     "te ahorra",
+      orSaveWith:       "O ahorra {savings}% con facturación anual",
+      upgradeMonthly:   "Mejorar — $9.99/mes →",
+      upgradeAnnual:    "Mejorar — $99.99/año →",
+      yourPlan:         "Tu plan actual:",
+      proUnlimited:     "Búsquedas ilimitadas · Todas las funciones",
+      freeLimit:        "búsquedas/mes · Mejora para acceso ilimitado",
+      openingCheckout:  "Abriendo pago...",
+    },
+
+
+    merch: {
+      title:        "ProRated Gear",
+      comingSoon:   "Coming Soon",
+      notifyBtn:    "Notify Me",
+      notifyTitle:  "Be first when the store opens",
+      notifyDone:   "You're on the list — we'll reach out soon!",
+      bulkTitle:    "Association & bulk orders",
+    },
+    blog: {
+      title:        "ProRated Blog",
+      subtitle:     "Practical guides for Alabama trade professionals",
+      readMore:     "Read article →",
+      backBtn:      "← All Articles",
+      cta:          "Ready to bid smarter?",
+      ctaSub:       "Join verified Alabama contractors on ProRated — free to create an account.",
+      ctaBtn:       "Create Free Account →",
+    },
+    support: {
+      searchPlaceholder: "Search for answers...",
+      stillNeed:    "Still need help?",
+      emailBtn:     "📧 Email Support",
+      contactBtn:   "Contact Page →",
+    },
+    resources: {
+      title:        "Resources & Tutorials",
+      subtitle:     "Short video guides to help you get the most out of ProRated",
+      comingSoon:   "Tutorial videos coming soon",
+      available:    "Available Now",
+      soon:         "Coming Soon",
+      readPref:     "Prefer reading over watching?",
+      visitSupport: "Visit Support Center →",
+    },
+    footer: {
+      about:    "Acerca de",
+      terms:    "Términos",
+      privacy:  "Privacidad",
+      contact:  "Contacto",
+      copy:     "© 2025 ProRated · Mejora tu propuesta",
+    },
+
+    banners: {
+      offline:      "📡 Sin conexión — las direcciones vistas recientemente siguen disponibles",
+      installTitle: "Agrega ProRated a tu pantalla de inicio",
+      installBody:  "Acceso instantáneo en cada trabajo — funciona sin internet",
+      installBtn:   "Instalar",
+      notNow:       "Ahora no",
+      iosTitle:     "Instala ProRated en tu iPhone",
+      iosTap:       "Toca",
+      iosShare:     "Compartir",
+      iosThen:      "luego",
+      iosAdd:       "\"Agregar a pantalla de inicio\"",
+      iosInstall:   "para instalar",
+    },
+  },
+};
+
+// Helper to get a nested translation value safely
+export const t = (lang, path) => {
+  try {
+    const keys = path.split(".");
+    // Try requested language first
+    let val = translations[lang];
+    if (val) {
+      let found = true;
+      for (const key of keys) {
+        val = val?.[key];
+        if (val === undefined) { found = false; break; }
+      }
+      if (found && val !== undefined) return val;
+    }
+    // Fall back to English
+    let fallback = translations.en;
+    for (const k of keys) fallback = fallback?.[k];
+    return fallback || path;
+  } catch { return path; }
+};

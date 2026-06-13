@@ -1,0 +1,319 @@
+import { useState, useEffect } from "react";
+import Nav from "./components/Nav";
+import BottomNav from "./components/BottomNav";
+import { OfflineBanner, InstallBanner, IOSInstallBanner } from "./components/Banners";
+import HomePage from "./pages/HomePage";
+import ReviewPage from "./pages/ReviewPage";
+import DashboardPage from "./pages/DashboardPage";
+import SignupPage from "./pages/SignupPage";
+import AdminPage from "./pages/admin/AdminPage";
+import AdminGate from "./pages/admin/AdminGate";
+import PricingPage from "./pages/PricingPage";
+import VerificationPending from "./pages/VerificationPending";
+import VerificationRejected from "./pages/VerificationRejected";
+import PrivacyPage from "./pages/PrivacyPage";
+import TermsPage from "./pages/TermsPage";
+import ContactPage from "./pages/ContactPage";
+import NDAPage from "./pages/NDAPage";
+import RealtorSignupPage from "./pages/RealtorSignupPage";
+import RealtorHomePage from "./pages/RealtorHomePage";
+import VerifiedProPage from "./pages/VerifiedProPage";
+import HomeownerReportPage from "./pages/HomeownerReportPage";
+import AGCLandingPage from "./pages/AGCLandingPage";
+import SupportPage from "./pages/SupportPage";
+import ResourcesPage from "./pages/ResourcesPage";
+import MerchPage from "./pages/MerchPage";
+import DemoPage from "./pages/DemoPage";
+import BlogPage from "./pages/BlogPage";
+import MissionPage from "./pages/MissionPage";
+import LocalPage from "./pages/LocalPage";
+import TradePage from "./pages/TradePage";
+import PartnerLandingPage, { PARTNERS } from "./pages/PartnerLandingPage";
+import PartnerDashboardPage from "./pages/PartnerDashboardPage";
+import BetaLanding from "./pages/BetaLanding";
+import BetaWelcome from "./pages/BetaWelcome";
+import FeedbackButton from "./components/FeedbackButton";
+import useOnboarding from "./hooks/useOnboarding";
+import Logo from "./components/Logo";
+import LangToggle from "./components/LangToggle";
+import { BRAND, TAGLINE } from "./data/constants";
+import usePWA from "./hooks/usePWA";
+import { useAuth } from "./hooks/useAuth";
+import PushPrompt from "./components/PushPrompt";
+
+export default function App() {
+  const getInitialPage = () => {
+    try {
+      const path = window.location.pathname;
+      if (path === "/beta" || path === "/beta/") return "beta";
+      if (path === "/privacy")  return "privacy";
+      if (path === "/terms")    return "terms";
+      if (path === "/pricing")  return "pricing";
+      if (path === "/contact" || path === "/contact/") return "contact";
+      if (path === "/admin" || path === "/admin/") return "admin";
+      if (path === "/verified-pros" || path === "/directory") return "verified-pro";
+      if (path === "/report" || path === "/homeowner-report") return "homeowner-report";
+      if (path === "/agc" || path === "/agc/") return "agc";
+      // Trade association partner pages
+      const partnerPaths = ["acca","phcc","iec","nrca","pca","nalp","aar","abc","hba","neca","bar"];
+      for (const pid of ["agc", ...partnerPaths]) {
+        if (path === `/${pid}` || path === `/${pid}/`) return `partner-${pid}`;
+        if (path === `/${pid}/dashboard` || path === `/${pid}/dashboard/`) return `partner-dash-${pid}`;
+      }
+      if (path === "/realtor" || path === "/realtor/") return "realtor-signup";
+      if (path === "/dashboard") return "dashboard";
+      return "home";
+    } catch { return "home"; }
+  };
+  const [page, setPage]               = useState(getInitialPage);
+  const [reviewAddress, setReviewAddress] = useState("");
+  const [loginMode, setLoginMode]         = useState("signup");
+  const [history, setHistory]         = useState([getInitialPage()]);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const [paymentSuccess, setPaymentSuccess] = useState(() => {
+    try { return new URLSearchParams(window.location.search).get("payment") === "success"; }
+    catch { return false; }
+  });
+  const [showInstall, setShowInstall] = useState(false);
+  const [showIOS, setShowIOS]         = useState(false);
+  const [showPush, setShowPush]       = useState(false);
+  const { installPrompt, isInstalled, promptInstall } = usePWA();
+  const { user, isLoggedIn } = useAuth(); // eslint-disable-line no-unused-vars
+
+  // Pages that are completely self-contained — no trade pro shell at all
+  const ISOLATED_PAGES = ["admin", "realtor-signup", "realtor-home", "demo"];
+  const isIsolated = ISOLATED_PAGES.includes(page) ||
+    Object.keys(PARTNERS).some(pid => page === `partner-dash-${pid}`);
+  const [ndaSigned, setNdaSigned] = useState(() => { // eslint-disable-line no-unused-vars
+    try { return localStorage.getItem("pr_nda_signed") === "true"; } catch { return false; }
+  });
+  const { showBetaWelcome, completeBetaWelcome } = useOnboarding();
+
+  // Show install banner after 6s
+  useEffect(() => {
+    if (isInstalled) return;
+    // Show push prompt after 30s
+    // Show push prompt after 8s if not already subscribed/denied
+    const pushTimer = setTimeout(async () => {
+      if (typeof Notification !== "undefined" && Notification.permission !== "denied") {
+        try {
+          const reg = await navigator.serviceWorker?.getRegistration();
+          const sub = await reg?.pushManager?.getSubscription();
+          if (!sub) setShowPush(true);
+        } catch { setShowPush(true); }
+      }
+    }, 8000);
+
+    const t = setTimeout(() => {
+      const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+      const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
+      if (!isStandalone) {
+        if (isIOS) setShowIOS(true);
+        else if (installPrompt) setShowInstall(true);
+      }
+    }, 6000);
+    return () => { clearTimeout(t); clearTimeout(pushTimer); };
+  }, [isInstalled, installPrompt]);
+
+  // Navigate forward — tracks history for back button
+  const go = (p, query = "") => {
+    if (query) setSearchQuery(query);
+    if (p === "signup") setLoginMode("signup");
+    setPage(p);
+    setHistory(h => [...h, p]);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // Go back in history
+  const goBack = () => {
+    if (history.length > 1) {
+      const newHistory = history.slice(0, -1);
+      const prev = newHistory[newHistory.length - 1];
+      setHistory(newHistory);
+      setPage(prev);
+    } else {
+      setPage("home");
+      setHistory(["home"]);
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // Navigate to login (not signup) for gated actions
+  const goLogin = () => {
+    setLoginMode("login");
+    setHistory(h => [...h, "signup"]);
+    setPage("signup");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // Navigate to review with address pre-filled
+  const goReview = (address) => {
+    setReviewAddress(address || "");
+    setHistory(h => [...h, "review"]);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    setPage("review");
+  };
+
+  const handleInstall = async () => {
+    const accepted = await promptInstall();
+    if (accepted) setShowInstall(false);
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", background: "#F8FAFC", fontFamily: "'DM Sans', sans-serif" }}>
+      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&family=DM+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+      <style>{`
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        *, *::before, *::after { box-sizing: border-box; }
+        html { height: 100%; overflow: hidden; }
+        body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; overscroll-behavior: none; -webkit-text-size-adjust: 100%; touch-action: pan-y; }
+        #root { position: fixed; top: 0; left: 0; right: 0; bottom: 0; overflow-y: scroll; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior: none; padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
+        input, textarea, button, select { font-family: inherit; }
+        /* iOS Safari safe area fixes */
+        body { padding-bottom: env(safe-area-inset-bottom); }
+        .bottom-nav-safe { padding-bottom: calc(8px + env(safe-area-inset-bottom)) !important; }
+        @keyframes spin   { to { transform: rotate(360deg); } }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Remove tap highlight on mobile */
+        button { -webkit-tap-highlight-color: transparent; }
+      `}</style>
+
+      {!isIsolated && showBetaWelcome && <BetaWelcome onDone={completeBetaWelcome} />}
+      {!isIsolated && <OfflineBanner />}
+      {!isIsolated && showIOS     && <IOSInstallBanner onDismiss={() => setShowIOS(false)} />}
+      {!isIsolated && showInstall && !showIOS && (
+        <InstallBanner onInstall={handleInstall} onDismiss={() => setShowInstall(false)} />
+      )}
+
+      {/* Top nav — hidden on mobile, not shown on isolated pages */}
+      {!isIsolated && (
+      <div style={{ display: "none" }} className="desktop-nav">
+        <Nav page={page} go={go} />
+      </div>
+      )}
+      <style>{`@media(min-width:640px){ .desktop-nav { display: block !important; } }`}</style>
+
+      {/* Mobile top bar — just logo + back button — not on isolated pages */}
+      <style>{`@media(min-width:640px){ .mobile-topbar { display: none !important; } }`}</style>
+      {!isIsolated && <div className="mobile-topbar" style={{
+        position: "sticky", top: 0, zIndex: 100,
+        background: "rgba(255,255,255,0.97)", backdropFilter: "blur(14px)",
+        borderBottom: `1px solid ${BRAND.border}`,
+        padding: "0 1rem",
+        boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", height: 52, gap: 8 }}>
+          {/* Back button — show when not on home */}
+          {page !== "home" && page !== "admin" && page !== "beta" && (
+            <button onClick={goBack}
+              style={{ background: "none", border: "none", cursor: "pointer", padding: "6px 8px 6px 0", display: "flex", alignItems: "center", gap: 4, color: BRAND.blue, fontSize: 15, fontWeight: 600, fontFamily: "'DM Sans', sans-serif", flexShrink: 0 }}>
+              ← Back
+            </button>
+          )}
+
+          {/* Logo centered */}
+          <div style={{ flex: 1, display: "flex", justifyContent: "flex-start", alignItems: "center" }}>
+            <button onClick={() => go("home")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 6 }}>
+              <Logo size={36} />
+              <div style={{ fontSize: 9, color: BRAND.gray, letterSpacing: "0.8px", textTransform: "uppercase", fontFamily: "'DM Sans', sans-serif" }}>
+                Bidding Made Better
+              </div>
+            </button>
+          </div>
+
+          {/* Language toggle — right side */}
+          <LangToggle style={{ flexShrink: 0 }} />
+        </div>
+      </div>}
+
+      <main style={{ paddingBottom: 0 }}>
+        {!isIsolated && showPush && <PushPrompt onDismiss={() => { setShowPush(false); try { localStorage.setItem("pr_push_dismissed", Date.now()); } catch {} }} />}
+        {page === "home"      && <HomePage      go={go} goLogin={goLogin} goReview={goReview} initialQuery={searchQuery} onQueryUsed={() => setSearchQuery("")} />}
+        {page === "review"    && <ReviewPage    go={go} goBack={goBack} initialAddress={reviewAddress} />}
+        {page === "dashboard" && <DashboardPage go={go} goBack={goBack} goLogin={goLogin} paymentSuccess={paymentSuccess} onPaymentAck={() => setPaymentSuccess(false)} />}
+        {page === "signup"    && <SignupPage    go={go} goBack={goBack} initialMode={loginMode} />}
+        {page === "pricing"   && <PricingPage        go={go} goBack={goBack} />}
+        {page === "pending"   && <VerificationPending go={go} />}
+        {page === "privacy"   && <PrivacyPage go={go} goBack={goBack} />}
+        {page === "terms"     && <TermsPage   go={go} goBack={goBack} />}
+        {page === "contact"   && <ContactPage go={go} goBack={goBack} />}
+        {page === "support"     && <SupportPage go={go} />}
+        {page === "resources"   && <ResourcesPage go={go} />}
+        {page === "merch"       && <MerchPage go={go} />}
+        {page === "demo"       && <DemoPage go={go} />}
+        {page === "blog"       && <BlogPage go={go} />}
+        {page === "mission"    && <MissionPage go={go} />}
+        {page === "local-birmingham" && <LocalPage go={go} city="birmingham" />}
+        {page === "local-huntsville" && <LocalPage go={go} city="huntsville" />}
+        {page === "local-mobile"     && <LocalPage go={go} city="mobile" />}
+        {page === "local-montgomery" && <LocalPage go={go} city="montgomery" />}
+        {page === "local-tuscaloosa" && <LocalPage go={go} city="tuscaloosa" />}
+        {page === "trade-roofing"    && <TradePage go={go} trade="roofing" />}
+        {page === "trade-electrical" && <TradePage go={go} trade="electrical" />}
+        {page === "trade-plumbing"   && <TradePage go={go} trade="plumbing" />}
+        {page === "trade-hvac"       && <TradePage go={go} trade="hvac" />}
+        {page === "trade-general"    && <TradePage go={go} trade="general" />}
+        {page === "nda"            && <NDAPage go={go} user={user} onAccepted={() => { localStorage.setItem("pr_nda_signed", "true"); setNdaSigned(true); go("home"); }} />}
+        {page === "realtor-signup" && <RealtorSignupPage go={go} />}
+        {page === "realtor-home"     && <RealtorHomePage     go={go} user={user} />}
+        {page === "verified-pro"     && <VerifiedProPage     go={go} />}
+        {page === "homeowner-report" && <HomeownerReportPage go={go} />}
+        {page === "agc"              && <AGCLandingPage          go={go} />}
+        {/* Trade association partner pages */}
+        {Object.keys(PARTNERS).map(pid => (
+          page === `partner-${pid}` &&
+          <PartnerLandingPage key={pid} go={go} partnerId={pid} />
+        ))}
+        {Object.keys(PARTNERS).map(pid => (
+          page === `partner-dash-${pid}` &&
+          <PartnerDashboardPage key={`dash-${pid}`} partnerId={pid} />
+        ))}
+        {page === "beta"      && <BetaLanding go={go} />}
+        {page === "rejected"  && <VerificationRejected go={go} />}
+        {page === "admin"     && <AdminGate     go={go} />}
+      </main>
+
+      {/* Footer — not shown on isolated pages */}
+      {!isIsolated && (
+      <footer style={{ borderTop: `1px solid ${BRAND.border}`, padding: "1.25rem 1rem", textAlign: "center", background: "#fff", paddingBottom: "calc(6rem + env(safe-area-inset-bottom))" }}>
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 8, marginBottom: 6 }}>
+          <Logo size={48} />
+        </div>
+        <div style={{ fontSize: 11, color: BRAND.gray, marginBottom: "0.75rem", letterSpacing: "0.5px" }}>{TAGLINE}</div>
+        <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap", marginBottom: 8 }}>
+          {[
+            { label: "Terms of Service", page: "terms"   },
+            { label: "Privacy Policy",   page: "privacy" },
+            { label: "Contact Us",       page: "contact" },
+            { label: "Support",          page: "support" },
+            { label: "Resources",        page: "resources" },
+            { label: "Merch",            page: "merch" },
+            { label: "Blog",             page: "blog" },
+            { label: "Our Mission",      page: "mission" },
+          ].map(({ label, page: p }) => (
+            <button key={label} onClick={() => go(p)}
+              style={{ background: "none", border: "none", color: BRAND.gray, fontSize: 11, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", padding: 0, textDecoration: "underline", textDecorationColor: BRAND.border }}>
+              {label}
+            </button>
+          ))}
+        </div>
+        <p style={{ fontSize: 10, color: "#94A3B8", margin: "4px 0 0" }}>
+          © 2026 ProRated · Bidding Made Better · 🔒 We never sell your personal data
+        </p>
+      </footer>
+      )}
+
+      {/* Feedback button — not on isolated pages */}
+      {!isIsolated && <FeedbackButton page={page} />}
+
+      {/* Bottom nav — mobile only, not on isolated pages */}
+      <style>{`@media(min-width:640px){ .mobile-bottom-nav { display: none !important; } }`}</style>
+      {!isIsolated && (
+      <div className="mobile-bottom-nav">
+        <BottomNav page={page} go={go} />
+      </div>
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,173 @@
+// ─────────────────────────────────────────────────────────────
+// ProRated — Email Notification Edge Function
+// Sends approval/rejection emails to contractors
+//
+// Deploy: supabase functions deploy send-approval-email
+//
+// Called from AdminPage when approving/rejecting a contractor
+// Uses Resend for reliable email delivery (free tier: 3000/month)
+// Sign up at resend.com and set RESEND_API_KEY in Supabase secrets
+// ─────────────────────────────────────────────────────────────
+
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", {
+      headers: {
+        "Access-Control-Allow-Origin":  "*",
+        "Access-Control-Allow-Headers": "authorization, content-type",
+      },
+    });
+  }
+
+  try {
+    const { contractorId, status, rejectionReason } = await req.json();
+
+    if (!contractorId || !status) {
+      return new Response(JSON.stringify({ error: "contractorId and status required" }), { status: 400 });
+    }
+
+    // Init Supabase
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    // Get contractor details + email from auth.users
+    const { data: contractor } = await supabase
+      .from("contractors")
+      .select("name, email, trade, state, license")
+      .eq("id", contractorId)
+      .single();
+
+    if (!contractor?.email) {
+      return new Response(JSON.stringify({ error: "Contractor not found" }), { status: 404 });
+    }
+
+    const name  = contractor.name || "Contractor";
+    const email = contractor.email;
+
+    let subject: string;
+    let html: string;
+
+    if (status === "approved") {
+      subject = "🎉 Welcome to ProRated — Your account is approved!";
+      html = `
+        <div style="font-family: 'DM Sans', Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px; background: #F8FAFC;">
+          <div style="background: #0F172A; border-radius: 16px; padding: 32px; text-align: center; margin-bottom: 24px;">
+            <h1 style="color: #F8FAFC; font-size: 24px; font-weight: 800; margin: 0 0 8px;">ProRated</h1>
+            <p style="color: #94A3B8; font-size: 13px; margin: 0;">Bidding Made Better</p>
+          </div>
+          <div style="background: #fff; border-radius: 16px; padding: 32px; border: 1px solid #E2E8F0;">
+            <div style="text-align: center; margin-bottom: 24px;">
+              <div style="font-size: 48px; margin-bottom: 12px;">✅</div>
+              <h2 style="color: #0F172A; font-size: 22px; font-weight: 800; margin: 0 0 8px;">You're verified, ${name}!</h2>
+              <p style="color: #64748B; font-size: 14px; line-height: 1.6; margin: 0;">
+                Your contractor license has been verified and your ProRated account is fully active.
+              </p>
+            </div>
+            <div style="background: #F0FDF4; border: 1px solid #86EFAC; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+              <p style="color: #166534; font-size: 13px; font-weight: 700; margin: 0 0 12px;">You can now:</p>
+              <p style="color: #166534; font-size: 13px; margin: 4px 0;">✓ Search job site addresses (${Deno.env.get("FREE_MONTHLY_LOOKUPS") || "25"}/month free)</p>
+              <p style="color: #166534; font-size: 13px; margin: 4px 0;">✓ Leave reviews for job sites you've worked</p>
+              <p style="color: #166534; font-size: 13px; margin: 4px 0;">✓ Save addresses to your watchlist</p>
+              <p style="color: #166534; font-size: 13px; margin: 4px 0;">✓ Get push notifications on saved addresses</p>
+            </div>
+            <div style="text-align: center;">
+              <a href="https://prorated-kappa.vercel.app" 
+                style="display: inline-block; background: #2563EB; color: #fff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-size: 15px; font-weight: 700;">
+                Start searching job sites →
+              </a>
+            </div>
+          </div>
+          <p style="text-align: center; color: #94A3B8; font-size: 11px; margin-top: 20px;">
+            ProRated · Hoover, Alabama · <a href="mailto:hello@prorated.io" style="color: #2563EB;">hello@prorated.io</a>
+          </p>
+        </div>
+      `;
+    } else if (status === "rejected") {
+      subject = "ProRated — License verification update";
+      html = `
+        <div style="font-family: 'DM Sans', Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px; background: #F8FAFC;">
+          <div style="background: #0F172A; border-radius: 16px; padding: 32px; text-align: center; margin-bottom: 24px;">
+            <h1 style="color: #F8FAFC; font-size: 24px; font-weight: 800; margin: 0 0 8px;">ProRated</h1>
+            <p style="color: #94A3B8; font-size: 13px; margin: 0;">Bidding Made Better</p>
+          </div>
+          <div style="background: #fff; border-radius: 16px; padding: 32px; border: 1px solid #E2E8F0;">
+            <h2 style="color: #0F172A; font-size: 20px; font-weight: 800; margin: 0 0 16px;">Hi ${name},</h2>
+            <p style="color: #64748B; font-size: 14px; line-height: 1.65; margin: 0 0 20px;">
+              We were unable to verify your contractor license at this time.
+            </p>
+            <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px; padding: 16px 20px; margin-bottom: 24px;">
+              <p style="color: #991B1B; font-size: 13px; font-weight: 700; margin: 0 0 6px;">Reason:</p>
+              <p style="color: #7F1D1D; font-size: 13px; margin: 0; line-height: 1.6;">
+                ${rejectionReason || "Unable to verify license in state contractor database."}
+              </p>
+            </div>
+            <p style="color: #64748B; font-size: 14px; line-height: 1.65; margin: 0 0 16px;">
+              If you believe this is an error, please reply to this email with:
+            </p>
+            <ul style="color: #64748B; font-size: 14px; line-height: 1.8; margin: 0 0 24px; padding-left: 20px;">
+              <li>Your license number</li>
+              <li>Your state</li>
+              <li>A photo or scan of your license</li>
+            </ul>
+            <p style="color: #64748B; font-size: 13px; margin: 0;">
+              We review appeals within 2 business days.
+            </p>
+          </div>
+          <p style="text-align: center; color: #94A3B8; font-size: 11px; margin-top: 20px;">
+            ProRated · <a href="mailto:disputes@prorated.io" style="color: #2563EB;">disputes@prorated.io</a>
+          </p>
+        </div>
+      `;
+    } else {
+      return new Response(JSON.stringify({ error: "Invalid status" }), { status: 400 });
+    }
+
+    // Send via Resend
+    const resendKey = Deno.env.get("RESEND_API_KEY");
+
+    if (!resendKey) {
+      // Log to console if no email key set — at least we tried
+      console.log(`[ProRated] Would send ${status} email to ${email}`);
+      return new Response(JSON.stringify({ sent: false, reason: "no-resend-key", email }));
+    }
+
+    const emailRes = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${resendKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from:    "ProRated <hello@prorated.io>",
+        to:      [email],
+        subject,
+        html,
+      }),
+    });
+
+    const emailData = await emailRes.json();
+
+    // Log to notification_log
+    await supabase.from("notification_log").insert({
+      user_id: contractorId,
+      type:    `contractor_${status}`,
+      title:   subject,
+      body:    `Sent to ${email}`,
+      success: emailRes.ok,
+    }).catch(() => {});
+
+    return new Response(
+      JSON.stringify({ sent: emailRes.ok, email, emailId: emailData.id }),
+      { headers: { "Content-Type": "application/json" } }
+    );
+
+  } catch (err: any) {
+    console.error("[ProRated] Email function error:", err);
+    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+  }
+});

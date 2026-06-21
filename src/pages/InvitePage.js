@@ -9,7 +9,7 @@ import { useAuth } from "../hooks/useAuth";
 // Handles prorated.app/invite/[token]
 // Accepts a team invite and links the user to the company
 
-export default function InvitePage({ go }) {
+export default function InvitePage({ go, goLogin }) {
   const { user, isLoggedIn } = useAuth();
   const [invite, setInvite]   = useState(null);
   const [company, setCompany] = useState(null);
@@ -17,8 +17,11 @@ export default function InvitePage({ go }) {
   const [accepting, setAccepting] = useState(false);
   const [error, setError]     = useState(null);
 
-  // Extract token from URL
-  const token = window.location.pathname.split("/invite/")[1]?.split("/")[0];
+  // Extract token from URL, fall back to localStorage for SPA navigation paths
+  const token = window.location.pathname.split("/invite/")[1]?.split("/")[0]
+    || localStorage.getItem("pending_invite_token");
+
+  const ANON = SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndzZHJiZG9qbnptdHduZHN3cHdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NzI3OTgsImV4cCI6MjA5NTA0ODc5OH0.2PJv-XQUjmbMhzaXkZSjWzCeDUtTWAmcAvobjJymQDs";
 
   useEffect(() => {
     if (token) fetchInvite();
@@ -26,7 +29,6 @@ export default function InvitePage({ go }) {
 
   const fetchInvite = async () => {
     try {
-      const ANON = SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndzZHJiZG9qbnptdHduZHN3cHdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NzI3OTgsImV4cCI6MjA5NTA0ODc5OH0.2PJv-XQUjmbMhzaXkZSjWzCeDUtTWAmcAvobjJymQDs";
       const session   = JSON.parse(localStorage.getItem("prorated_session") || "{}");
       const authToken = session.access_token || ANON;
 
@@ -66,7 +68,7 @@ export default function InvitePage({ go }) {
 
   const handleAccept = async () => {
     if (!isLoggedIn) {
-      // Store full invite context so signup can skip plan selection
+      // Store full invite context so signup/login can skip plan selection
       localStorage.setItem("pending_invite_token", token);
       localStorage.setItem("pending_invite_context", JSON.stringify({
         token,
@@ -74,7 +76,8 @@ export default function InvitePage({ go }) {
         companyName: company?.name,
         plan:        company?.plan || "bronze",
       }));
-      go("signup");
+      // Default to login — invited users likely already have an account
+      if (goLogin) goLogin(); else go("signup");
       return;
     }
 
@@ -89,7 +92,7 @@ export default function InvitePage({ go }) {
         {
           method: "PATCH",
           headers: {
-            "apikey":         SUPABASE_ANON_KEY,
+            "apikey":         ANON,
             "Authorization":  `Bearer ${tok}`,
             "Content-Type":   "application/json",
           },
@@ -106,7 +109,7 @@ export default function InvitePage({ go }) {
         {
           method: "PATCH",
           headers: {
-            "apikey":         SUPABASE_ANON_KEY,
+            "apikey":         ANON,
             "Authorization":  `Bearer ${tok}`,
             "Content-Type":   "application/json",
           },
@@ -231,15 +234,24 @@ export default function InvitePage({ go }) {
           )}
 
           <Btn fullWidth onClick={handleAccept} disabled={accepting}>
-            {accepting ? "Joining..." : isLoggedIn ? `Join ${company.name} →` : "Join for free →"}
+            {accepting ? "Joining..." : isLoggedIn ? `Join ${company.name} →` : "Sign in to accept →"}
           </Btn>
 
           {!isLoggedIn && (
             <p style={{ fontSize: 11, color: BRAND.gray, textAlign: "center", marginTop: 10 }}>
-              Already have an account?{" "}
-              <button onClick={() => { localStorage.setItem("pending_invite_token", token); go("signup"); }}
+              New to ProRated?{" "}
+              <button onClick={() => {
+                localStorage.setItem("pending_invite_token", token);
+                localStorage.setItem("pending_invite_context", JSON.stringify({
+                  token,
+                  companyId:   invite.company_id,
+                  companyName: company?.name,
+                  plan:        company?.plan || "bronze",
+                }));
+                go("signup");
+              }}
                 style={{ background: "none", border: "none", color: BRAND.blue, fontWeight: 700, cursor: "pointer", fontSize: 11, fontFamily: "'DM Sans', sans-serif" }}>
-                Sign in instead
+                Create a free account →
               </button>
             </p>
           )}

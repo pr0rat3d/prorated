@@ -369,7 +369,7 @@ export default function App() {
           go(user?.status === "approved" ? "home" : "pending");
         }} />}
         {page === "reset-password" && <ResetPasswordPage />}
-        {page === "invite"          && <InvitePage go={go} />}
+        {page === "invite"          && <InvitePage go={go} goLogin={goLogin} />}
         {page === "company-setup"   && <CompanySetupPage go={go} goBack={goBack} />}
         {page === "realtor-signup" && <RealtorSignupPage go={go} />}
         {page === "realtor-home"     && <RealtorHomePage     go={go} user={user} />}

@@ -277,7 +277,7 @@ export default function RealtorHomePage({ go, user }) {
             </div>
 
             {/* Address header */}
-            <div style={{ background: BRAND.dark, borderRadius: results ? "0 0 16px 16px" : 16, borderRadius: 16, padding: "1.25rem 1.5rem", marginBottom: "1rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+            <div style={{ background: BRAND.dark, borderRadius: results ? "0 0 16px 16px" : 16, padding: "1.25rem 1.5rem", marginBottom: "1rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
               <div>
                 <div style={{ fontSize: 11, color: "#64748B", marginBottom: 3, textTransform: "uppercase", letterSpacing: "0.05em" }}>Property Report</div>
                 <div style={{ fontSize: 15, fontWeight: 800, color: "#F8FAFC" }}>{results.address}</div>

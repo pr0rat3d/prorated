@@ -8,6 +8,8 @@ import DashboardPage from "./pages/DashboardPage";
 import SignupPage from "./pages/SignupPage";
 import AdminPage from "./pages/admin/AdminPage";
 import AdminGate from "./pages/admin/AdminGate";
+import InvitePage from "./pages/InvitePage";
+import CompanySetupPage from "./pages/CompanySetupPage";
 import PricingPage from "./pages/PricingPage";
 import VerificationPending from "./pages/VerificationPending";
 import VerificationRejected from "./pages/VerificationRejected";
@@ -37,6 +39,7 @@ import useOnboarding from "./hooks/useOnboarding";
 import Logo from "./components/Logo";
 import LangToggle from "./components/LangToggle";
 import { BRAND, TAGLINE } from "./data/constants";
+import { saveSession, updatePassword } from "./api/auth";
 import usePWA from "./hooks/usePWA";
 import { useAuth } from "./hooks/useAuth";
 import PushPrompt from "./components/PushPrompt";
@@ -61,25 +64,55 @@ export default function App() {
         if (path === `/${pid}/dashboard` || path === `/${pid}/dashboard/`) return `partner-dash-${pid}`;
       }
       if (path === "/realtor" || path === "/realtor/") return "realtor-signup";
+      // Handle Supabase password recovery link
+      const hash = window.location.hash;
+      if (hash.includes("type=recovery") && hash.includes("access_token")) return "reset-password";
+      // Handle team invite links
+      if (path.startsWith("/invite/")) return "invite";
+      if (path === "/company-setup" || path === "/company-setup/") return "company-setup";
       if (path === "/dashboard") return "dashboard";
       return "home";
     } catch { return "home"; }
   };
   const [page, setPage]               = useState(getInitialPage);
   const [reviewAddress, setReviewAddress] = useState("");
+  const [editReviewId, setEditReviewId]   = useState(null);
   const [loginMode, setLoginMode]         = useState("signup");
   const [history, setHistory]         = useState([getInitialPage()]);
   const [searchQuery, setSearchQuery] = useState("");
 
   const [paymentSuccess, setPaymentSuccess] = useState(() => {
-    try { return new URLSearchParams(window.location.search).get("payment") === "success"; }
+    try {
+      const isSuccess = new URLSearchParams(window.location.search).get("payment") === "success";
+      if (isSuccess) {
+        // Clean the URL immediately so it doesn't stick
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+      return isSuccess;
+    }
     catch { return false; }
   });
   const [showInstall, setShowInstall] = useState(false);
   const [showIOS, setShowIOS]         = useState(false);
   const [showPush, setShowPush]       = useState(false);
   const { installPrompt, isInstalled, promptInstall } = usePWA();
-  const { user, isLoggedIn } = useAuth(); // eslint-disable-line no-unused-vars
+  const { user, isLoggedIn, refreshUser } = useAuth(); // eslint-disable-line no-unused-vars
+
+  // If arriving with payment=success but not logged in, auto-show login
+  useEffect(() => {
+    if (!paymentSuccess) return;
+    const t = setTimeout(() => {
+      if (!isLoggedIn) {
+        // Session didn't survive Stripe redirect — prompt login
+        setLoginMode("login");
+        setPage("signup");
+        setHistory(h => [...h, "signup"]);
+      } else if (refreshUser) {
+        refreshUser();
+      }
+    }, 600);
+    return () => clearTimeout(t);
+  }, [paymentSuccess, isLoggedIn]);
 
   // Pages that are completely self-contained — no trade pro shell at all
   const ISOLATED_PAGES = ["admin", "realtor-signup", "realtor-home", "demo"];
@@ -116,6 +149,67 @@ export default function App() {
     return () => { clearTimeout(t); clearTimeout(pushTimer); };
   }, [isInstalled, installPrompt]);
 
+  // ── Password Reset Page ─────────────────────────────────────
+  const ResetPasswordPage = () => {
+    const [pw, setPw]     = useState("");
+    const [pw2, setPw2]   = useState("");
+    const [done, setDone] = useState(false);
+    const [err, setErr]   = useState(null);
+    const [busy, setBusy] = useState(false);
+
+    useEffect(() => {
+      const hash = new URLSearchParams(window.location.hash.replace("#", "?"));
+      const token = hash.get("access_token");
+      const type  = hash.get("type");
+      if (token && type === "recovery") {
+        saveSession({ access_token: token, expires_at: Date.now() / 1000 + 3600 });
+      }
+    }, []);
+
+    const handleUpdate = async () => {
+      if (pw.length < 6) { setErr("Password must be at least 6 characters."); return; }
+      if (pw !== pw2)    { setErr("Passwords don't match."); return; }
+      setBusy(true); setErr(null);
+      try {
+        await updatePassword(pw);
+        setDone(true);
+        setTimeout(() => go("home"), 3000);
+      } catch (e) {
+        setErr(e.message || "Could not update password. Please try again.");
+      }
+      setBusy(false);
+    };
+
+    const inp = { width: "100%", padding: "11px 13px", border: `1.5px solid ${BRAND.border}`, borderRadius: 10, fontSize: 14, background: "#F8FAFC", color: BRAND.dark, outline: "none", fontFamily: "'DM Sans', sans-serif", boxSizing: "border-box", marginBottom: 10 };
+
+    return (
+      <div style={{ maxWidth: 400, margin: "80px auto", padding: "0 1.25rem", fontFamily: "'DM Sans', sans-serif" }}>
+        <div style={{ textAlign: "center", marginBottom: 24 }}>
+          <Logo size={56} />
+          <div style={{ fontSize: 20, fontWeight: 700, color: BRAND.dark, marginTop: 12 }}>Set new password</div>
+          <div style={{ fontSize: 13, color: BRAND.gray, marginTop: 4 }}>Choose a strong password for your ProRated account.</div>
+        </div>
+        {done ? (
+          <div style={{ background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 12, padding: "16px", textAlign: "center", color: "#166534", fontSize: 14 }}>
+            ✅ Password updated! Redirecting you to the app...
+          </div>
+        ) : (
+          <div style={{ background: "#fff", border: `1.5px solid ${BRAND.border}`, borderRadius: 14, padding: "1.5rem" }}>
+            {err && <div style={{ background: "#FEE2E2", color: "#991B1B", border: "1px solid #FCA5A5", borderRadius: 10, padding: "10px 14px", fontSize: 13, marginBottom: 12 }}>{err}</div>}
+            <input type="password" placeholder="New password (6+ characters)" value={pw}  onChange={e => setPw(e.target.value)}  style={inp} />
+            <input type="password" placeholder="Confirm new password"          value={pw2} onChange={e => setPw2(e.target.value)} style={{ ...inp, marginBottom: 0 }} />
+            <div style={{ marginTop: "1rem" }}>
+              <button onClick={handleUpdate} disabled={!pw || !pw2 || busy}
+                style={{ width: "100%", padding: "12px", background: BRAND.blue, color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: pw && pw2 && !busy ? "pointer" : "not-allowed", opacity: pw && pw2 && !busy ? 1 : 0.6, fontFamily: "'DM Sans', sans-serif" }}>
+                {busy ? "Updating..." : "Update password →"}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Navigate forward — tracks history for back button
   const go = (p, query = "") => {
     if (query) setSearchQuery(query);
@@ -148,8 +242,9 @@ export default function App() {
   };
 
   // Navigate to review with address pre-filled
-  const goReview = (address) => {
+  const goReview = (address, reviewId = null) => {
     setReviewAddress(address || "");
+    setEditReviewId(reviewId || null);
     setHistory(h => [...h, "review"]);
     window.scrollTo({ top: 0, behavior: "smooth" });
     setPage("review");
@@ -217,7 +312,7 @@ export default function App() {
             <button onClick={() => go("home")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 6 }}>
               <Logo size={36} />
               <div style={{ fontSize: 9, color: BRAND.gray, letterSpacing: "0.8px", textTransform: "uppercase", fontFamily: "'DM Sans', sans-serif" }}>
-                Bidding Made Better
+                Built by Pros, Built for Pros
               </div>
             </button>
           </div>
@@ -230,8 +325,8 @@ export default function App() {
       <main style={{ paddingBottom: 0 }}>
         {!isIsolated && showPush && <PushPrompt onDismiss={() => { setShowPush(false); try { localStorage.setItem("pr_push_dismissed", Date.now()); } catch {} }} />}
         {page === "home"      && <HomePage      go={go} goLogin={goLogin} goReview={goReview} initialQuery={searchQuery} onQueryUsed={() => setSearchQuery("")} />}
-        {page === "review"    && <ReviewPage    go={go} goBack={goBack} initialAddress={reviewAddress} />}
-        {page === "dashboard" && <DashboardPage go={go} goBack={goBack} goLogin={goLogin} paymentSuccess={paymentSuccess} onPaymentAck={() => setPaymentSuccess(false)} />}
+        {page === "review"    && <ReviewPage    go={go} goBack={goBack} initialAddress={reviewAddress} editReviewId={editReviewId} />}
+        {page === "dashboard" && <DashboardPage go={go} goBack={goBack} goLogin={goLogin} goReview={goReview} paymentSuccess={paymentSuccess} onPaymentAck={() => setPaymentSuccess(false)} />}
         {page === "signup"    && <SignupPage    go={go} goBack={goBack} initialMode={loginMode} />}
         {page === "pricing"   && <PricingPage        go={go} goBack={goBack} />}
         {page === "pending"   && <VerificationPending go={go} />}
@@ -254,7 +349,28 @@ export default function App() {
         {page === "trade-plumbing"   && <TradePage go={go} trade="plumbing" />}
         {page === "trade-hvac"       && <TradePage go={go} trade="hvac" />}
         {page === "trade-general"    && <TradePage go={go} trade="general" />}
-        {page === "nda"            && <NDAPage go={go} user={user} onAccepted={() => { localStorage.setItem("pr_nda_signed", "true"); setNdaSigned(true); go("home"); }} />}
+        {page === "nda" && <NDAPage go={go} user={user} onAccepted={() => {
+          localStorage.setItem("pr_nda_signed", "true");
+          setNdaSigned(true);
+          // Check where to go after NDA
+          const stored = localStorage.getItem("post_nda_destination");
+          localStorage.removeItem("post_nda_destination");
+          if (stored) {
+            try {
+              const dest = JSON.parse(stored);
+              if (dest.type === "stripe") { window.location.href = dest.url; return; }
+              if (dest.type === "invite") {
+                window.history.pushState({}, "", `/invite/${dest.token}`);
+                go("invite"); return;
+              }
+              if (dest.type === "pending") { go("pending"); return; }
+            } catch {}
+          }
+          go(user?.status === "approved" ? "home" : "pending");
+        }} />}
+        {page === "reset-password" && <ResetPasswordPage />}
+        {page === "invite"          && <InvitePage go={go} />}
+        {page === "company-setup"   && <CompanySetupPage go={go} goBack={goBack} />}
         {page === "realtor-signup" && <RealtorSignupPage go={go} />}
         {page === "realtor-home"     && <RealtorHomePage     go={go} user={user} />}
         {page === "verified-pro"     && <VerifiedProPage     go={go} />}
@@ -299,7 +415,7 @@ export default function App() {
           ))}
         </div>
         <p style={{ fontSize: 10, color: "#94A3B8", margin: "4px 0 0" }}>
-          © 2026 ProRated · Bidding Made Better · 🔒 We never sell your personal data
+          © 2026 ProRated · Built by Pros, Built for Pros · 🔒 We never sell your personal data
         </p>
       </footer>
       )}

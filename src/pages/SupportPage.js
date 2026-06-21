@@ -18,7 +18,7 @@ const SECTIONS = [
       },
       {
         q: "Who can use ProRated?",
-        a: "ProRated is for licensed trade professionals only — general contractors, electricians, plumbers, HVAC technicians, roofers, painters, flooring installers, pest control, landscapers, and concrete/masonry contractors. All accounts require license verification before access is granted.",
+        a: "ProRated is for licensed trade professionals only. All accounts require a valid trade or business license and are verified before access is granted.",
       },
       {
         q: "How do I create an account?",
@@ -26,7 +26,7 @@ const SECTIONS = [
       },
       {
         q: "Is ProRated free?",
-        a: "Yes — you can earn free Pro access by leaving reviews. Submit 3 reviews and unlock 30 days of Pro access free. You can also subscribe for $9.99/month or $99.99/year for unlimited access.",
+        a: "Yes — ProRated has a free tier. Paid plans are available for contractors who want unlimited access and team features. Use promo code ProRated2026 at signup for 2 months free.",
       },
       {
         q: "What states does ProRated cover?",
@@ -60,7 +60,7 @@ const SECTIONS = [
       },
       {
         q: "What does the ownership change warning mean?",
-        a: "If multiple contractors have flagged that the homeowner may have moved, or if all reviews are more than 18 months old, ProRated shows a warning banner. This is a reminder that older reviews may reflect a previous owner — always verify before committing.",
+        a: "If multiple contractors have flagged that the homeowner may have moved, or if all reviews are more than 3 years old, ProRated shows a warning banner. This is a reminder that older reviews may reflect a previous owner — always verify current ownership before committing.",
       },
     ],
   },
@@ -78,7 +78,7 @@ const SECTIONS = [
       },
       {
         q: "What are the 5 rating categories?",
-        a: "Access & Parking — driveway space, equipment clearance, staging area.\n\nPayment Reliability — paid on time, no disputes or delays.\n\nTimeline Respect — start dates honored, decisions made promptly.\n\nCommunication — responsive, clear instructions, respectful.\n\nObstacles — unexpected issues, scope changes, access problems.",
+        a: "Access & Parking — driveway space, equipment clearance, staging area.\n\nPayment Reliability — paid on time, no disputes or delays.\n\nTimeline Respect — start dates honored, decisions made promptly.\n\nCommunication — responsive, clear instructions, respectful.\n\nObstacles — unexpected site conditions, hazards, or on-site surprises that affected the job.",
       },
       {
         q: "Can I edit a review after submitting?",
@@ -89,12 +89,12 @@ const SECTIONS = [
         a: "You can leave one review per address per 30 days. This prevents spamming and keeps the data honest. If you worked the same address multiple times within 30 days, update your existing review.",
       },
       {
-        q: "Will the homeowner see my review?",
-        a: "No. Homeowners cannot access ProRated. Reviews are only visible to verified licensed trade professionals. The homeowner's name is never attached to any review — only their property address.",
+        q: "Are reviews anonymous?",
+        a: "Your name is never shown on any review — only your trade and the work category. Reviews are attributed to a verified trade professional, not an individual, so homeowners and the public cannot identify who left a specific review.",
       },
       {
-        q: "What if I made a mistake in my review?",
-        a: "Tap ✏️ Edit in Dashboard → My Reviews to correct it. If you need help removing a review entirely, email hello@prorated.app with the address and reason.",
+        q: "Can a review be removed?",
+        a: "Yes — you can delete your own review from Dashboard → My Reviews. If you need help removing a review for any other reason, email hello@prorated.app with the address and reason.",
       },
     ],
   },
@@ -108,7 +108,7 @@ const SECTIONS = [
     articles: [
       {
         q: "How does license verification work?",
-        a: "After signup, our team manually checks your contractor license number against your state's licensing database. Tier 1 trades (GC, Electrical, Plumbing, HVAC, Roofing) require a state contractor license. Tier 2 trades (Painting, Flooring, Pest Control, Landscaping, Concrete) require a business license. Verification typically takes less than 24 hours.",
+        a: "After signup, our team manually verifies your license against your state's licensing database. Trades that require a state contractor license (such as General Contracting, Electrical, Plumbing, HVAC, and Roofing) must provide that license number. All other trade professionals must provide a valid business license. Verification typically takes less than 24 hours.",
       },
       {
         q: "What is the Trust Score?",
@@ -116,11 +116,11 @@ const SECTIONS = [
       },
       {
         q: "What is a Verified Pro?",
-        a: "Verified Pro is the highest trust tier on ProRated. It requires a Trust Score of 75+ and unlocks a listing in the public Verified Pro Directory — a searchable directory used by homeowners and GCs looking for trusted trade professionals.",
+        a: "A Verified Pro is a contractor who has earned a Trust Score of 75 or higher through consistent, quality contributions to the platform. Their reviews carry slightly more weight in address ratings, reflecting their established track record on ProRated.",
       },
       {
-        q: "How do referral codes work?",
-        a: "Every approved contractor gets a unique referral code found in your Dashboard. Share it with other trade professionals. When they sign up using your link and submit 3 reviews, you earn 50% off your next month's Pro subscription.",
+        q: "How do team accounts work?",
+        a: "Bronze, Silver, and Gold plans include multiple team logins. The account owner invites teammates by email from the Team tab in their Dashboard. Each teammate gets their own login and can submit reviews independently.",
       },
       {
         q: "How do I delete my account?",
@@ -138,19 +138,27 @@ const SECTIONS = [
     articles: [
       {
         q: "What's included in the free plan?",
-        a: "Free accounts get limited searches and can leave reviews. Submit 3 reviews to unlock 30 days of Pro free. Submit 8 reviews total to earn another 30 days free. Free accounts do not have access to full rating breakdowns or the Pro directory.",
+        a: "Free accounts get 10 address lookups per month. During account verification (before admin approval) you get 3 lookups, unlimited review submissions, and a single login. Upgrade to a paid plan for unlimited lookups, team logins, Bid Prep Summary, Would-Return rates, and full access to all features starting at $9.99/month.",
       },
       {
-        q: "What does Pro include?",
-        a: "Pro ($9.99/month or $99.99/year) includes: unlimited address searches, full 5-category rating breakdowns, work history details, payment score history, access to the Verified Pro directory, and priority data access.",
+        q: "What do the paid plans include?",
+        a: "All paid plans include unlimited address searches, full 5-category rating breakdowns, Bid Prep Summary, Would-Return rate, work history, payment score history, and team logins for your crew.\n\n🥉 Bronze — $9.99/mo · 1–5 team logins\n🥈 Silver — $19.99/mo · 6–15 team logins\n🥇 Gold — $29.99/mo · 16–39 team logins\n💎 Platinum — Custom pricing · 40+ team logins",
+      },
+      {
+        q: "Is there a loyalty reward for active teams?",
+        a: "Yes — teams that average 3 or more reviews per week over their first year (156 total) earn their 13th month free. We check this automatically on your account anniversary. The more your team reviews, the better the data gets for everyone — and you get rewarded for it.",
+      },
+      {
+        q: "What is the Platinum plan?",
+        a: "Platinum is ProRated's enterprise tier for organizations with 40 or more team members. Pricing is custom and negotiated directly — we set it up for you in Stripe based on your team size and needs. To inquire, email hello@prorated.app or select Platinum on the pricing page and we'll reach out within 1 business day.",
       },
       {
         q: "How do I cancel my subscription?",
-        a: "Email hello@prorated.app with your account email and we'll cancel your subscription immediately. You'll retain Pro access until the end of your current billing period.",
+        a: "Email hello@prorated.app with your account email and we'll cancel your subscription immediately. You'll retain access until the end of your current billing period.",
       },
       {
         q: "Is there a discount for associations?",
-        a: "Yes. If your trade association has a ProRated partnership, members get free Pro access during the beta period. Check with your association or enter your partner promo code at signup.",
+        a: "Yes. If your trade association has a ProRated partnership, members may receive a promo code for discounted or free access. Check with your association or enter your partner promo code at signup for it to be applied automatically.",
       },
     ],
   },
@@ -163,8 +171,8 @@ const SECTIONS = [
     accent: "#166534",
     articles: [
       {
-        q: "Can homeowners see their own ratings?",
-        a: "No. ProRated is a contractor-only platform. Homeowners cannot create accounts, search addresses, or view any ratings. The platform is gated behind verified trade professional license verification.",
+        q: "Who can see my reviews and data?",
+        a: "Only verified, licensed trade professionals with approved ProRated accounts can view address ratings and reviews. Homeowners, the general public, and unverified users cannot access any platform data.",
       },
       {
         q: "Is my name attached to my reviews?",

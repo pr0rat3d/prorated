@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { BRAND } from "./UI";
-import useAddressAutocomplete from "../hooks/useAddressAutocomplete";
+import useAddressAutocomplete, { getRecentAddresses, saveRecentAddress } from "../hooks/useAddressAutocomplete";
 
 // ─────────────────────────────────────────────────────────────
 // AddressInput — drop-in replacement for any address text field
@@ -28,6 +28,8 @@ export default function AddressInput({
   const [activeIndex, setActiveIndex]                      = useState(-1);
   const { suggestions, loading, fetchSuggestions, selectSuggestion, clearSuggestions } =
     useAddressAutocomplete(inputRef);
+  const [recentAddresses, setRecentAddresses] = useState(() => getRecentAddresses());
+  const [showRecent, setShowRecent]           = useState(false);
 
   // Auto-focus if requested
   useEffect(() => {
@@ -56,9 +58,19 @@ export default function AddressInput({
 
   const handleSelect = (suggestion) => {
     const address = selectSuggestion(suggestion);
+    saveRecentAddress(address);
+    setRecentAddresses(getRecentAddresses());
     onChange(address);
     onSelect?.(address);
     setActiveIndex(-1);
+    setShowRecent(false);
+    inputRef.current?.blur();
+  };
+
+  const handleRecentSelect = (address) => {
+    onChange(address);
+    onSelect?.(address);
+    setShowRecent(false);
     inputRef.current?.blur();
   };
 
@@ -90,8 +102,8 @@ export default function AddressInput({
         value={value}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setTimeout(() => setFocused(false), 150)}
+        onFocus={() => { setFocused(true); if (!value) setShowRecent(true); }}
+        onBlur={() => setTimeout(() => { setFocused(false); setShowRecent(false); }, 150)}
         placeholder={placeholder}
         autoComplete="off"
         style={{
@@ -116,6 +128,27 @@ export default function AddressInput({
           border: `2px solid ${BRAND.border}`, borderTop: `2px solid ${BRAND.blue}`,
           animation: "spin 0.7s linear infinite",
         }} />
+      )}
+
+      {/* Recent addresses dropdown */}
+      {showRecent && !value && recentAddresses.length > 0 && !showDropdown && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 6px)", left: -14, right: -14,
+          background: "#fff", border: `2px solid ${BRAND.border}`, borderRadius: 12,
+          boxShadow: "0 16px 48px rgba(0,0,0,0.2)", zIndex: 99999, overflow: "hidden",
+        }}>
+          <div style={{ padding: "6px 14px 2px", fontSize: 10, fontWeight: 700, color: BRAND.gray, textTransform: "uppercase", letterSpacing: "0.08em" }}>Recent searches</div>
+          {recentAddresses.map((addr, i) => (
+            <button key={i}
+              onMouseDown={(e) => { e.preventDefault(); handleRecentSelect(addr); }}
+              style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 14px", background: "#fff", border: "none", borderTop: `1px solid ${BRAND.border}`, cursor: "pointer", textAlign: "left", fontFamily: "'DM Sans', sans-serif" }}
+              onMouseEnter={e => e.currentTarget.style.background = "#F8FAFC"}
+              onMouseLeave={e => e.currentTarget.style.background = "#fff"}>
+              <span style={{ fontSize: 14, flexShrink: 0 }}>🕐</span>
+              <span style={{ fontSize: 13, color: BRAND.dark, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{addr}</span>
+            </button>
+          ))}
+        </div>
       )}
 
       {/* Suggestions dropdown */}

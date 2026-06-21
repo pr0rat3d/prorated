@@ -37,6 +37,23 @@ const loadGoogleMaps = () => new Promise((resolve, reject) => {
 });
 
 // ── Main hook ─────────────────────────────────────────────────
+// ── Recent address helpers ────────────────────────────────────
+const RECENT_KEY = "prorated_recent_addresses";
+const MAX_RECENT = 5;
+
+export const getRecentAddresses = () => {
+  try { return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); }
+  catch { return []; }
+};
+
+export const saveRecentAddress = (address) => {
+  try {
+    const recent = getRecentAddresses().filter(a => a !== address);
+    recent.unshift(address);
+    localStorage.setItem(RECENT_KEY, JSON.stringify(recent.slice(0, MAX_RECENT)));
+  } catch {}
+};
+
 export default function useAddressAutocomplete(inputRef) {
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading]         = useState(false);
@@ -95,6 +112,7 @@ export default function useAddressAutocomplete(inputRef) {
 
   // Clear suggestions and reset session token after selection
   const selectSuggestion = useCallback((suggestion) => {
+    saveRecentAddress(suggestion.description || suggestion.structured_formatting?.main_text || "");
     setSuggestions([]);
     // Reset session token for next search (Billing best practice)
     if (window.google?.maps?.places) {

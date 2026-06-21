@@ -2,18 +2,33 @@
 // ProRated — Configurable Plan Limits
 // Change these values here to update across the entire app
 // ─────────────────────────────────────────────────────────────
-export const FREE_MONTHLY_LOOKUPS = 10;   // ← change this anytime (3 post-beta)
-export const PRO_MONTHLY_PRICE    = 9.99; // ← monthly Pro price
-export const PRO_PRICE_DISPLAY    = "$9.99"; // ← display string
+export const FREE_MONTHLY_LOOKUPS = 10;   // ← free tier monthly limit
+export const PENDING_MONTHLY_LOOKUPS = 3;    // ← limit during verification period
+
+// ── Company pricing tiers ─────────────────────────────────────
+export const COMPANY_TIERS = {
+  bronze:   { name: "Bronze",   price: 9.99,  seatLimit: 5,   icon: "🥉" },
+  silver:   { name: "Silver",   price: 19.99, seatLimit: 15,  icon: "🥈" },
+  gold:     { name: "Gold",     price: 29.99, seatLimit: 39,  icon: "🥇" },
+  platinum: { name: "Platinum", price: null,  seatLimit: 999, icon: "💎", contact: true },
+};
+
+export const PROMO_CODES = {
+  PRORATED2026: { days: 60, label: "2 months free applied!" },
+};
+
+// Anniversary reward threshold (reviews per 52 weeks)
+export const ANNIVERSARY_REVIEW_THRESHOLD = 156; // 3/week × 52 weeks
+export const PRO_MONTHLY_PRICE    = 19.99; // ← Bronze monthly price
+export const PRO_PRICE_DISPLAY    = "$19.99"; // ← display string
 
 // Helper — builds the plan label string used throughout the app
 export const FREE_PLAN_LABEL = `Free · ${FREE_MONTHLY_LOOKUPS} lookups/month`;
-export const ANNUAL_PRICE       = 99.99;
-export const ANNUAL_PRICE_DISPLAY = "$99.99";
+// Annual billing removed — monthly only
 
 export const APP_NAME   = "ProRated";
 export const APP_DOMAIN = "prorated.io";
-export const TAGLINE    = "Bidding Made Better";
+export const TAGLINE    = "Built by Pros, Built for Pros";
 
 export const BRAND = {
   blue:    "#2563EB",
@@ -45,6 +60,8 @@ export const TRADES = [
   { id: "siding",       label: "Siding & Exterior",       icon: "🏘️" },
   { id: "insulation",   label: "Insulation",                icon: "🧤" },
   { id: "garage_door",  label: "Garage Door Services",       icon: "🚪" },
+  { id: "fencing",      label: "Fencing",                      icon: "🪧" },
+  { id: "pool_service",  label: "Pool Service",                  icon: "🏊" },
 ];
 
 export const RATING_CATEGORIES = [
@@ -56,24 +73,39 @@ export const RATING_CATEGORIES = [
 ];
 
 export const ISSUE_TAGS = [
-  { id: "steep_driveway", label: "Steep driveway",      severity: "warn" },
-  { id: "no_parking",     label: "No parking",          severity: "warn" },
-  { id: "tight_access",   label: "Tight access",        severity: "warn" },
-  { id: "aggressive_dog", label: "Aggressive dog",      severity: "bad"  },
-  { id: "scope_creep",    label: "Scope creep",         severity: "bad"  },
-  { id: "slow_payment",   label: "Slow payment",        severity: "bad"  },
-  { id: "micromanager",   label: "Micromanager",        severity: "bad"  },
-  { id: "old_systems",    label: "Old wiring/plumbing", severity: "warn" },
-  { id: "hoa",            label: "HOA restrictions",    severity: "warn" },
-  { id: "unsafe",         label: "Unsafe conditions",   severity: "bad"  },
-  { id: "pays_well",      label: "Pays on time",        severity: "good" },
-  { id: "easy_access",    label: "Easy access",         severity: "good" },
-  { id: "great_owner",    label: "Great homeowner",     severity: "good" },
-  { id: "clear_scope",    label: "Scope was clear",     severity: "good" },
-  { id: "poor_comms",     label: "Poor communication",  severity: "bad"  },
-  { id: "great_comms",    label: "Great communication", severity: "good" },
-  { id: "delayed_start",  label: "Delayed start date",  severity: "bad"  },
-  { id: "site_hazards",   label: "Site hazards",        severity: "bad"  },
+  // ── Positive ──────────────────────────────────────────────
+  { id: "pays_well",        label: "Pays on time",              severity: "good", desc: "Homeowner paid promptly with no disputes or delays." },
+  { id: "easy_access",      label: "Easy access",               severity: "good", desc: "Driveway, staging area, and site entry were easy to work with." },
+  { id: "great_owner",      label: "Great homeowner",           severity: "good", desc: "Homeowner was respectful, reasonable, and easy to work with overall." },
+  { id: "friendly",         label: "Friendly",                  severity: "good", desc: "Homeowner had a positive, welcoming attitude toward the crew throughout the job." },
+  { id: "understanding",    label: "Understanding",             severity: "good", desc: "Homeowner was flexible and reasonable when unexpected issues or changes came up." },
+  { id: "no_hover",         label: "Didn't Hover",              severity: "good", desc: "Homeowner gave the crew space to work without micromanaging or interfering." },
+  { id: "clear_scope",      label: "Scope was clear",           severity: "good", desc: "Project expectations were well-defined and didn't change during the job." },
+  { id: "clear_expects",    label: "Clear Expectations",        severity: "good", desc: "Homeowner communicated exactly what they wanted upfront with no ambiguity." },
+  { id: "great_comms",      label: "Great communication",       severity: "good", desc: "Homeowner was responsive and communicated clearly throughout the job." },
+  { id: "reasonable_time",  label: "Reasonable Timeline",       severity: "good", desc: "Homeowner set a realistic schedule and didn't pressure the crew to rush." },
+  { id: "pets_secured",     label: "Pets Secured",              severity: "good", desc: "Pets were properly contained and not a hazard or distraction during the job." },
+  // ── Heads Up ──────────────────────────────────────────────
+  { id: "steep_driveway",   label: "Steep driveway",            severity: "warn", desc: "Driveway grade may affect truck access, staging, or equipment delivery." },
+  { id: "no_parking",       label: "No parking",                severity: "warn", desc: "Limited or no street/driveway parking for crew vehicles or trailers." },
+  { id: "tight_access",     label: "Tight access",              severity: "warn", desc: "Narrow gates, fencing, or clearance issues that affect equipment or material delivery." },
+  { id: "old_systems",      label: "Old wiring/plumbing",       severity: "warn", desc: "Existing systems are outdated and may require additional work or code upgrades." },
+  { id: "hoa",              label: "HOA restrictions",          severity: "warn", desc: "HOA rules may affect work hours, materials, staging, or require written approval before starting." },
+  // ── Concerns ──────────────────────────────────────────────
+  { id: "inflexible",       label: "Inflexible Customer",       severity: "bad",  desc: "Homeowner refused reasonable adjustments even when circumstances required them." },
+  { id: "rude_hostile",     label: "Rude / Hostile",            severity: "bad",  desc: "Homeowner displayed rude, hostile, or aggressive behavior toward the crew." },
+  { id: "unreasonable",     label: "Unreasonable Demands",      severity: "bad",  desc: "Homeowner made demands outside the agreed scope or beyond what was reasonable." },
+  { id: "unclear_scope",    label: "Unclear Scope / Changing",  severity: "bad",  desc: "Project scope was vague or kept changing throughout the job, making it hard to complete cleanly." },
+  { id: "rushed_timeline",  label: "Rushed / Unrealistic Timeline", severity: "bad", desc: "Homeowner pushed for an unrealistic schedule that created pressure or quality risk." },
+  { id: "aggressive_dog",   label: "Aggressive dog",            severity: "bad",  desc: "Dog on property was aggressive or unsecured — confirm pets are controlled before crew arrives." },
+  { id: "pets_loose",       label: "Pets Loose / Aggressive",   severity: "bad",  desc: "Pets were unsecured or aggressive — a distraction or safety concern for the crew on site." },
+  { id: "scope_creep",      label: "Scope creep",               severity: "bad",  desc: "Homeowner added work or changed project requirements after the job started." },
+  { id: "slow_payment",     label: "Slow payment",              severity: "bad",  desc: "Payment was significantly delayed or required repeated follow-up after job completion." },
+  { id: "micromanager",     label: "Micromanager",              severity: "bad",  desc: "Homeowner hovered over crew, interfered with work, or second-guessed decisions on site." },
+  { id: "unsafe",           label: "Unsafe conditions",         severity: "bad",  desc: "Site had hazardous conditions — structural, chemical, electrical, or other safety concerns." },
+  { id: "poor_comms",       label: "Poor communication",        severity: "bad",  desc: "Homeowner was unresponsive, unclear, or difficult to reach for decisions during the job." },
+  { id: "delayed_start",    label: "Delayed start date",        severity: "bad",  desc: "Homeowner pushed back the agreed start date with little or no notice, wasting crew time." },
+  { id: "site_hazards",     label: "Site hazards",              severity: "bad",  desc: "Unexpected on-site hazards such as debris, unstable ground, or access blockages." },
 ];
 
 export const DEMO_ADDRESSES = [
@@ -590,6 +622,32 @@ export const WORK_CATEGORIES = [
     ]
   },
   {
+    id: "pool_service",
+    label: "Pool Service",
+    icon: "🏊",
+    items: [
+      { id: "pool_install",    label: "New pool installation" },
+      { id: "pool_repair",     label: "Pool repair" },
+      { id: "pool_resurfacing",label: "Resurfacing / replastering" },
+      { id: "pool_equipment",  label: "Equipment service" },
+      { id: "pool_cleaning",   label: "Cleaning / maintenance" },
+      { id: "pool_opening",    label: "Seasonal opening" },
+      { id: "pool_closing",    label: "Seasonal closing" },
+      { id: "pool_leak",       label: "Leak detection / repair" },
+    ]
+  },
+  {
+    id: "fencing",
+    label: "Fencing",
+    icon: "🪧",
+    items: [
+      { id: "fence_new",     label: "New fence installation" },
+      { id: "fence_repair",  label: "Fence repair" },
+      { id: "fence_remove",  label: "Fence removal" },
+      { id: "fence_gate",    label: "Gate addition / repair" },
+    ]
+  },
+  {
     id: "general",
     label: "General Contracting",
     icon: "🏗️",
@@ -632,6 +690,8 @@ export const TRADE_LICENSE_REQUIREMENTS = {
   siding:       { tier: 2, required: true,  label: "Business License #",             hint: "Enter your city or county business license number",  example: "BL-12345"  },
   insulation:   { tier: 2, required: true,  label: "Business License #",             hint: "Enter your city or county business license number",  example: "BL-12345"  },
   garage_door:  { tier: 2, required: true,  label: "Business License #",             hint: "Enter your city or county business license number",  example: "BL-12345"  },
+  fencing:      { tier: 2, required: true,  label: "Business License #",             hint: "Enter your city or county business license number",  example: "BL-12345"  },
+  pool_service:  { tier: 2, required: true,  label: "Business License #",             hint: "Enter your city or county business license number",  example: "BL-12345"  },
 };
 
 // Helper — get requirement for a trade

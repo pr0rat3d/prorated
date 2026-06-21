@@ -1,135 +1,287 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <!-- Core Public Pages -->
   <url>
     <loc>https://prorated.app/</loc>
-    <changefreq>daily</changefreq>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://prorated.app/directory</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://prorated.app/realtor</loc>
+    <loc>https://prorated.app/beta</loc>
+    <lastmod>2025-06-13</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://prorated.app/pricing</loc>
+    <lastmod>2025-06-13</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://prorated.app/contact</loc>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://prorated.app/terms</loc>
+    <lastmod>2025-06-13</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://prorated.app/privacy</loc>
+    <lastmod>2025-06-13</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://prorated.app/contact</loc>
-    <changefreq>yearly</changefreq>
-    <priority>0.4</priority>
-  </url>
-  <url>
-    <loc>https://prorated.app/acca</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://prorated.app/phcc</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://prorated.app/iec</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://prorated.app/nrca</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://prorated.app/pca</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://prorated.app/nalp</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://prorated.app/aar</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://prorated.app/abc</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://prorated.app/hba</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://prorated.app/neca</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://prorated.app/bar</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://prorated.app/support</loc>
+    <lastmod>2025-06-13</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://prorated.app/resources</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://prorated.app/merch</loc>
+    <loc>https://prorated.app/directory</loc>
+    <lastmod>2025-06-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://prorated.app/demo</loc>
+    <lastmod>2025-06-13</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
+    <priority>0.8</priority>
   </url>
-  <url><loc>https://prorated.app/blog</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://prorated.app/blog/protect-from-slow-paying-homeowners</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://prorated.app/blog/5-things-contractors-know-before-bidding</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://prorated.app/blog/what-is-job-site-rating</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://prorated.app/blog/alabama-contractor-license-guide</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://prorated.app/blog/vet-residential-job-site</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://prorated.app/alabama/birmingham</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://prorated.app/alabama/huntsville</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://prorated.app/alabama/mobile</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://prorated.app/alabama/montgomery</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://prorated.app/alabama/tuscaloosa</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://prorated.app/trades/roofing</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://prorated.app/trades/electrical</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://prorated.app/trades/plumbing</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://prorated.app/trades/hvac</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://prorated.app/trades/general</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://prorated.app/mission</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
-</urlset>
+  <url>
+    <loc>https://prorated.app/mission</loc>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://prorated.app/merch</loc>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- Blog -->
+  <url>
+    <loc>https://prorated.app/blog</loc>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://prorated.app/blog/protect-from-slow-paying-homeowners</loc>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://prorated.app/blog/5-things-contractors-know-before-bidding</loc>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://prorated.app/blog/scope-creep-how-to-protect-yourself</loc>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://prorated.app/blog/job-site-obstacles-what-contractors-dont-talk-about</loc>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://prorated.app/blog/what-is-job-site-rating</loc>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://prorated.app/blog/homeowner-communication-the-hidden-factor</loc>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://prorated.app/blog/vet-residential-job-site</loc>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Location SEO Pages -->
+  <url>
+    <loc>https://prorated.app/alabama/birmingham</loc>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://prorated.app/alabama/huntsville</loc>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://prorated.app/alabama/mobile</loc>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://prorated.app/alabama/montgomery</loc>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://prorated.app/alabama/tuscaloosa</loc>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Trade SEO Pages -->
+  <url>
+    <loc>https://prorated.app/trades/roofing</loc>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://prorated.app/trades/electrical</loc>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://prorated.app/trades/plumbing</loc>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://prorated.app/trades/hvac</loc>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://prorated.app/trades/general</loc>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Partner Pages -->
   <url>
     <loc>https://prorated.app/agc</loc>
+    <lastmod>2025-06-13</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
+    <priority>0.6</priority>
   </url>
+  <url>
+    <loc>https://prorated.app/abc</loc>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://prorated.app/hba</loc>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://prorated.app/acca</loc>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://prorated.app/phcc</loc>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://prorated.app/iec</loc>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://prorated.app/nrca</loc>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://prorated.app/pca</loc>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://prorated.app/nalp</loc>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://prorated.app/neca</loc>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://prorated.app/aar</loc>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://prorated.app/bar</loc>
+    <lastmod>2025-06-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+<!-- DMCA Policy -->
+<url>
+  <loc>https://prorated.app/dmca</loc>
+  <lastmod>2026-06-17</lastmod>
+  <changefreq>yearly</changefreq>
+  <priority>0.3</priority>
+</url>
+<!-- Blog: Scope Creep -->
+<url>
+  <loc>https://prorated.app/blog/scope-creep-is-stealing-from-your-business</loc>
+  <lastmod>2026-06-17</lastmod>
+  <changefreq>monthly</changefreq>
+  <priority>0.7</priority>
+</url>
+<!-- Blog: Slow-Paying Homeowners -->
+<url>
+  <loc>https://prorated.app/blog/what-slow-paying-homeowners-cost-your-business</loc>
+  <lastmod>2026-06-17</lastmod>
+  <changefreq>monthly</changefreq>
+  <priority>0.7</priority>
+</url>
+
+</urlset>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { AVATAR_PAL, BRAND as BRAND_CONST } from "../data/constants";
 
 // Re-export BRAND so components can import it from either UI.js or constants.js
@@ -40,12 +40,68 @@ export function Badge({ score, large = false }) {
   );
 }
 
-export function Pill({ label, sev = "neutral", small = false, selected = false, onClick }) {
-  const p = tagStyle(sev);
+export function Pill({ label, sev = "neutral", small = false, selected = false, onClick, desc }) {
+  const p        = tagStyle(sev);
+  const [showTip, setShowTip] = React.useState(false);
+  const timerRef = React.useRef(null);
+
+  const handleInfoTap = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!desc) return;
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setShowTip(true);
+    timerRef.current = setTimeout(() => setShowTip(false), 4500);
+  };
+
   return (
     <span onClick={onClick}
-      style={{ display: "inline-block", whiteSpace: "nowrap", cursor: onClick ? "pointer" : "default", background: selected ? p.bg : "#F8FAFC", color: selected ? p.color : "#475569", border: `1.5px solid ${selected ? p.border : "#CBD5E1"}`, borderRadius: 20, fontWeight: 500, fontSize: small ? 11 : 12, padding: small ? "2px 8px" : "4px 11px", transition: "all 0.12s" }}>
+      title={desc || undefined}
+      style={{ position: "relative", display: "inline-flex", alignItems: "center", gap: 3, whiteSpace: "nowrap", cursor: onClick ? "pointer" : "default", background: selected ? p.bg : "#F8FAFC", color: selected ? p.color : "#475569", border: `1.5px solid ${selected ? p.border : "#CBD5E1"}`, borderRadius: 20, fontWeight: 500, fontSize: small ? 11 : 12, padding: small ? "2px 8px" : "4px 11px", transition: "all 0.12s" }}>
       {label}
+      {desc && (
+        <span
+          onClickCapture={handleInfoTap}
+          onTouchEnd={handleInfoTap}
+          style={{ fontSize: 9, opacity: 0.55, lineHeight: 1, marginLeft: 1, cursor: "pointer", WebkitTapHighlightColor: "transparent" }}
+          aria-label={`More info: ${desc}`}
+        >ⓘ</span>
+      )}
+      {showTip && (
+        <span
+          style={{
+            position:    "absolute",
+            bottom:      "calc(100% + 8px)",
+            left:        "50%",
+            transform:   "translateX(-50%)",
+            width:       220,
+            background:  "#1E293B",
+            color:       "#F1F5F9",
+            fontSize:    11,
+            lineHeight:  1.5,
+            padding:     "8px 12px",
+            borderRadius: 8,
+            boxShadow:   "0 4px 16px rgba(0,0,0,0.3)",
+            zIndex:      9999,
+            whiteSpace:  "normal",
+            pointerEvents: "none",
+            textAlign:   "center",
+            fontWeight:  400,
+          }}
+        >
+          {desc}
+          <span style={{
+            position:    "absolute",
+            top:         "100%",
+            left:        "50%",
+            transform:   "translateX(-50%)",
+            width:       0, height: 0,
+            borderLeft:  "5px solid transparent",
+            borderRight: "5px solid transparent",
+            borderTop:   "5px solid #1E293B",
+          }} />
+        </span>
+      )}
     </span>
   );
 }
@@ -84,9 +140,9 @@ export function Btn({ children, onClick, disabled, variant = "primary", small = 
   );
 }
 
-export function Card({ children, style = {}, green = false }) {
+export function Card({ children, style = {}, green = false, ...props }) {
   return (
-    <div style={{ background: green ? "#F0FDF4" : "#FFFFFF", border: `1px solid ${green ? "#86EFAC" : BRAND.border}`, borderRadius: 16, padding: "1.25rem", ...style }}>
+    <div style={{ background: green ? "#F0FDF4" : "#FFFFFF", border: `1px solid ${green ? "#86EFAC" : BRAND.border}`, borderRadius: 16, padding: "1.25rem", ...style }} {...props}>
       {children}
     </div>
   );

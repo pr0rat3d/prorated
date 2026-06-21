@@ -6,12 +6,12 @@ export default function MissionPage({ go }) {
   const { lang } = useLang();
 
   const stats = [
-    { stat: "82%",     label: "of contractors report a slow-pay homeowner at least once per year",           source: "NAHB",           url: "https://www.nahb.org/news-and-economics/industry-news/remodeling/the-cost-of-doing-business-study" },
-    { stat: "47 days", label: "average days to payment on residential jobs vs 30-day terms",                 source: "Levelset 2023",  url: "https://levelset.com/contractor-survey/" },
-    { stat: "$60K",    label: "average annual revenue lost to non-payment per small contractor annually",    source: "FMI Corp",       url: "https://www.fmicorp.com/insights/publications/the-hidden-costs-of-the-construction-industry" },
-    { stat: "1 in 3",  label: "small contractors cite late payment as a top cause of cash flow failure",    source: "QuickBooks",     url: "https://quickbooks.intuit.com/r/cash-flow/construction-payment-report/" },
-    { stat: "100%",   label: "of subcontractors now consider a GC or homeowner's payment reputation before deciding to bid", source: "Rabbet 2024", url: "https://www.pbmares.com/accounts-receivable-in-construction-cash-flow-at-risk-amid-payment-delays/" },
-    { stat: "97%",    label: "of general contractors increased bid prices in 2024 specifically to account for payment delays", source: "Rabbet 2024", url: "https://www.docjoist.com/reports/construction-payment-statistics" },
+    { stat: "$280B",    label: "lost annually by the U.S. construction industry due to slow and delayed payments in 2024 — the highest ever recorded", source: "Rabbet 2024",     url: "https://www.globenewswire.com/news-release/2024/10/01/2955968/0/en/Slow-Payments-Cost-280-Billion-in-2024-Threaten-U-S-Construction-Industry-s-Financial-Health.html" },
+    { stat: "57%",      label: "of service businesses lose $1,000–$5,000 every month to unbilled scope creep — and only 1% successfully bill for all out-of-scope work", source: "Ignition 2025",   url: "https://www.ignitionapp.com/news/2025-agency-pricing-cashflow-report" },
+    { stat: "3–7%",     label: "average net profit margin for U.S. contractors — meaning a single unmanaged scope-creep job can wipe out months of profit", source: "IBIS World / Procore", url: "https://www.procore.com/library/construction-markup-and-profit-margin" },
+    { stat: "27%",      label: "average budget overrun on projects that experience scope creep — 85% of all projects that creep go over budget by this amount", source: "PMI 2025",        url: "https://www.pmi.org" },
+    { stat: "70%",      label: "of contractors say payment delays regularly threaten their ability to operate and grow their business",                        source: "Built 2025",      url: "https://getbuilt.com/blog/70-percent-of-contractors-say-payment-delays-threaten-industry/" },
+    { stat: "27%",      label: "of contractors have used personal savings or retirement funds to cover cash flow gaps caused by slow-paying clients",          source: "Billd 2025",      url: "https://billd.com/resources/2025-market-report" },
   ];
 
   return (
@@ -33,7 +33,7 @@ export default function MissionPage({ go }) {
             Our Mission
           </div>
           <h1 style={{ fontSize: "clamp(26px, 5vw, 38px)", fontWeight: 900, color: "#F8FAFC", margin: "0 0 14px", lineHeight: 1.15, letterSpacing: "-0.5px" }}>
-            Bidding Made Better
+            Built by Pros, Built for Pros
           </h1>
           <p style={{ fontSize: 16, color: "#94A3B8", margin: "0 auto", maxWidth: 480, lineHeight: 1.75 }}>
             Trade professionals deserve the full picture of what they're committing to before they commit. ProRated exists to make that possible.
@@ -104,10 +104,12 @@ export default function MissionPage({ go }) {
             <div style={{ marginTop: 12, fontSize: 9, color: "#334155", lineHeight: 1.8 }}>
               <span style={{ color: "#475569", fontWeight: 600 }}>Further reading: </span>
               {[
-                { label: "NAHB Cost of Doing Business Study", url: "https://www.nahb.org/news-and-economics/industry-news/remodeling/the-cost-of-doing-business-study" },
-                { label: "Levelset Contractor Payment Report", url: "https://levelset.com/contractor-survey/" },
-                { label: "FMI Hidden Costs of Construction", url: "https://www.fmicorp.com/insights/publications/the-hidden-costs-of-the-construction-industry" },
-                { label: "QuickBooks Cash Flow Study", url: "https://quickbooks.intuit.com/r/cash-flow/construction-payment-report/" },
+                { label: "GlobeNewsWire — $280B Slow Payments 2024", url: "https://www.globenewswire.com/news-release/2024/10/01/2955968/0/en/Slow-Payments-Cost-280-Billion-in-2024-Threaten-U-S-Construction-Industry-s-Financial-Health.html" },
+                { label: "Ignition 2025 Agency Pricing & Cash Flow Report", url: "https://www.ignitionapp.com/news/2025-agency-pricing-cashflow-report" },
+                { label: "IBIS World / Procore — Construction Profit Margins", url: "https://www.procore.com/library/construction-markup-and-profit-margin" },
+                { label: "CFMA 2024 Construction Financial Benchmarker", url: "https://cfma.org/articles/construction-s-lifeline-key-metrics-for-measuring-financial-health" },
+                { label: "Built 2025 Construction Cash Crunch Survey", url: "https://getbuilt.com/blog/70-percent-of-contractors-say-payment-delays-threaten-industry/" },
+                { label: "Billd 2025 National Subcontractor Market Report", url: "https://billd.com/resources/2025-market-report" },
               ].map((r, i) => (
                 <span key={i}>
                   <a href={r.url} target="_blank" rel="noopener noreferrer" style={{ color: "#60A5FA", textDecoration: "underline" }}>{r.label}</a>

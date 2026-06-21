@@ -1,4 +1,5 @@
-import { SUPABASE_URL } from "../../config.js";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../../config.js";
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || "LittlePigs6969!";
 import { useState, useEffect } from "react";
 import { BRAND } from "../../components/UI";
 import Logo from "../../components/Logo";
@@ -16,7 +17,27 @@ const getLicenseUrl = (state, license) => {
 };
 
 // All DB calls route through /api/db — no keys in frontend
-const sb    = async (path) => dbGet(path);
+const SUPA_URL = "https://wsdrbdojnzmtwndswpwr.supabase.co";
+const sb = async (path) => {
+  try {
+    const token = sessionStorage.getItem("pr_admin_auth");
+    const adminPass = token ? atob(token).split(":")[0] : null;
+    // Try direct Supabase call with admin op header via /api/db
+    const res = await fetch("/api/db", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(adminPass ? { "x-admin-op": adminPass } : {}),
+      },
+      body: JSON.stringify({ path, method: "GET" }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    }
+    return [];
+  } catch { return []; }
+};
 const patch = async (table, id, data) => adminPatch(`/${table}`, data, { id: `eq.${id}` });
 const del   = async (table, id) => adminDelete(`/${table}`, { id: `eq.${id}` });
 
@@ -41,7 +62,7 @@ const Row = ({ children, faded }) => (
 );
 
 const SectionHead = ({ title, count }) => (
-  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: "1rem" }}>
+  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
     <h2 style={{ fontSize: 16, fontWeight: 800, color: BRAND.dark, margin: 0 }}>{title}</h2>
     {count !== undefined && <Badge color="#F1F5F9" text={BRAND.gray}>{count}</Badge>}
   </div>
@@ -74,14 +95,21 @@ function UserRow({ user: u, onApprove, onReject, onCompleteDelete, onAdminDelete
             <Badge color="#F0F4FF" text="#3730A3">🔨 Contractor</Badge>
             {u.trade && <Badge color="#F8FAFC" text={BRAND.gray}>{u.trade}</Badge>}
             {u.deletion_requested && <Badge color="#FEE2E2" text="#991B1B">🗑️ Deletion Requested</Badge>}
-            {u.referral_count > 0 && <Badge color="#EFF6FF" text="#1E40AF">🤝 {u.referral_count} referral{u.referral_count !== 1 ? "s" : ""} — 50% off pending</Badge>}
-            {u.pro_expires_at && new Date(u.pro_expires_at) > new Date() && <Badge color="#F0FDF4" text="#166534">⭐ Pro</Badge>}
+
+            {u.plan === "bronze" && <Badge color="#FFFBEB" text="#B45309">🥉 Bronze</Badge>}
+            {u.plan === "silver" && <Badge color="#F8FAFC" text="#475569">🥈 Silver</Badge>}
+            {u.plan === "gold"     && <Badge color="#FFFBEB" text="#92400E">🥇 Gold</Badge>}
+            {u.plan === "platinum" && <Badge color="#EFF6FF" text="#1E3A8A">💎 Platinum</Badge>}
+            {u.pro_expires_at && new Date(u.pro_expires_at) > new Date() && <Badge color="#F0FDF4" text="#166534">⭐ Pro (legacy)</Badge>}
           </div>
           <div style={{ fontSize: 11, color: BRAND.gray, display: "flex", gap: 12, flexWrap: "wrap" }}>
             <span>📧 {u.email || "—"}</span>
             <span>📍 {u.state || "—"}</span>
             <span>📅 {u.created_at ? new Date(u.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</span>
-            {u.referral_code && <span>🔗 {u.referral_code}</span>}
+
+            {u.company_id && <span>🏗️ Company account</span>}
+            {u.company_role === "owner" && <Badge color="#EFF6FF" text="#1E40AF">Owner</Badge>}
+            {u.company_role === "member" && <Badge color="#F0FDF4" text="#166534">Team member</Badge>}
           </div>
           {expanded && (
             <div style={{ marginTop: 10, padding: "10px 12px", background: "#F8FAFC", borderRadius: 8, fontSize: 11, color: BRAND.gray, lineHeight: 1.8 }}>
@@ -90,10 +118,16 @@ function UserRow({ user: u, onApprove, onReject, onCompleteDelete, onAdminDelete
               </div>
               <div><strong>Trade:</strong> {u.trade || "—"}</div>
               <div><strong>Phone:</strong> {u.phone || "—"}</div>
-              <div><strong>Plan:</strong> {u.plan || "free"}</div>
+              <div><strong>Plan:</strong> {
+                u.plan === "bronze" ? "🥉 Bronze ($9.99/mo)" :
+                u.plan === "silver" ? "🥈 Silver ($19.99/mo)" :
+                u.plan === "gold"   ? "🥇 Gold ($29.99/mo)" :
+                "Free"
+              }</div>
+              <div><strong>Account Type:</strong> {u.account_type === "company" ? "🏗️ Company" : "👤 Solo"}</div>
+              <div><strong>Company Role:</strong> {u.company_role || "—"}</div>
+              <div><strong>Promo Code:</strong> {u.promo_code || "—"}</div>
               <div><strong>Trust Score:</strong> {u.trust_score ?? "—"}</div>
-              <div><strong>Pro Source:</strong> {u.pro_source || "—"}</div>
-              <div><strong>Referred By:</strong> {u.referred_by || "—"}</div>
               <div><strong>User ID:</strong> <span style={{ fontFamily: "monospace" }}>{u.id}</span></div>
             </div>
           )}
@@ -177,7 +211,7 @@ function ReviewRow({ review: r, onDelete, editRequests = [] }) {
             {myEditReqs.length > 0 && <Badge color="#FEF3C7" text="#92400E">✏️ {myEditReqs.length} edit request{myEditReqs.length > 1 ? "s" : ""}</Badge>}
           </div>
           <div style={{ fontSize: 11, color: BRAND.gray, display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <span>👤 {r.reviewer_name || r.user_id?.slice(0, 8) || "Anonymous"}</span>
+            <span>👤 {r.user_id?.slice(0, 8) || "Anonymous"}</span>
             <span>🔨 {r.trade || "—"}</span>
             <span>📅 {r.created_at ? new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</span>
           </div>
@@ -218,6 +252,8 @@ export default function AdminPage({ go }) {
   const [feedback, setFeedback] = useState([]);
   const [reported, setReported] = useState([]);
   const [ndaSigs, setNdaSigs]   = useState([]);
+  const [companies, setCompanies] = useState([]);
+  const [companyMembers, setCompanyMembers] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [userFilter, setUserFilter] = useState("all");
   const [reviewFilter, setReviewFilter] = useState("all");
@@ -227,7 +263,7 @@ export default function AdminPage({ go }) {
   const loadData = async () => {
     setLoading(true);
     const safe = async (path) => { try { const r = await sb(path); return Array.isArray(r) ? r : []; } catch { return []; } };
-    const [co, re, rv, er, ss, fb, rp, nd, rl] = await Promise.all([
+    const [co, re, rv, er, ss, fb, rp, nd, rl, cm, cmem] = await Promise.all([
       safe("/contractors?select=*&order=created_at.desc&limit=500"),
       safe("/realtor_subscriptions?select=*&order=created_at.desc&limit=200"),
       safe("/reviews?select=*&order=created_at.desc&limit=200"),
@@ -237,10 +273,13 @@ export default function AdminPage({ go }) {
       safe("/reported_reviews?select=*&order=reported_at.desc&limit=100"),
       safe("/nda_signatures?select=*&order=agreed_at.desc&limit=200"),
       safe("/realtor_lookups?select=*&order=created_at.desc&limit=200"),
+      safe("/companies?select=*&order=created_at.desc&limit=200"),
+      safe("/contractors?select=id,name,email,trade,company_id,company_role,plan,status,created_at&company_id=neq.null&order=created_at.desc&limit=500"),
     ]);
     setContractors(co); setRealtors(re); setReviews(rv);
     setEditRequests(er); setSubs(ss); setFeedback(fb);
     setReported(rp); setNdaSigs(nd);
+    setCompanies(cm); setCompanyMembers(cmem);
     // Enrich realtor rows with lookup counts
     const lookupCounts = rl.reduce((acc, l) => { acc[l.user_id] = (acc[l.user_id] || 0) + 1; return acc; }, {});
     setRealtors(re.map(r => ({ ...r, lookup_count: lookupCounts[r.user_id] || 0 })));
@@ -249,8 +288,13 @@ export default function AdminPage({ go }) {
 
   // ── Actions ────────────────────────────────────────────────
   const approveContractor = async (id) => {
-    await patch("contractors", id, { status: "approved", verified_at: new Date().toISOString(), reviewed_by: "admin" });
-    setContractors(cs => cs.map(c => c.id === id ? { ...c, status: "approved" } : c));
+    await patch("contractors", id, {
+      status: "approved",
+      verification_tier: "verified",
+      verified_at: new Date().toISOString(),
+      reviewed_by: "admin",
+    });
+    setContractors(cs => cs.map(c => c.id === id ? { ...c, status: "approved", verification_tier: "verified" } : c));
     fetch(`${SUPABASE_URL}/functions/v1/send-approval-email`, {
       method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
       body: JSON.stringify({ contractorId: id, status: "approved" }),
@@ -266,19 +310,26 @@ export default function AdminPage({ go }) {
     }).catch(() => {});
   };
 
-  const adminDelete = async (id, name) => {
+  const deleteUser = async (id, name) => {
     if (!window.confirm(`Permanently delete ${name || "this user"}? This cannot be undone.`)) return;
+    // Anonymize contractor record — null out PII
     await adminPatch("/contractors", { deleted: true, deletion_requested: false, name: "Deleted Member", email: null, phone: null, license_number: null }, { id: `eq.${id}` });
-    await adminPatch("/reviews", { user_id: null, reviewer_name: "Former Member" }, { user_id: `eq.${id}` });
+    // Anonymize reviews — only null out user_id, no reviewer_name column
+    await adminPatch("/reviews", { user_id: null }, { user_id: `eq.${id}` });
+    // Delete from Supabase Auth via Edge Function
+    try {
+      await fetch(`${SUPABASE_URL}/functions/v1/delete-user`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
+        body: JSON.stringify({ userId: id, adminPass: "LittlePigs6969!" }),
+      });
+    } catch (e) {
+      console.warn("[ProRated] Auth delete note:", e);
+    }
     setContractors(cs => cs.filter(c => c.id !== id));
   };
 
-  const completeDelete = async (id) => {
-    if (!window.confirm("Permanently delete this user and anonymize their reviews?")) return;
-    await patch("contractors", id, { deleted: true, deletion_requested: false, name: "Deleted Member", email: null, phone: null, license_number: null });
-    await adminPatch("/reviews", { user_id: null, reviewer_name: "Former Member" }, { user_id: `eq.${id}` });
-    setContractors(cs => cs.map(c => c.id === id ? { ...c, deleted: true, deletion_requested: false } : c));
-  };
+  const completeDelete = deleteUser; // alias
 
   const deleteReview = async (id) => {
     if (!window.confirm("Delete this review?")) return;
@@ -313,16 +364,24 @@ export default function AdminPage({ go }) {
   const openReports         = reported.filter(r => !r.resolved);
   const pendingEditRequests = editRequests.filter(e => !e.resolved);
   const proRealtors         = realtors.filter(r => r.plan === "pro");
+  const bronzeContractors   = contractors.filter(c => c.plan === "bronze");
+  const silverContractors   = contractors.filter(c => c.plan === "silver");
+  const goldContractors     = contractors.filter(c => c.plan === "gold");
+  const paidContractors     = contractors.filter(c => ["bronze","silver","gold"].includes(c.plan));
   const avgScore            = reviews.length ? (reviews.reduce((s, r) => s + (r.overall_score || 0), 0) / reviews.length).toFixed(1) : "—";
 
   // ── Filtered views ──────────────────────────────────────────
-  const filteredContractors = userFilter === "all"      ? contractors
+  const filteredContractors = userFilter === "all"      ? contractors.filter(c => !c.deleted)
     : userFilter === "pending"  ? pendingContractors
-    : userFilter === "approved" ? contractors.filter(c => c.status === "approved")
-    : userFilter === "rejected" ? contractors.filter(c => c.status === "rejected")
+    : userFilter === "approved" ? contractors.filter(c => c.status === "approved" && !c.deleted)
+    : userFilter === "rejected" ? contractors.filter(c => c.status === "rejected" && !c.deleted)
     : userFilter === "deletion" ? deletionRequests
-    : userFilter === "pro"      ? contractors.filter(c => c.plan === "pro")
-    : contractors;
+    : userFilter === "deleted"  ? contractors.filter(c => c.deleted)
+    : userFilter === "bronze"   ? contractors.filter(c => c.plan === "bronze")
+    : userFilter === "silver"   ? contractors.filter(c => c.plan === "silver")
+    : userFilter === "gold"     ? contractors.filter(c => c.plan === "gold")
+    : userFilter === "platinum" ? contractors.filter(c => c.plan === "platinum")
+    : contractors.filter(c => !c.deleted);
 
   const filteredReviews = reviewFilter === "all"     ? reviews
     : reviewFilter === "edits" ? reviews.filter(r => editRequests.some(e => e.review_id === r.id))
@@ -332,6 +391,7 @@ export default function AdminPage({ go }) {
   const TABS = [
     { id: "overview",     label: "Overview",    icon: "📊" },
     { id: "contractors",  label: `Contractors${pendingContractors.length > 0 ? ` (${pendingContractors.length})` : ""}`, icon: "🔨" },
+    { id: "companies",    label: `Companies (${companies.length})`, icon: "🏗️" },
     { id: "realtors",     label: `Realtors (${realtors.length})`, icon: "🏡" },
     { id: "reviews",      label: `Reviews${pendingEditRequests.length > 0 ? ` (${pendingEditRequests.length} edits)` : ""}`, icon: "⭐" },
     { id: "feedback",     label: `Feedback${openFeedback.length > 0 ? ` (${openFeedback.length})` : ""}`, icon: "💬" },
@@ -395,9 +455,18 @@ export default function AdminPage({ go }) {
               {statBox("🔨", contractors.length, "Total Contractors", BRAND.blue)}
               {statBox("✅", contractors.filter(c => c.status === "approved").length, "Verified", "#16A34A")}
               {statBox("⏳", pendingContractors.length, "Pending Review", "#D97706")}
-              {statBox("🏡", realtors.length, "Realtors", "#7C3AED")}
-              {statBox("⭐", reviews.length, "Reviews", "#EA580C")}
-              {statBox("★", avgScore, "Avg Rating", "#CA8A04")}
+              {statBox("💰", paidContractors.length, "Paid Accounts", "#7C3AED")}
+              {statBox("🏡", realtors.length, "Realtors", "#EA580C")}
+              {statBox("⭐", reviews.length, "Reviews", "#CA8A04")}
+            </div>
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: "1.5rem" }}>
+              {statBox("🥉", bronzeContractors.length, "Bronze", "#B45309")}
+              {statBox("🥈", silverContractors.length, "Silver", "#475569")}
+              {statBox("🥇", goldContractors.length, "Gold", "#92400E")}
+              {statBox("💎", contractors.filter(c => c.plan === "platinum").length, "Platinum", "#1E3A8A")}
+              {statBox("🆓", contractors.filter(c => !c.plan || c.plan === "free").length, "Free Tier", BRAND.gray)}
+              {statBox("🏗️", contractors.filter(c => c.company_id).length, "In Companies", "#2563EB")}
+              {statBox("★", avgScore, "Avg Rating", "#16A34A")}
             </div>
 
             {/* Action items */}
@@ -451,18 +520,7 @@ export default function AdminPage({ go }) {
               )}
             </div>
 
-            {/* Referral summary */}
-            {contractors.filter(c => c.referral_count > 0).length > 0 && (
-              <div style={{ marginTop: "1.5rem", background: "#1E293B", border: "1px solid #334155", borderRadius: 12, padding: "1rem 1.25rem" }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#F8FAFC", marginBottom: 8 }}>🤝 Referral Discounts Pending</div>
-                {contractors.filter(c => c.referral_count > 0).map(c => (
-                  <div key={c.id} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #334155", fontSize: 12, color: "#94A3B8" }}>
-                    <span>{c.name || c.email}</span>
-                    <span style={{ color: "#93C5FD" }}>{c.referral_count} referral{c.referral_count !== 1 ? "s" : ""} — apply 50% off in Stripe</span>
-                  </div>
-                ))}
-              </div>
-            )}
+
           </div>
         )}
 
@@ -472,7 +530,7 @@ export default function AdminPage({ go }) {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: 8 }}>
               <SectionHead title="Contractors" count={contractors.length} />
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {[["all","All"],["pending","⏳ Pending"],["approved","✓ Verified"],["rejected","✗ Rejected"],["deletion","🗑️ Deletion"],["pro","⭐ Pro"]].map(([val, label]) => (
+                {[["all","All"],["pending","⏳ Pending"],["approved","✓ Verified"],["rejected","✗ Rejected"],["deletion","🗑️ Deletion Req"],["deleted","🚫 Deleted"],["bronze","🥉 Bronze"],["silver","🥈 Silver"],["gold","🥇 Gold"],["platinum","💎 Platinum"]].map(([val, label]) => (
                   <button key={val} onClick={() => setUserFilter(val)}
                     style={{ padding: "4px 10px", borderRadius: 8, border: `1px solid ${userFilter === val ? BRAND.blue : BRAND.border}`, background: userFilter === val ? BRAND.blue : "#fff", color: userFilter === val ? "#fff" : BRAND.gray, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
                     {label}
@@ -482,9 +540,154 @@ export default function AdminPage({ go }) {
             </div>
             {filteredContractors.length === 0 ? <Empty msg="No contractors match this filter" /> :
               filteredContractors.map(c => (
-                <UserRow key={c.id} user={c} onApprove={approveContractor} onReject={rejectContractor} onCompleteDelete={completeDelete} onAdminDelete={adminDelete} />
+                <UserRow key={c.id} user={c} onApprove={approveContractor} onReject={rejectContractor} onCompleteDelete={completeDelete} onAdminDelete={deleteUser} />
               ))
             }
+          </div>
+        )}
+
+        {/* ── COMPANIES ── */}
+        {!loading && tab === "companies" && (
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+              <SectionHead title="Companies" count={companies.length} />
+              <button onClick={async () => {
+                if (!window.confirm("Delete all pending (unaccepted) invites?")) return;
+                await adminDelete("/invites", { accepted_at: "is.null" });
+                alert("Pending invites cleared.");
+              }} style={{ fontSize: 11, fontWeight: 700, padding: "5px 12px", borderRadius: 7, border: "1px solid #FCA5A5", background: "#FEF2F2", color: "#DC2626", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+                🗑️ Clear pending invites
+              </button>
+            </div>
+            {companies.length === 0 ? <Empty msg="No companies yet" /> : companies.map(company => {
+              const members = companyMembers.filter(m => m.company_id === company.id);
+              // If owner isn't in members list (company_id not set on their row), add them from contractors
+              const ownerInMembers = members.some(m => m.company_role === "owner" || m.id === company.owner_id);
+              const displayMembers = ownerInMembers ? members : [
+                ...contractors.filter(c => c.id === company.owner_id).map(c => ({ ...c, company_role: "owner" })),
+                ...members
+              ];
+              const owner = displayMembers.find(m => m.company_role === "owner");
+              const tierIcon = { bronze: "🥉", silver: "🥈", gold: "🥇", platinum: "💎" }[company.plan] || "🏗️";
+              const seatLimit = { bronze: 5, silver: 15, gold: 39 }[company.plan] || "∞";
+              return (
+                <div key={company.id} style={{ background: "#fff", border: `1px solid ${BRAND.border}`, borderRadius: 14, padding: "16px 18px", marginBottom: 10 }}>
+                  {/* Company header */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                        <span style={{ fontSize: 16, fontWeight: 800, color: BRAND.dark }}>{company.name}</span>
+                        <span style={{ background: "#EFF6FF", color: BRAND.blue, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20 }}>
+                          {tierIcon} {company.plan?.toUpperCase() || "FREE"}
+                        </span>
+                        <span style={{ background: company.status === "active" ? "#DCFCE7" : "#FEF3C7", color: company.status === "active" ? "#166534" : "#92400E", fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20 }}>
+                          {company.status || "active"}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 11, color: BRAND.gray }}>
+                        Owner: <strong>{owner?.name || owner?.email || "—"}</strong>
+                        {owner?.email && ` · ${owner.email}`}
+                      </div>
+                      <div style={{ fontSize: 11, color: BRAND.gray, marginTop: 2 }}>
+                        Created: {new Date(company.created_at).toLocaleDateString()}
+                        {company.anniversary_date && ` · Anniversary: ${new Date(company.anniversary_date).toLocaleDateString()}`}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: 22, fontWeight: 900, color: BRAND.blue }}>{displayMembers.length}<span style={{ fontSize: 11, fontWeight: 400, color: BRAND.gray }}>/{seatLimit}</span></div>
+                      <div style={{ fontSize: 10, color: BRAND.gray }}>seats used</div>
+                    </div>
+                  </div>
+
+                  {/* Seat usage bar */}
+                  <div style={{ background: BRAND.border, borderRadius: 4, height: 6, marginBottom: 12, overflow: "hidden" }}>
+                    <div style={{ width: `${Math.min(100, (displayMembers.length / (typeof seatLimit === "number" ? seatLimit : members.length || 1)) * 100)}%`, height: "100%", background: members.length >= seatLimit ? "#DC2626" : BRAND.blue, borderRadius: 4, transition: "width 0.3s" }} />
+                  </div>
+
+                  {/* Team member list */}
+                  {displayMembers.length > 0 ? (
+                    <div style={{ display: "grid", gap: 6 }}>
+                      {displayMembers.map(m => (
+                        <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: "#F8FAFC", borderRadius: 8 }}>
+                          <div style={{ width: 28, height: 28, background: m.company_role === "owner" ? BRAND.blue : "#94A3B8", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 11, fontWeight: 800, flexShrink: 0 }}>
+                            {(m.name || m.email || "?").charAt(0).toUpperCase()}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: BRAND.dark, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.name || "—"}</div>
+                            <div style={{ fontSize: 11, color: BRAND.gray, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.email}</div>
+                          </div>
+                          <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
+                            <span style={{ fontSize: 10, fontWeight: 600, color: m.company_role === "owner" ? BRAND.blue : BRAND.gray, background: m.company_role === "owner" ? "#EFF6FF" : "#F1F5F9", padding: "2px 7px", borderRadius: 20 }}>
+                              {m.company_role === "owner" ? "Owner" : "Member"}
+                            </span>
+                            <span style={{ fontSize: 10, color: BRAND.gray }}>{m.trade}</span>
+                            <span style={{ fontSize: 10, color: m.status === "approved" ? "#16A34A" : "#D97706" }}>
+                              {m.status === "approved" ? "✓" : "⏳"}
+                            </span>
+                            {m.company_role !== "owner" && (
+                              <button onClick={async () => {
+                                if (!window.confirm(`Remove ${m.name || m.email} from team?`)) return;
+                                await adminPatch("/contractors", { company_id: null, company_role: null }, { id: `eq.${m.id}` });
+                                setCompanyMembers(prev => prev.filter(x => x.id !== m.id));
+                              }} style={{ background: "#FEF2F2", border: "1px solid #FCA5A5", color: "#DC2626", fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 6, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+                                Remove
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 12, color: BRAND.gray, textAlign: "center", padding: "8px 0" }}>No members yet</div>
+                  )}
+
+                  {/* Stripe / billing info */}
+                  {company.stripe_subscription_id && (
+                    <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${BRAND.border}`, fontSize: 11, color: BRAND.gray }}>
+                      Stripe sub: <code style={{ fontSize: 10 }}>{company.stripe_subscription_id}</code>
+                    </div>
+                  )}
+
+                  {/* Admin actions */}
+                  <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${BRAND.border}`, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <select
+                      defaultValue={company.plan || "bronze"}
+                      onChange={async (e) => {
+                        const newPlan = e.target.value;
+                        await adminPatch("/companies", { plan: newPlan }, { id: `eq.${company.id}` });
+                        setCompanies(prev => prev.map(c => c.id === company.id ? { ...c, plan: newPlan } : c));
+                      }}
+                      style={{ fontSize: 11, padding: "4px 8px", borderRadius: 7, border: `1px solid ${BRAND.border}`, fontFamily: "'DM Sans', sans-serif", cursor: "pointer", background: "#F8FAFC" }}>
+                      <option value="bronze">🥉 Bronze</option>
+                      <option value="silver">🥈 Silver</option>
+                      <option value="gold">🥇 Gold</option>
+                      <option value="platinum">💎 Platinum</option>
+                    </select>
+                    <button onClick={async () => {
+                      const newName = window.prompt("New company name:", company.name);
+                      if (!newName?.trim()) return;
+                      await adminPatch("/companies", { name: newName.trim() }, { id: `eq.${company.id}` });
+                      setCompanies(prev => prev.map(c => c.id === company.id ? { ...c, name: newName.trim() } : c));
+                    }} style={{ fontSize: 11, fontWeight: 700, padding: "4px 12px", borderRadius: 7, border: `1px solid ${BRAND.border}`, background: "#F8FAFC", color: BRAND.dark, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+                      ✏️ Rename
+                    </button>
+                    <button onClick={async () => {
+                      if (!window.confirm(`Delete company "${company.name}" and remove all members? Cannot be undone.`)) return;
+                      // Remove all members if any exist
+                      if (displayMembers.length > 0) {
+                        await adminPatch("/contractors", { company_id: null, company_role: null }, { company_id: `eq.${company.id}` });
+                      }
+                      // Delete company
+                      await adminDelete("/companies", { id: `eq.${company.id}` });
+                      setCompanies(prev => prev.filter(c => c.id !== company.id));
+                      setCompanyMembers(prev => prev.filter(m => m.company_id !== company.id));
+                    }} style={{ fontSize: 11, fontWeight: 700, padding: "4px 12px", borderRadius: 7, border: "1px solid #FCA5A5", background: "#FEF2F2", color: "#DC2626", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+                      🗑️ Delete company
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
 

@@ -253,6 +253,240 @@ A job with a moderate payment risk history and tight site access isn't necessari
 The contractors who consistently run profitable businesses aren't the ones who avoid all risk. They're the ones who price it correctly.
     `,
   },
+  {
+    slug:     "how-to-vet-a-homeowner-before-you-bid",
+    title:    "How to Vet a Homeowner Before You Bid",
+    desc:     "Before you spend hours on an estimate, learn how to vet a homeowner. Here's what experienced contractors check before ever setting foot on a job site.",
+    category: "Tips",
+    readTime: "5 min read",
+    date:     "June 2026",
+    keywords: ["how to vet a homeowner before bidding", "homeowner red flags contractors", "residential job site intelligence", "contractor bid prep"],
+    content: `
+Every contractor has a story. The homeowner who kept adding scope. The one who disappeared when the invoice came. The property that turned into a six-week nightmare nobody warned you about.
+
+The frustrating part? Most of those situations had warning signs — they just weren't visible before you committed.
+
+Vetting a homeowner before you bid isn't about being suspicious. It's about doing your homework the same way a homeowner researches you before hiring. Here's how experienced trade professionals do it.
+
+**1. Start With the Address, Not the Person**
+
+The property itself tells you a lot before you ever speak to the owner. Look up the address and ask: How many times has it changed hands in the last 5 years? Are there open permits or unresolved code violations? What's the property type — primary residence, rental, or vacation home?
+
+Rental properties and frequently flipped homes tend to carry different dynamics than owner-occupied primary residences. Knowing which one you're walking into changes how you price, how you communicate, and how you protect yourself.
+
+**2. Check for Prior Contractor Activity**
+
+If other tradespeople have worked at that address, there's a record — and increasingly, there are platforms where contractors leave reviews on job sites the same way customers leave reviews on businesses.
+
+Look for patterns:
+
+BULLETS:Have multiple contractors worked there in a short period?|Are there reviews mentioning payment delays, scope changes, or access issues?|Has the ownership changed recently?
+
+High contractor turnover at a single address is one of the clearest signals that something is off.
+
+**3. Assess the Bid Prep Factors**
+
+Before you invest hours in an estimate, do a quick site intelligence check:
+
+BULLETS:Access — is the property easy to reach? Known parking or staging limitations?|Condition — what's the visible condition of the property from prior photos?|Timeline pressure — is the homeowner under contract, facing a deadline, or dealing with an insurance claim?|Communication style — how responsive were they on the initial inquiry?
+
+Slow communicators before the job are almost always slower once work starts.
+
+**4. Trust Your Gut — But Verify It**
+
+Experienced contractors develop intuition over time, but intuition works best when it's backed by data. A homeowner can seem perfectly pleasant on a first call and still have a pattern of disputing final invoices.
+
+The goal isn't to avoid difficult clients entirely — it's to go in with your eyes open, price accordingly, and put the right protections in your contract before work starts.
+
+**5. Use Job Site Intelligence Tools**
+
+The trades have historically relied entirely on word-of-mouth to share this kind of information. That's changing. Platforms like ProRated let licensed contractors search any residential address and see aggregated job site ratings across five categories — access, communication, payment history, scope clarity, and site conditions — before they ever write a bid.
+
+The contractors winning in today's market aren't the ones bidding the most jobs. They're the ones bidding the right jobs — and they know the difference before they show up.
+    `,
+  },
+  {
+    slug:     "what-contractors-wish-they-knew-before-bidding",
+    title:    "What Contractors Wish They Knew Before Bidding a Job",
+    desc:     "Seasoned contractors share the job site and homeowner intelligence they wish they'd had before bidding. Avoid the mistakes that cost time, money, and margin.",
+    category: "Tips",
+    readTime: "5 min read",
+    date:     "June 2026",
+    keywords: ["what contractors wish they knew before bidding", "contractor bidding mistakes", "job site preparation tips", "residential bidding advice"],
+    content: `
+Ask any contractor with ten or more years in the field what they wish they'd known early in their career and the answers are remarkably consistent. They're rarely about tools, techniques, or licensing.
+
+They're almost always about information. Specifically — the information they didn't have before they committed to a job.
+
+**"I wish I'd known about the payment history at that address."**
+
+Slow payment is the margin killer most contractors don't talk about publicly. A job that pays 90 days late isn't just inconvenient — it's a cash flow problem that affects your whole operation.
+
+Experienced contractors have learned to watch for signals: homeowners who negotiate hard on price before work starts, properties with high contractor turnover, and clients who are vague about budget. Any one of those factors alone might be fine. All three together is a pattern.
+
+**"I wish I'd known the property had changed hands three times in two years."**
+
+Frequent ownership changes at a residential property often indicate underlying issues — deferred maintenance, financial stress, or a pattern of conflict with service providers. It's not a disqualifier, but it's information that changes how you structure your contract and what you require upfront.
+
+**"I wish I'd known three other roofers had already walked that job."**
+
+When a homeowner has gotten four or five bids and still hasn't hired anyone, there's usually a reason. Either their expectations don't match market pricing, there's a scope problem they haven't disclosed, or previous contractors saw something on-site that changed their interest level.
+
+**"I wish I'd known about the access issues before I priced the job."**
+
+A job that looks straightforward from the street can involve narrow driveways, HOA restrictions, or proximity to neighboring structures that add real cost to the job. Contractors who've been burned on this price access risk into every bid now.
+
+**"I wish I'd known the homeowner's communication style before we started."**
+
+Communication issues don't usually appear on day one. They show up on day four when you need a decision made and your calls go unreturned. Or on the final walkthrough when expectations that were never written down suddenly become disputes.
+
+**What the Best Contractors Do Differently**
+
+The trade professionals consistently landing good jobs and protecting their margins share a few common habits:
+
+BULLETS:They qualify the job site, not just the scope — before writing a number, they do a quick intelligence check on the address|They price for what they know and what they don't — unknown factors are built into the bid as contingency|They use their network — word-of-mouth has always been how the trades share job site intelligence|They walk away from the wrong jobs — the most profitable contractors bid selectively and win at the right margin
+
+Platforms like ProRated are changing how this intelligence is shared. Licensed contractors can now search any residential address and pull aggregated job site ratings before writing a single number on an estimate. The contractors using that information are making better bids.
+    `,
+  },
+  {
+    slug:     "scope-creep-is-stealing-from-your-business",
+    title:    "Scope Creep Is Stealing From Your Business — Here's the Proof",
+    desc:     "Industry data shows most contractors lose thousands every month to unbilled scope creep — and almost none are tracking it. Here's what the research says.",
+    category: "Business",
+    readTime: "6 min read",
+    date:     "June 2026",
+    keywords: ["scope creep cost contractors", "unbilled work contractor losses", "scope creep construction", "contractor profit margin residential"],
+    content: `
+Most contractors know the feeling. You agreed on a price, started the job, and somewhere between the first site visit and the final invoice the project became something else entirely. An extra coat of paint. A door that wasn't in bad shape but since you're here. A full bathroom retile that started as caulking.
+
+This is scope creep. And while every contractor knows the feeling, very few know what it's actually costing them. The numbers are worse than most expect.
+
+**What the Research Actually Shows**
+
+57% of service businesses lose $1,000 to $5,000 every month to unbilled scope creep. Another 30% say it costs more than $5,000 per month. And only 1% successfully bill for all out-of-scope work — meaning 99 in 100 are leaving money on the table every single month. (Ignition 2025 Agency Pricing & Cash Flow Report, survey of 273 managers and executives)
+
+On the construction side, the Project Management Institute reports that about 52% of all projects experience scope creep, and 85% of those projects exceed their original budget by an average of 27%. Read those together: more than half of your jobs are running over scope, most are running 27% over budget, and you're probably not billing for most of it.
+
+**The Margin Math Is Brutal**
+
+The average net profit margin for construction businesses ranges from 3% to 7% according to IBIS World — confirmed by the CFMA 2024 Financial Benchmarker at 6.3% of revenue. A contractor doing $500,000 annually keeps somewhere between $15,000 and $35,000 after all expenses.
+
+Now consider what one unmanaged job does to that number. A $25,000 roofing job that runs 27% over scope means $6,750 in unrecovered work. On a 5% net margin business, that single job wipes out more than a third of the profit you'd earn on $500,000 in revenue.
+
+**Why Contractors Don't Bill for It**
+
+Nearly 80% of businesses rarely or only sometimes charge for out-of-scope work. The most common reasons: reluctance to have uncomfortable conversations with clients, and no system to track extra work in the moment. For residential contractors there's a third reason — you're in someone's home, the request feels small, and the relationship feels fragile.
+
+But that instinct has a compounding cost. The monthly average loss from unbilled scope ranges from $12,000 to $60,000 per year before accounting for downstream effects.
+
+**What You Can Do Starting Now**
+
+BULLETS:Write detailed scope before you start — not "replace roof shingles" but a line-by-line spec of materials, quantities, exclusions, and what constitutes a change order|Create a change order process and use it every time — even for small additions — businesses with consistent processes recover significantly more out-of-scope work|Require a deposit on every job — a homeowner who won't pay 25-30% upfront signals how the final invoice conversation will go|Know the property before you bid — peer-sourced job site ratings aggregated by address show patterns of scope disputes, slow payment, and contractor turnover before you pull your truck in the driveway
+
+The research is clear. Scope creep is one of the primary reasons residential contractors with full order books and busy crews still struggle to show profit at year end. It's also one of the most preventable margin leaks in the business.
+    `,
+  },
+  {
+    slug:     "what-slow-paying-homeowners-cost-your-business",
+    title:    "What Slow-Paying Homeowners Actually Cost Your Business",
+    desc:     "Most contractors underestimate what slow-paying homeowners actually cost them. Here's the real math — and what you can do about it before you bid.",
+    category: "Business",
+    readTime: "6 min read",
+    date:     "June 2026",
+    keywords: ["what slow paying homeowners cost contractors", "contractor cash flow residential", "unpaid invoices small contractor", "homeowner payment delays cost"],
+    content: `
+Most contractors think about slow payment as an inconvenience. The job is done, the invoice is out, and now you're waiting. What most don't think about is what that waiting period actually costs their business in dollars.
+
+It's more than you think. Here's the math.
+
+**The Hidden Cost of Float**
+
+When a homeowner takes 60, 90, or 120 days to pay, they're effectively borrowing money from you — interest-free — while your costs have already been paid. You bought the materials. You paid your crew. You covered fuel, insurance, and overhead. All of that went out the door on day one. The homeowner's money came back weeks or months later.
+
+That gap is called float. And float has a real cost.
+
+Say you do $500,000 in residential work per year. Industry data shows the average subcontractor waits 56 days to get paid — even though payment is typically due in 30. That's a 26-day gap between when you're owed and when you're paid.
+
+At $500K annual revenue, that gap means you're carrying roughly $35,000–$40,000 in outstanding receivables at any given moment. If you had to borrow that $40,000 at 8% interest, that's $3,200 per year in financing cost just to cover the float. Most contractors are doing this with their own savings — and never counting it as a cost of doing business.
+
+**What the Data Shows**
+
+82% of contractors now wait more than 30 days to get paid — up from 49% just two years ago. The problem is getting worse, not better.
+
+1 in 3 subcontractors has had to pull from personal or retirement savings to cover cash flow gaps. That's not a financing strategy. That's financial stress.
+
+56 days is the average time subcontractors actually wait for payment, according to the 2025 Billd National Subcontractor Market Report — even when general contractors estimate they pay in 30.
+
+$280 billion was lost across the U.S. construction industry in 2024 alone due to payment delays.
+
+**The Compounding Problem**
+
+Slow payment creates a cascade of secondary costs:
+
+BULLETS:You take on less work — when receivables are tied up, you can't front the next job's materials|You price defensively — contractors who account for working capital costs in bids report 24% profit margins vs 17% for those who don't|You spend time chasing money instead of working — follow-up calls, liens, and small claims court aren't billable|You absorb borrowing costs — if you bridge gaps with a credit line, you're paying interest on money you've already earned
+
+**The Jobs You Don't Know You're Losing**
+
+There's one more cost that never shows up on a balance sheet: the jobs you didn't take because you had a bad feeling about a client, but couldn't articulate why.
+
+Experienced contractors develop pattern recognition over time. Certain signals — vague scope, pressure to start without a contract, a property that's changed hands multiple times — correlate with payment problems on the back end. But most contractors only develop that intuition after getting burned. And getting burned has a cost.
+
+**What You Can Do Before You Bid**
+
+Slow payment isn't random. It follows patterns. And patterns — when you have enough data — are predictable.
+
+BULLETS:Require deposits — a 25–30% upfront deposit immediately tells you whether a homeowner is serious and financially prepared|Check property history — ownership changes and high contractor turnover are visible signals if you know where to look|Know who you're walking into a job with — peer-sourced job site ratings aggregated by address are now available on platforms like ProRated|Price the risk — if you take a job with yellow flags, price it accordingly with larger deposits and explicit late payment clauses
+
+The contractors who protect their margins aren't the ones who get lucky with good clients. They're the ones who do their homework before they bid, price risk into their work, and use every tool available to know what they're walking into.
+    `,
+  },
+  {
+    slug:     "red-flags-residential-job-site",
+    title:    "Red Flags on a Residential Job Site Every Contractor Should Know",
+    desc:     "Experienced contractors know which warning signs to watch for before accepting a residential job. Here are the red flags that protect your time, margin, and sanity.",
+    category: "Tips",
+    readTime: "5 min read",
+    date:     "June 2026",
+    keywords: ["red flags residential job site contractors", "problem homeowners contractors", "job site warning signs", "contractor due diligence"],
+    content: `
+Not every job is worth taking. Every contractor learns this eventually — usually after a project that cost more in time, stress, and unpaid invoices than it ever paid in profit.
+
+The good news: most bad jobs announce themselves in advance. You just have to know what you're looking at.
+
+**Red Flag #1: Vague Scope, Urgent Timeline**
+
+"We just need it done quickly" paired with a project description that lacks any real detail almost always leads to scope creep. When a homeowner can't clearly articulate what they want done, the definition of "done" becomes a moving target. Before you bid: get the scope in writing. If they resist that, note it.
+
+**Red Flag #2: Multiple Contractors Have Already Walked the Job**
+
+If a homeowner has gotten four or five bids and still hasn't hired anyone, ask yourself: what did those other contractors see? High bid volume with no hire usually means the homeowner's budget doesn't match their expectations, there's an undisclosed problem with the property, or previous contractors saw behavior patterns that changed their interest.
+
+**Red Flag #3: Pushback on Basic Contract Terms**
+
+A homeowner who resists a written contract, a deposit requirement, or a payment schedule is telling you something about how they intend to handle disputes later. Legitimate clients understand that contractors protect themselves with paperwork.
+
+**Red Flag #4: Property With Recent Ownership Changes**
+
+A home that's changed hands multiple times in a short window often has deferred maintenance, financial stress, or a pattern of conflict with service providers baked into its history. Ownership history is public record — checking it takes two minutes.
+
+**Red Flag #5: Rental Property Managed by an Absent Owner**
+
+Rentals managed by out-of-state owners introduce a specific dynamic: decisions get slow, access gets complicated, and the person approving your invoice often isn't the person who saw the work done.
+
+**Red Flag #6: Pressure to Start Before Contract Is Signed**
+
+"Can you just get started and we'll work out the paperwork?" is how unpaid invoices start. A legitimate emergency doesn't require you to waive your business terms. A signed contract can happen in 10 minutes.
+
+**Red Flag #7: History of Disputes With Other Contractors**
+
+One bad review might be a personality conflict. Three bad reviews is a track record. Platforms like ProRated aggregate contractor reviews by address so licensed professionals can see the job site history before they commit.
+
+**How to Use Red Flags Without Losing Good Jobs**
+
+Seeing red flags doesn't always mean walking away. Sometimes it means pricing a risk premium into your bid, requiring a larger upfront deposit, or setting explicit change order terms in the contract. The goal is to go into every job with accurate information — so you can make the decision that's right for your business.
+    `,
+  },
 ];
 
 

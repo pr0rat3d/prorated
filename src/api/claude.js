@@ -61,14 +61,14 @@ Return ONLY this exact JSON — no markdown, no extra text:
   ]
 }
 Include 3-4 reviews from different trades. Rate all 5 categories realistically.`,
-    "You are a database API for ProRated, a contractor job-site rating platform. Tagline: Bidding Made Better. Return ONLY valid JSON parseable by JSON.parse(). No markdown."
+    "You are a database API for ProRated, a contractor job-site rating platform. Tagline: Built by Pros, Built for Pros. Return ONLY valid JSON parseable by JSON.parse(). No markdown."
   );
 }
 
 export async function generateSubmitConfirmation(address, trade, overall) {
   return callClaude(
     `A ${trade} contractor submitted a ${overall}-star review on ProRated for "${address}".
-Return ONLY: {"message": "<warm 1-2 sentence confirmation mentioning the address, pending verification, from the ProRated team — Bidding Made Better>"}`,
+Return ONLY: {"message": "<warm 1-2 sentence confirmation mentioning the address, pending verification, from the ProRated team — Built by Pros, Built for Pros>"}`,
     "You are the ProRated API. Return ONLY valid JSON."
   );
 }

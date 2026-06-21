@@ -164,8 +164,13 @@ export const updateReview = async (reviewId, formData) => {
 // ── Fetch reviews by user ──────────────────────────────────────
 export const fetchMyReviews = async (userId) => {
   try {
+    // Fall back to session user if no userId passed
+    const id = userId || (() => {
+      try { return JSON.parse(localStorage.getItem("prorated_session") || "{}").user?.id; } catch { return null; }
+    })();
+    if (!id) return [];
     const data = await sb(
-      `/reviews?user_id=eq.${userId}&order=created_at.desc`,
+      `/reviews?user_id=eq.${id}&order=created_at.desc`,
       { method: "GET" }
     );
     return data || [];
@@ -259,4 +264,49 @@ export const buildAddressFromReviews = (address, storedRows) => {
     reviews,
     fromDatabase: true,
   };
+};
+
+// ── Delete review ─────────────────────────────────────────────
+export const deleteReview = async (reviewId) => {
+  try {
+    // Use same token resolution as saveReview — check Supabase auth key first
+    let authToken = SUPABASE_ANON_KEY;
+    let userId = null;
+    try {
+      const storageKey = Object.keys(localStorage).find(k => k.includes("auth-token") || k.includes("supabase.auth"));
+      if (storageKey) {
+        const stored = JSON.parse(localStorage.getItem(storageKey));
+        const token = stored?.access_token || stored?.currentSession?.access_token;
+        if (token) authToken = token;
+      }
+      // Also try prorated_session
+      const session = JSON.parse(localStorage.getItem("prorated_session") || "{}");
+      if (session.access_token) authToken = session.access_token;
+      userId = session.user?.id;
+    } catch {}
+
+    if (!userId) return false;
+
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/reviews?id=eq.${reviewId}&user_id=eq.${userId}`,
+      {
+        method: "DELETE",
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${authToken}`,
+          Prefer: "return=minimal",
+        },
+      }
+    );
+
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      console.warn("[ProRated] deleteReview failed:", res.status, body);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn("[ProRated] deleteReview error:", err);
+    return false;
+  }
 };

@@ -3,7 +3,7 @@
    Handles caching, offline support, and push notifications
    ============================================================ */
 
-const CACHE_NAME  = "prorated-v6";
+const CACHE_NAME  = "prorated-v7";
 const OFFLINE_URL = "/offline.html";
 
 const PRECACHE_URLS = [
@@ -44,6 +44,12 @@ self.addEventListener("fetch", (event) => {
   if (url.hostname.includes("anthropic.com") || url.hostname.includes("supabase.co")) return;
 
   if (request.mode === "navigate") {
+    // Never cache dynamic paths — always fetch fresh from network
+    const dynamicPaths = ["/invite/", "/reset-password", "/dashboard", "/company-setup"];
+    if (dynamicPaths.some(p => url.pathname.startsWith(p))) {
+      event.respondWith(fetch(request).catch(() => caches.match("/index.html")));
+      return;
+    }
     event.respondWith(
       fetch(request)
         .then(res => { caches.open(CACHE_NAME).then(c => c.put(request, res.clone())); return res; })

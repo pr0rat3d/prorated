@@ -40,6 +40,7 @@ export default async function handler(req, res) {
     "beta_feedback", "nda_signatures", "reported_reviews", "push_subscriptions",
     "translation_cache", "saved_addresses", "address_watches",
     "featured_suppliers", "review_edit_requests",
+    "companies", "company_members", "invites", "review_points",
   ];
   const tableMatch = pathStr.match(/^\/([a-z_]+)/);
   if (!tableMatch || !allowedTables.includes(tableMatch[1])) {
@@ -57,7 +58,7 @@ export default async function handler(req, res) {
     "Prefer":        "return=representation",
   };
 
-  // Use service key for admin write operations
+  // Use service key for admin operations (reads and writes)
   if (req.headers["x-admin-op"] === process.env.ADMIN_PASSWORD) {
     headers["Authorization"] = `Bearer ${process.env.SUPABASE_SERVICE_KEY}`;
   }

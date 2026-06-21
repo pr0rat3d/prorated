@@ -51,7 +51,7 @@ export default function LocalPage({ go, city }) {
     document.title = title;
     const m = document.querySelector("meta[name='description']");
     if (m) m.setAttribute("content", desc);
-    return () => { document.title = "ProRated — Bidding Made Better"; };
+    return () => { document.title = "ProRated — Built by Pros, Built for Pros"; };
   }, [city]);
 
   return (

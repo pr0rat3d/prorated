@@ -5,47 +5,56 @@ import Logo from "../components/Logo";
 
 
 
-const NDA_VERSION       = "1.0"; // bump this when legal updates the NDA
+const NDA_VERSION = "1.1"; // bump this when legal updates the NDA
 
-// ── Placeholder NDA text — replace with real PDF/text when legal finalizes ──
-const NDA_PLACEHOLDER = `
-PRORATED BETA TESTER NON-DISCLOSURE AGREEMENT
+// ── R2 hosted NDA PDF ─────────────────────────────────────────
+// Upload finalized PDF to Cloudflare R2 prorated-videos bucket
+// then replace this URL with the public link
+const NDA_PDF_URL = "https://pub-adda1244317b474f9827ed482efd0c69.r2.dev/prorated-user-agreement-v1.1.pdf";
 
-[PLACEHOLDER — Legal document will be inserted here]
+// ── NDA summary shown in scroll box ──────────────────────────
+// Full legal document is linked above — this is a plain-English summary
+const NDA_SUMMARY = `
+PRORATED USER AGREEMENT — SUMMARY
+Version ${NDA_VERSION} | Governed by the laws of the State of Alabama
 
-This Non-Disclosure Agreement ("Agreement") is entered into between ProRated 
-("Company") and the undersigned Beta Tester ("Recipient").
+This is a summary of your agreement with ProRated. The full legal document is linked below. By signing, you agree to the complete terms of the full document.
 
-1. CONFIDENTIAL INFORMATION
-   The Recipient may receive access to non-public information including but not 
-   limited to: platform features, user data structures, business strategies, 
-   pricing models, and technical implementations ("Confidential Information").
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-2. OBLIGATIONS
-   Recipient agrees to:
-   (a) Keep all Confidential Information strictly confidential
-   (b) Not disclose any Confidential Information to third parties
-   (c) Use Confidential Information only for the purpose of beta testing
-   (d) Notify ProRated immediately of any unauthorized disclosure
+1. PLATFORM USE
+   ProRated is a job site intelligence platform for licensed trade professionals. Access is granted to verified license holders only. You agree to use the platform for lawful, professional purposes.
 
-3. TERM
-   This Agreement remains in effect for two (2) years from the date of signing.
+2. REVIEW ACCURACY
+   All reviews you submit must be honest, accurate, and based on your direct professional experience at that job site. Submitting false, misleading, or malicious reviews is a violation of this agreement and may result in account termination.
 
-4. FEEDBACK
-   Any feedback, suggestions, or ideas provided by Recipient regarding the 
-   platform may be used by ProRated without compensation or attribution.
+3. CONFIDENTIALITY
+   You may receive access to non-public platform information during your use of ProRated. You agree not to disclose platform features, data structures, pricing models, or business strategies to third parties.
 
-5. NO WARRANTIES
-   The beta platform is provided "as is" without warranties of any kind.
+4. YOUR DATA
+   ProRated collects your name, email, trade license number, and reviews for platform operation. We do not sell your personal data. Full details in our Privacy Policy at prorated.app/privacy.
 
-6. GOVERNING LAW
-   This Agreement shall be governed by the laws of the State of Alabama.
+5. INTELLECTUAL PROPERTY
+   All platform content, design, and technology is owned by ProRated. You may not copy, reproduce, or reverse-engineer any part of the platform.
 
-7. ENTIRE AGREEMENT
-   This Agreement constitutes the entire agreement between the parties 
-   regarding confidentiality of the beta program.
+6. FEEDBACK
+   Any feedback or suggestions you provide may be used by ProRated to improve the platform without compensation or attribution.
 
-[FULL LEGAL TEXT WILL BE INSERTED BY COUNSEL]
+7. NO WARRANTIES
+   The platform is provided "as is." ProRated makes no guarantees about the accuracy of third-party submitted reviews.
+
+8. LIMITATION OF LIABILITY
+   ProRated's liability is limited to the amount paid by you in the 12 months prior to any claim.
+
+9. TERM & TERMINATION
+   This agreement remains in effect for the duration of your account. ProRated reserves the right to terminate accounts that violate these terms.
+
+10. GOVERNING LAW
+    This agreement is governed by the laws of the State of Alabama. Any disputes shall be resolved in Jefferson County, Alabama.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+By signing below you confirm you have read, understood, and agree to the full ProRated User Agreement linked above.
 `;
 
 export default function NDAPage({ go, user, onAccepted }) {
@@ -77,12 +86,14 @@ export default function NDAPage({ go, user, onAccepted }) {
     setSigning(true);
     setError(null);
     try {
+      const session = JSON.parse(localStorage.getItem("prorated_session") || "{}");
+      const token   = session.access_token || SUPABASE_ANON_KEY;
       const res = await fetch(`${SUPABASE_URL}/rest/v1/nda_signatures`, {
         method: "POST",
         headers: {
           "Content-Type":  "application/json",
           "apikey":        SUPABASE_ANON_KEY,
-          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          "Authorization": `Bearer ${token}`,
           "Prefer":        "return=minimal",
         },
         body: JSON.stringify({
@@ -110,7 +121,7 @@ export default function NDAPage({ go, user, onAccepted }) {
       <div>
         <div style={{ fontSize: 56, marginBottom: 16 }}>✅</div>
         <h2 style={{ fontSize: 24, fontWeight: 800, color: "#F8FAFC", marginBottom: 10 }}>Agreement signed!</h2>
-        <p style={{ fontSize: 15, color: "#94A3B8" }}>Welcome to the ProRated beta. Taking you in now...</p>
+        <p style={{ fontSize: 15, color: "#94A3B8" }}>Welcome to ProRated. Taking you in now...</p>
       </div>
     </div>
   );
@@ -123,7 +134,7 @@ export default function NDAPage({ go, user, onAccepted }) {
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
           <Logo size={44} />
         </div>
-        <h1 style={{ fontSize: 20, fontWeight: 800, color: "#F8FAFC", marginBottom: 4 }}>Beta Tester Agreement</h1>
+        <h1 style={{ fontSize: 20, fontWeight: 800, color: "#F8FAFC", marginBottom: 4 }}>ProRated User Agreement</h1>
         <p style={{ fontSize: 12, color: "#94A3B8", margin: 0 }}>Please read and sign before accessing ProRated</p>
       </div>
 
@@ -133,8 +144,7 @@ export default function NDAPage({ go, user, onAccepted }) {
         <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 12, padding: "12px 16px", marginBottom: "1.25rem", display: "flex", gap: 10, alignItems: "flex-start" }}>
           <span style={{ fontSize: 18, flexShrink: 0 }}>ℹ️</span>
           <div style={{ fontSize: 13, color: "#1E40AF", lineHeight: 1.6 }}>
-            As a ProRated beta tester, you're getting early access to our platform. 
-            Please read this agreement carefully — it protects both you and us during the beta period.
+            Please read this agreement carefully before using ProRated. By signing you confirm you are a licensed trade professional and agree to use the platform honestly and in good faith.
           </div>
         </div>
 
@@ -156,7 +166,15 @@ export default function NDAPage({ go, user, onAccepted }) {
               whiteSpace: "pre-line",
               transition: "border-color 0.3s",
             }}>
-            {NDA_PLACEHOLDER}
+            {/* PDF link at top */}
+            <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 10, padding: "10px 14px", marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: 12, color: "#1E40AF", fontWeight: 600 }}>📄 Full legal document (PDF)</span>
+              <a href={NDA_PDF_URL} target="_blank" rel="noopener noreferrer"
+                style={{ fontSize: 12, color: BRAND.blue, fontWeight: 700, textDecoration: "none", background: "#DBEAFE", padding: "4px 10px", borderRadius: 6 }}>
+                View PDF ↗
+              </a>
+            </div>
+            {NDA_SUMMARY}
           </div>
 
           {/* Scroll indicator */}
@@ -206,8 +224,7 @@ export default function NDAPage({ go, user, onAccepted }) {
               style={{ width: 18, height: 18, marginTop: 2, flexShrink: 0, cursor: scrolled ? "pointer" : "not-allowed", accentColor: BRAND.blue }}
             />
             <span style={{ fontSize: 13, color: scrolled ? BRAND.dark : BRAND.gray, lineHeight: 1.6 }}>
-              I have read and agree to the ProRated Beta Tester Non-Disclosure Agreement. 
-              I understand this constitutes a legally binding digital signature.
+              I have read and fully understand the ProRated User Agreement (linked above). By checking this box I am providing my legally binding digital signature and agree to all terms and conditions contained therein.
             </span>
           </label>
 
@@ -228,7 +245,7 @@ export default function NDAPage({ go, user, onAccepted }) {
               fontFamily: "'DM Sans', sans-serif",
               transition: "all 0.2s",
             }}>
-            {signing ? "Recording signature..." : !scrolled ? "↑ Scroll to read agreement first" : !checked ? "Check the box to sign" : "✍️ Sign & Enter ProRated →"}
+            {signing ? "Recording signature..." : !scrolled ? "↑ Scroll to read agreement first" : !checked ? "☑️ Check the box above to sign" : "✍️ I Agree — This is my Legal Signature →"}
           </button>
 
           {error && (

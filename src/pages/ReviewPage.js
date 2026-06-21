@@ -1,5 +1,5 @@
-import { GOOGLE_MAPS_KEY } from "../config.js";
-import { useState, useEffect } from "react";
+import { GOOGLE_MAPS_KEY, SUPABASE_URL, SUPABASE_ANON_KEY } from "../config.js";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Stars, Btn, Card, BRAND } from "../components/UI";
 import { TRADES, RATING_CATEGORIES, WORK_CATEGORIES } from "../data/constants";
 import { getTagsForTrade } from "../data/tradeTags";
@@ -31,26 +31,78 @@ const getMilestoneMessage = (count) => {
   return null;
 };
 
-export default function ReviewPage({ go, goBack, initialAddress }) {
+export default function ReviewPage({ go, goBack, initialAddress, editReviewId }) {
   const { user, isLoggedIn } = useAuth();
   // Always scroll to top on mount
   useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, []);
   const { lang } = useLang();
   const [step, setStep]                     = useState(1); // Always start at step 1
+  const [tooltip, setTooltip]               = useState(null);
+  const tooltipTimer                         = useRef(null);
+  const isEditMode = !!editReviewId;
+
+  const showTooltip = useCallback((e, tag) => {
+    if (!tag.desc) return;
+    e.stopPropagation();
+    if (tooltipTimer.current) clearTimeout(tooltipTimer.current);
+    setTooltip({ id: tag.id, text: tag.desc });
+    tooltipTimer.current = setTimeout(() => setTooltip(null), 4500);
+  }, []);
+
+  const hideTooltip = useCallback(() => {
+    if (tooltipTimer.current) clearTimeout(tooltipTimer.current);
+    setTooltip(null);
+  }, []);
   const [showDisclaimer, setShowDisclaimer] = useState(() => isMilestone(getReviewCount()));
   const [milestoneMsg, setMilestoneMsg]     = useState(() => getMilestoneMessage(getReviewCount()));
   const [submitting, setSubmit]             = useState(false);
   const [done, setDone]                     = useState(false);
 
+  const toTitleCase = (str) => str ? str.replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()) : str;
+
   const [form, setForm] = useState({
-    address: initialAddress || "", trade: user?.trade || "", propertyType: "", overall: 0,
+    address: initialAddress ? toTitleCase(initialAddress) : "", trade: user?.trade || "", propertyType: "", overall: 0,
     ratings: { access: 0, payment: 0, timeline: 0, communication: 0, obstacles: 0 },
-    tags: [], text: "", workCategory: "", workItem: "",
+    tags: [], text: "", workCategory: "", workItem: "", would_return: null,
   });
+
+  // If in edit mode, fetch the existing review and pre-fill the form
+  useEffect(() => {
+    if (!editReviewId) return;
+    const session = JSON.parse(localStorage.getItem("prorated_session") || "{}");
+    const token   = session.access_token;
+    fetch(`${SUPABASE_URL}/rest/v1/reviews?id=eq.${editReviewId}&select=*&limit=1`, {
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.json())
+      .then(rows => {
+        const r = rows?.[0];
+        if (!r) return;
+        setForm({
+          address:      toTitleCase(r.address || initialAddress || ""),
+          trade:        r.trade || user?.trade || "",
+          propertyType: r.property_type || "",
+          overall:      r.overall_score || 0,
+          ratings: {
+            access:        r.access_score || 0,
+            payment:       r.payment_score || 0,
+            timeline:      r.timeline_score || 0,
+            communication: r.communication_score || 0,
+            obstacles:     r.obstacles_score || 0,
+          },
+          tags:        r.tags || [],
+          text:        r.review_text || "",
+          workCategory: r.work_category || "",
+          workItem:     r.work_item || "",
+          would_return: r.would_return ?? null,
+        });
+      })
+      .catch(() => {});
+  }, [editReviewId]);
 
   const setRating = (cat, val) => setForm(f => ({ ...f, ratings: { ...f.ratings, [cat]: val } }));
   const toggleTag = (id) => setForm(f => ({
-    ...f, tags: f.tags.includes(id) ? f.tags.filter(t => t !== id) : [...f.tags, id].slice(0, 5)
+    ...f, tags: f.tags.includes(id) ? f.tags.filter(t => t !== id) : [...f.tags, id].slice(0, 8)
   }));
 
   const ok1 = form.address.trim().length > 5 && form.trade && form.workItem;
@@ -72,12 +124,29 @@ export default function ReviewPage({ go, goBack, initialAddress }) {
     }
     setSubmit(true);
     try {
+      const cleanAddress = toTitleCase(form.address);
+
+      if (isEditMode) {
+        // Edit mode — patch existing review, don't create new
+        await updateReview(editReviewId, {
+          overall: form.overall,
+          ratings: form.ratings,
+          tags: form.tags,
+          text: form.text,
+          workCategory: form.workCategory,
+          workItem: form.workItem,
+          workLabel: WORK_CATEGORIES.find(c => c.id === form.workCategory)?.items.find(i => i.id === form.workItem)?.label || "",
+        });
+        setDone(true);
+        return;
+      }
+
       const initials = (user?.name || "C").slice(0,1).toUpperCase() + (form.trade || "R").slice(-1).toUpperCase();
       await saveReview({
         userId:           user?.id,
-        address:          form.address,
+        address:          cleanAddress,
         property_type:    form.propertyType || null,
-        street:           form.address.split(",")[0].trim(),
+        street:           cleanAddress.split(",")[0].trim(),
         trade:            form.trade,
         contractor_name:  user?.name || "Anonymous",
         contractor_initials: initials,
@@ -94,8 +163,9 @@ export default function ReviewPage({ go, goBack, initialAddress }) {
         work_label:       WORK_CATEGORIES.find(c => c.id === form.workCategory)?.items.find(i => i.id === form.workItem)?.label || "",
         review_text:      form.text,
         helpful_count:    0,
+        would_return:     form.would_return,
       });
-      notifyAddressWatchers(form.address, { trade: form.trade, score: form.overall }).catch(() => {});
+      notifyAddressWatchers(cleanAddress, { trade: form.trade, score: form.overall }).catch(() => {});
       try {
         const count = parseInt(localStorage.getItem("pr_review_count") || "0");
         localStorage.setItem("pr_review_count", String(count + 1));
@@ -120,7 +190,7 @@ export default function ReviewPage({ go, goBack, initialAddress }) {
 
   const reset = () => {
     setDone(false); setStep(1);
-    setForm({ address: "", trade: user?.trade || "", overall: 0, ratings: { access: 0, payment: 0, timeline: 0, communication: 0, obstacles: 0 }, tags: [], text: "" });
+    setForm({ address: "", trade: user?.trade || "", overall: 0, ratings: { access: 0, payment: 0, timeline: 0, communication: 0, obstacles: 0 }, tags: [], text: "", would_return: null });
     try {
       const count = getReviewCount();
       const show = isMilestone(count);
@@ -325,7 +395,7 @@ export default function ReviewPage({ go, goBack, initialAddress }) {
         <span style={{ fontSize: 12, color: BRAND.gray, marginLeft: 10, flexShrink: 0 }}>Step {step} of {STEPS.length}</span>
       </div>
 
-      <h1 style={{ fontSize: 23, fontWeight: 800, color: BRAND.dark, marginBottom: 4 }}>Rate a job site</h1>
+      <h1 style={{ fontSize: 23, fontWeight: 800, color: BRAND.dark, marginBottom: 4 }}>{isEditMode ? "Edit your review" : "Rate a job site"}</h1>
       <p style={{ fontSize: 13, color: BRAND.gray, marginBottom: "1.35rem" }}>Help the next trade professional know what they're walking into before they bid.</p>
 
       {/* Step 1 */}
@@ -432,12 +502,32 @@ export default function ReviewPage({ go, goBack, initialAddress }) {
 
               {/* Category tabs */}
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: "0.75rem" }}>
-                {WORK_CATEGORIES.map(cat => (
+                {/* Work category — show trade-matched one first */}
+                {(() => {
+                  const tradeToCategory = {
+                    general: "general", roofing: "roofing", painting: "painting",
+                    plumbing: "plumbing", hvac: "hvac", electrical: "electrical",
+                    flooring: "flooring", windows: "windows", foundation: "foundation",
+                    siding: "siding", insulation: "insulation", pest_control: "pest_control",
+                    landscaping: "landscaping", concrete: "concrete", garage_door: "garage_door",
+                    pool_service: "pool_service", fencing: "fencing",
+                  };
+                  const defaultCat = tradeToCategory[form.trade] || null;
+                  // Auto-select if not already set
+                  if (defaultCat && !form.workCategory) {
+                    setTimeout(() => setForm(f => f.workCategory ? f : ({ ...f, workCategory: defaultCat })), 0);
+                  }
+                  // Show matching category first, then rest
+                  const sorted = defaultCat
+                    ? [WORK_CATEGORIES.find(c => c.id === defaultCat), ...WORK_CATEGORIES.filter(c => c.id !== defaultCat)].filter(Boolean)
+                    : WORK_CATEGORIES;
+                  return sorted.map(cat => (
                   <button key={cat.id} onClick={() => setForm(f => ({ ...f, workCategory: cat.id, workItem: "" }))}
                     style={{ padding: "5px 10px", borderRadius: 8, border: `1.5px solid ${form.workCategory === cat.id ? BRAND.blue : BRAND.border}`, background: form.workCategory === cat.id ? "#EFF6FF" : "#F8FAFC", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 600, color: form.workCategory === cat.id ? BRAND.blue : BRAND.dark }}>
                     {cat.icon} {cat.label}
                   </button>
-                ))}
+                  ));
+                })()}
               </div>
 
               {/* Work items for selected category */}
@@ -502,23 +592,109 @@ export default function ReviewPage({ go, goBack, initialAddress }) {
 
       {/* Step 3 */}
       {step === 3 && (
-        <div style={{ animation: "fadeUp 0.25s ease both" }}>
+        <div style={{ animation: "fadeUp 0.25s ease both" }} onClick={hideTooltip}>
+
+
+
+          {/* Would you return toggle */}
           <Card style={{ marginBottom: "0.85rem" }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: 3 }}>Issue tags <span style={{ color: BRAND.gray, fontWeight: 400 }}>(optional, up to 5)</span></div>
-            <div style={{ fontSize: 11, color: BRAND.gray, marginBottom: "0.75rem" }}>Tag specific things contractors should know</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {availableTags.map(tag => {
-                const selected = form.tags.includes(tag.id);
-                const color = tag.severity === "good" ? BRAND.green : tag.severity === "alert" ? "#DC2626" : tag.severity === "warn" ? "#D97706" : BRAND.gray;
-                const bg    = tag.severity === "good" ? "#F0FDF4" : tag.severity === "alert" ? "#FEF2F2" : tag.severity === "warn" ? "#FFFBEB" : "#F8FAFC";
+            <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: 3 }}>Would you work this job site again?</div>
+            <div style={{ fontSize: 11, color: BRAND.gray, marginBottom: "0.75rem" }}>Your honest take helps other contractors make better decisions</div>
+            <div style={{ display: "flex", gap: 10 }}>
+              {[
+                { val: true,  label: "👍  Yes, I'd return",     activeColor: BRAND.green, activeBg: "#F0FDF4", activeBorder: BRAND.green },
+                { val: false, label: "👎  No, I wouldn't",      activeColor: "#DC2626",   activeBg: "#FEF2F2", activeBorder: "#DC2626"  },
+              ].map(({ val, label, activeColor, activeBg, activeBorder }) => {
+                const active = form.would_return === val;
                 return (
-                  <button key={tag.id} onClick={() => toggleTag(tag.id)}
-                    style={{ padding: "5px 12px", borderRadius: 20, border: `1.5px solid ${selected ? color : BRAND.border}`, background: selected ? bg : "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer", color: selected ? color : BRAND.dark, fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s" }}>
-                    {tag.icon} {tag.label}
+                  <button key={String(val)} onClick={() => setForm(f => ({ ...f, would_return: f.would_return === val ? null : val }))}
+                    style={{ flex: 1, padding: "10px 8px", borderRadius: 10, border: `1.5px solid ${active ? activeBorder : BRAND.border}`, background: active ? activeBg : "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", color: active ? activeColor : BRAND.gray, fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s" }}>
+                    {label}
                   </button>
                 );
               })}
             </div>
+          </Card>
+
+          {/* Grouped tag sections */}
+          <Card style={{ marginBottom: "0.85rem" }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: 2 }}>
+              Job site tags <span style={{ color: BRAND.gray, fontWeight: 400 }}>(optional, up to 8)</span>
+            </div>
+            <div style={{ fontSize: 11, color: BRAND.gray, marginBottom: "0.85rem" }}>
+              Select all that apply — {8 - form.tags.length} remaining
+            </div>
+
+            {[
+              { label: "✅ Positive",  severity: "good", headerColor: BRAND.green,  headerBg: "#F0FDF4" },
+              { label: "⚠️ Heads Up",  severity: "warn", headerColor: "#D97706",    headerBg: "#FFFBEB" },
+              { label: "🚩 Concerns",  severity: "bad",  headerColor: "#DC2626",    headerBg: "#FEF2F2" },
+            ].map(({ label, severity, headerColor, headerBg }) => {
+              const groupTags = availableTags.filter(t => t.severity === severity || (severity === "bad" && (t.severity === "alert" || t.severity === "bad")));
+              if (!groupTags.length) return null;
+              return (
+                <div key={severity} style={{ marginBottom: "0.85rem" }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: headerColor, background: headerBg, padding: "3px 8px", borderRadius: 6, display: "inline-block", marginBottom: 8 }}>
+                    {label}
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {groupTags.map(tag => {
+                      const selected = form.tags.includes(tag.id);
+                      const atLimit = form.tags.length >= 8 && !selected;
+                      return (
+                        <button key={tag.id} onClick={() => !atLimit && toggleTag(tag.id)}
+                          title={tag.desc || undefined}
+                          style={{ padding: "5px 12px", borderRadius: 20, border: `1.5px solid ${selected ? headerColor : BRAND.border}`, background: selected ? headerBg : "#fff", fontSize: 11, fontWeight: 600, cursor: atLimit ? "not-allowed" : "pointer", color: selected ? headerColor : atLimit ? "#CBD5E1" : BRAND.dark, fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s", opacity: atLimit ? 0.5 : 1 }}>
+                          <span style={{ position: "relative", display: "inline-flex", alignItems: "center", gap: 3 }}>
+                          {tag.icon} {tag.label}
+                          {tag.desc && (
+                            <span
+                              onClickCapture={e => showTooltip(e, tag)}
+                              onTouchEnd={e => { e.preventDefault(); showTooltip(e, tag); }}
+                              style={{ fontSize: 9, opacity: 0.55, marginLeft: 2, cursor: "pointer", WebkitTapHighlightColor: "transparent" }}
+                            >ⓘ</span>
+                          )}
+                          {tooltip?.id === tag.id && (
+                            <span style={{
+                              position:    "absolute",
+                              bottom:      "calc(100% + 8px)",
+                              left:        "50%",
+                              transform:   "translateX(-50%)",
+                              width:       220,
+                              background:  "#1E293B",
+                              color:       "#F1F5F9",
+                              fontSize:    11,
+                              lineHeight:  1.5,
+                              padding:     "8px 12px",
+                              borderRadius: 8,
+                              boxShadow:   "0 4px 16px rgba(0,0,0,0.3)",
+                              zIndex:      9999,
+                              whiteSpace:  "normal",
+                              pointerEvents: "none",
+                              textAlign:   "left",
+                              fontWeight:  400,
+                            }}>
+                              {tooltip.text}
+                              <span style={{
+                                position:    "absolute",
+                                top:         "100%",
+                                left:        "50%",
+                                transform:   "translateX(-50%)",
+                                width:       0, height: 0,
+                                borderLeft:  "5px solid transparent",
+                                borderRight: "5px solid transparent",
+                                borderTop:   "5px solid #1E293B",
+                              }} />
+                            </span>
+                          )}
+                        </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
           </Card>
 
           <Card style={{ marginBottom: "1.35rem" }}>
@@ -543,6 +719,7 @@ export default function ReviewPage({ go, goBack, initialAddress }) {
               ["🔨 Trade", TRADES.find(t => t.id === form.trade)?.label],
               ["⭐ Overall", `${form.overall}/5`],
               ["🏷 Tags", form.tags.length > 0 ? `${form.tags.length} selected` : "None"],
+              ["🔁 Would Return", form.would_return === true ? "Yes 👍" : form.would_return === false ? "No 👎" : "Not answered"],
             ].map(([label, value]) => (
               <div key={label} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "3px 0", color: "#166534" }}>
                 <span>{label}</span>
@@ -554,7 +731,7 @@ export default function ReviewPage({ go, goBack, initialAddress }) {
           <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
             <Btn variant="secondary" onClick={() => setStep(2)}>← Back</Btn>
             <Btn onClick={handleSubmit} disabled={!ok1 || !ok2 || submitting}>
-              {submitting ? "Submitting..." : "Submit review ✓"}
+              {submitting ? "Saving..." : isEditMode ? "Save changes ✓" : "Submit review ✓"}
             </Btn>
           </div>
         </div>

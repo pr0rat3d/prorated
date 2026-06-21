@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../config.js";
+import { SUPABASE_URL, SUPABASE_ANON_KEY, GOOGLE_MAPS_KEY } from "../config.js";
 import { getSaleWarning, getOwnershipFlags, submitOwnershipFlag, isStaleReview, getAgeLabel } from "../api/ownershipDetection.js";
 import { TRADES, ISSUE_TAGS, RATING_CATEGORIES } from "../data/constants";
 import { Badge, Stars, Pill, Bar, Btn, BRAND } from "./UI";
@@ -35,6 +35,7 @@ export default function AddressCard({ address, go, goLogin, goReview }) {
   const [showFlagModal, setShowFlagModal]   = useState(false);
   const [flagNote, setFlagNote]             = useState("");
   const [showBidPrep, setShowBidPrep]       = useState(false);
+  const [svError, setSvError]               = useState(false);
   const [propertyType, setPropertyType]     = useState(null);
   const { isLoggedIn, user } = useAuth();
   const { lang } = useLang();
@@ -108,9 +109,35 @@ export default function AddressCard({ address, go, goLogin, goReview }) {
   const hdrBg = address.overallScore >= 4 ? "#F0FDF4" : address.overallScore >= 3 ? "#FEFCE8" : "#FFF1F2";
   const hdrBorder = address.overallScore >= 4 ? "#BBF7D0" : address.overallScore >= 3 ? "#FEF08A" : "#FECDD3";
 
+  const fullAddr = `${toTitleCase(address.street)}, ${toTitleCase(address.city)}, ${address.state}`.trim();
+  const svUrl = fullAddr && GOOGLE_MAPS_KEY
+    ? `https://maps.googleapis.com/maps/api/streetview?size=600x220&location=${encodeURIComponent(fullAddr)}&key=${GOOGLE_MAPS_KEY}&return_error_code=true&fov=90&pitch=5`
+    : null;
+
   return (
     <>
     <div style={{ background: "#FFF", border: `1px solid ${BRAND.border}`, borderRadius: 20, overflow: "hidden", marginBottom: "1.5rem", boxShadow: "0 2px 16px rgba(0,0,0,0.06)", animation: "fadeUp 0.4s ease both" }}>
+
+      {/* Street View Banner */}
+      {svUrl && !svError ? (
+        <div style={{ width: "100%", height: 180, position: "relative", background: "#E2E8F0", overflow: "hidden" }}>
+          <img
+            src={svUrl}
+            alt="Street view"
+            onError={() => setSvError(true)}
+            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          />
+          <div style={{ position: "absolute", bottom: 6, right: 8, background: "rgba(0,0,0,0.45)", color: "#fff", fontSize: 9, padding: "2px 6px", borderRadius: 4, fontFamily: "'DM Sans', sans-serif" }}>
+            Google Street View
+          </div>
+        </div>
+      ) : svError ? (
+        <div style={{ width: "100%", height: 80, background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+          <span style={{ fontSize: 20 }}>🏠</span>
+          <span style={{ fontSize: 12, color: BRAND.gray }}>No street view available for this address</span>
+        </div>
+      ) : null}
+
       {/* Header */}
       <div style={{ padding: "1.1rem 1.35rem", background: hdrBg, borderBottom: `1px solid ${hdrBorder}` }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 8 }}>

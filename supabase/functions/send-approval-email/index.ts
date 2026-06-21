@@ -23,17 +23,68 @@ serve(async (req) => {
   }
 
   try {
-    const { contractorId, status, rejectionReason } = await req.json();
-
-    if (!contractorId || !status) {
-      return new Response(JSON.stringify({ error: "contractorId and status required" }), { status: 400 });
-    }
+    const body = await req.json();
+    const { contractorId, status, rejectionReason, type, inviteEmail, companyName, invitedByName } = body;
 
     // Init Supabase
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
+
+    // ── Handle team invite emails ──────────────────────────────
+    if (type === "invite") {
+      if (!inviteEmail) {
+        return new Response(JSON.stringify({ error: "inviteEmail required" }), { status: 400 });
+      }
+      const link = body.inviteLink || `https://prorated.app/invite/`;
+      const inviteRes = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${Deno.env.get("RESEND_API_KEY")}` },
+        body: JSON.stringify({
+          from: "ProRated <hello@prorated.app>",
+          to: inviteEmail,
+          subject: `${invitedByName || "A team"} invited you to join ProRated`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px; background: #F8FAFC;">
+              <div style="background: #0F172A; border-radius: 16px; padding: 32px; text-align: center; margin-bottom: 24px;">
+                <h1 style="color: #F8FAFC; font-size: 24px; font-weight: 800; margin: 0 0 8px;">ProRated</h1>
+                <p style="color: #94A3B8; margin: 0; font-size: 14px;">Built by Pros, Built for Pros</p>
+              </div>
+              <div style="background: #fff; border-radius: 16px; padding: 32px; border: 1px solid #E2E8F0;">
+                <h2 style="color: #0F172A; font-size: 20px; margin: 0 0 16px;">You've been invited!</h2>
+                <p style="color: #475569; font-size: 15px; line-height: 1.6;">
+                  <strong>${invitedByName || "A team member"}</strong> has invited you to join their team workspace <strong>${companyName || "on ProRated"}</strong>.
+                </p>
+                <p style="color: #475569; font-size: 15px; line-height: 1.6;">
+                  ProRated is a verified job site intelligence platform for licensed trade professionals. Sign up to access job site reviews, manage your team, and bid smarter.
+                </p>
+                <div style="text-align: center; margin: 32px 0;">
+                  <a href="${link}" style="background: #2563EB; color: #fff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-size: 15px; font-weight: 700; display: inline-block;">
+                    Accept Invitation →
+                  </a>
+                </div>
+                <p style="color: #94A3B8; font-size: 12px; text-align: center;">
+                  Sign up with this email address (${inviteEmail}) to automatically join the team.
+                </p>
+              </div>
+              <p style="color: #94A3B8; font-size: 11px; text-align: center; margin-top: 24px;">
+                Built by Pros, Built for Pros · <a href="https://prorated.app" style="color: #94A3B8;">prorated.app</a>
+              </p>
+            </div>
+          `,
+        }),
+      });
+      const inviteData = await inviteRes.json();
+      return new Response(JSON.stringify({ ok: true, resend: inviteData }), {
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+      });
+    }
+
+    // ── Handle approval / rejection emails ─────────────────────
+    if (!contractorId || !status) {
+      return new Response(JSON.stringify({ error: "contractorId and status required" }), { status: 400 });
+    }
 
     // Get contractor details + email from auth.users
     const { data: contractor } = await supabase
@@ -58,7 +109,7 @@ serve(async (req) => {
         <div style="font-family: 'DM Sans', Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px; background: #F8FAFC;">
           <div style="background: #0F172A; border-radius: 16px; padding: 32px; text-align: center; margin-bottom: 24px;">
             <h1 style="color: #F8FAFC; font-size: 24px; font-weight: 800; margin: 0 0 8px;">ProRated</h1>
-            <p style="color: #94A3B8; font-size: 13px; margin: 0;">Bidding Made Better</p>
+            <p style="color: #94A3B8; font-size: 13px; margin: 0;">Built by Pros, Built for Pros</p>
           </div>
           <div style="background: #fff; border-radius: 16px; padding: 32px; border: 1px solid #E2E8F0;">
             <div style="text-align: center; margin-bottom: 24px;">
@@ -76,14 +127,14 @@ serve(async (req) => {
               <p style="color: #166534; font-size: 13px; margin: 4px 0;">✓ Get push notifications on saved addresses</p>
             </div>
             <div style="text-align: center;">
-              <a href="https://prorated-kappa.vercel.app" 
+              <a href="https://prorated.app" 
                 style="display: inline-block; background: #2563EB; color: #fff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-size: 15px; font-weight: 700;">
                 Start searching job sites →
               </a>
             </div>
           </div>
           <p style="text-align: center; color: #94A3B8; font-size: 11px; margin-top: 20px;">
-            ProRated · Hoover, Alabama · <a href="mailto:hello@prorated.io" style="color: #2563EB;">hello@prorated.io</a>
+            ProRated · Hoover, Alabama · <a href="mailto:hello@prorated.app" style="color: #2563EB;">hello@prorated.app</a>
           </p>
         </div>
       `;
@@ -93,7 +144,7 @@ serve(async (req) => {
         <div style="font-family: 'DM Sans', Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px; background: #F8FAFC;">
           <div style="background: #0F172A; border-radius: 16px; padding: 32px; text-align: center; margin-bottom: 24px;">
             <h1 style="color: #F8FAFC; font-size: 24px; font-weight: 800; margin: 0 0 8px;">ProRated</h1>
-            <p style="color: #94A3B8; font-size: 13px; margin: 0;">Bidding Made Better</p>
+            <p style="color: #94A3B8; font-size: 13px; margin: 0;">Built by Pros, Built for Pros</p>
           </div>
           <div style="background: #fff; border-radius: 16px; padding: 32px; border: 1px solid #E2E8F0;">
             <h2 style="color: #0F172A; font-size: 20px; font-weight: 800; margin: 0 0 16px;">Hi ${name},</h2>
@@ -119,7 +170,7 @@ serve(async (req) => {
             </p>
           </div>
           <p style="text-align: center; color: #94A3B8; font-size: 11px; margin-top: 20px;">
-            ProRated · <a href="mailto:disputes@prorated.io" style="color: #2563EB;">disputes@prorated.io</a>
+            ProRated · <a href="mailto:hello@prorated.app" style="color: #2563EB;">hello@prorated.app</a>
           </p>
         </div>
       `;
@@ -143,7 +194,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from:    "ProRated <hello@prorated.io>",
+        from:    "ProRated <hello@prorated.app>",
         to:      [email],
         subject,
         html,

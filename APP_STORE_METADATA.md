@@ -14,7 +14,7 @@ Subtitle (30 chars max):
 Job Site Intel for Contractors
 
 Bundle ID (set in Xcode/Expo):
-io.prorated.app
+app.prorated
 
 SKU (internal reference):
 PRORATED-001
@@ -165,7 +165,7 @@ Short Description (80 chars):
 Know the job site before you bid. Verified contractor ratings.
 
 Package Name:
-io.prorated.app
+app.prorated
 
 Category: Business
 Tags: Contractor, Construction, Business Tools

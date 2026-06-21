@@ -12,7 +12,7 @@ export const translations = {
       review:    "Review",
       dashboard: "Dashboard",
       signUp:    "Sign up free",
-      tagline:   "Bidding Made Better",
+      tagline:   "Built by Pros, Built for Pros",
     },
 
     // ── Bottom Nav ─────────────────────────────────────────────
@@ -363,7 +363,7 @@ export const translations = {
       terms:    "Terms",
       privacy:  "Privacy",
       contact:  "Contact",
-      copy:     "© 2025 ProRated · Bidding Made Better",
+      copy:     "© 2025 ProRated · Built by Pros, Built for Pros",
     },
 
     // ── Offline / Install banners ──────────────────────────────
@@ -407,7 +407,7 @@ export const translations = {
       review:    "Reseña",
       dashboard: "Panel",
       signUp:    "Registrarse gratis",
-      tagline:   "Mejora tu propuesta",
+      tagline:   "Construido por Pros, para Pros",
     },
 
     bottomNav: {

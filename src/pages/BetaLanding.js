@@ -188,7 +188,7 @@ export default function BetaLanding({ go }) {
             <span style={{ color: BRAND.blue }}>Pro</span><span style={{ color: BRAND.green }}>Rated</span>
           </span>
         </div>
-        <p style={{ fontSize: 11, color: "#475569" }}>© 2025 ProRated · Bidding Made Better · Hoover, Alabama</p>
+        <p style={{ fontSize: 11, color: "#475569" }}>© 2025 ProRated · Built by Pros, Built for Pros · Hoover, Alabama</p>
       </div>
     </div>
   );

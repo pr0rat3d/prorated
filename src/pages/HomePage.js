@@ -18,8 +18,9 @@ export default function HomePage({ go, goLogin, goReview, initialQuery, onQueryU
   const { lang } = useLang();
   const { user, isLoggedIn } = useAuth();
 
-  // Auto-search if coming from saved address View button
+  // Auto-search if coming from saved address View button or review "View address"
   const pendingSearch = (() => {
+    if (initialQuery) { if (onQueryUsed) onQueryUsed(); return initialQuery; }
     try {
       const stored = sessionStorage.getItem("pr_search_query");
       if (stored) { sessionStorage.removeItem("pr_search_query"); return stored; }
@@ -51,8 +52,7 @@ export default function HomePage({ go, goLogin, goReview, initialQuery, onQueryU
       setLoading(false);
       return;
     }
-    const isDemo = user?.email === "demo@prorated.io" || user?.email === "demo@prorated.app";
-    const isApproved = user?.status === "approved" || user?.plan === "pro" || isDemo;
+    const isApproved = user?.status === "approved" || user?.plan === "pro";
 
     if (!isApproved && user?.status === "pending") {
       setError("gate_pending");
@@ -130,8 +130,11 @@ export default function HomePage({ go, goLogin, goReview, initialQuery, onQueryU
           <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(59,130,246,0.07) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,0.07) 1px,transparent 1px)", backgroundSize: "42px 42px", pointerEvents: "none", overflow: "hidden" }} />
           <div style={{ position: "absolute", top: "-10%", left: "50%", transform: "translateX(-50%)", width: 700, height: 500, background: "radial-gradient(ellipse,rgba(37,99,235,0.18) 0%,transparent 65%)", pointerEvents: "none" }} />
           <div style={{ position: "relative", maxWidth: 660, margin: "0 auto" }}>
-            <div style={{ display: "flex", justifyContent: "center", marginBottom: 20, animation: "fadeUp 0.5s ease both" }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 20, animation: "fadeUp 0.5s ease both", gap: 8 }}>
               <Logo size={110} dark={true} />
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "2.5px", textTransform: "uppercase", color: "rgba(148,163,184,0.85)", fontFamily: "'DM Sans', sans-serif" }}>
+                Built by Pros, Built for Pros
+              </div>
             </div>
             <div style={{ display: "inline-block", background: "rgba(59,130,246,0.15)", color: "#93C5FD", fontSize: 10, fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", padding: "5px 16px", borderRadius: 20, border: "1px solid rgba(59,130,246,0.3)", marginBottom: 18, animation: "fadeUp 0.5s ease 0.05s both" }}>
               {t(lang, "home.badge")}

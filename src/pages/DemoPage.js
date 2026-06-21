@@ -5,7 +5,7 @@ export default function DemoPage({ go }) {
   useEffect(() => {
     // Set page title
     document.title = "ProRated — See How It Works";
-    return () => { document.title = "ProRated — Bidding Made Better"; };
+    return () => { document.title = "ProRated — Built by Pros, Built for Pros"; };
   }, []);
 
   return (

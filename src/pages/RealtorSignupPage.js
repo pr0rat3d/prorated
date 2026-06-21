@@ -18,7 +18,7 @@ export default function RealtorSignupPage({ go }) {
     const ogDesc = document.querySelector("meta[property='og:description']");
     if (ogDesc) ogDesc.setAttribute("content", "Search any property address and see verified trade professional ratings, work history, and payment scores. Built for real estate professionals in Alabama.");
     return () => {
-      document.title = "ProRated — Bidding Made Better";
+      document.title = "ProRated — Built by Pros, Built for Pros";
       if (desc) desc.setAttribute("content", "Contractor-to-contractor job site ratings. Know access, payment history, obstacles before you bid.");
     };
   }, []);

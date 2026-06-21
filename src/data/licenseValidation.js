@@ -17,17 +17,17 @@ const OBVIOUS_FAKES = [
 const STATE_FORMATS = {
   AL: {
     pattern:  /^\d{6,8}$|^[A-Z]{1,4}[-]?\d{4,8}$/i,
-    hint:     "Alabama licenses are typically 6-8 digits (e.g. 1234567) or letter prefix + digits (e.g. AL-C-12345)",
+    hint: "",
     examples: ["1234567", "AL-C-12345", "GC-12345"],
   },
   FL: {
     pattern:  /^[A-Z]{2,4}\d{6,8}$/i,
-    hint:     "Florida licenses start with 2-4 letters followed by 6-8 digits (e.g. CBC123456)",
+    hint: "",
     examples: ["CBC123456", "EC13005866"],
   },
   GA: {
     pattern:  /^[A-Z]{2,5}\d{5,8}$/i,
-    hint:     "Georgia licenses start with letters followed by digits (e.g. GCCO123456)",
+    hint: "",
     examples: ["GCCO123456", "EN123456"],
   },
   TN: {
@@ -37,12 +37,12 @@ const STATE_FORMATS = {
   },
   TX: {
     pattern:  /^[A-Z]{3,8}\d{4,8}$/i,
-    hint:     "Texas licenses start with letters followed by digits (e.g. TACLB012345)",
+    hint: "",
     examples: ["TACLB012345", "TECL12345"],
   },
   CA: {
     pattern:  /^\d{7}$|^[A-Z]\d{6,7}$/i,
-    hint:     "California licenses are 7 digits or a letter + 6-7 digits (e.g. 1012345)",
+    hint: "",
     examples: ["1012345", "B1234567"],
   },
   NC: {
@@ -120,7 +120,7 @@ export const validateLicense = (license, state) => {
   if (stateFormat && !stateFormat.pattern.test(clean.replace(/\s/g, ""))) {
     return {
       valid:   false,
-      error:   `This doesn't look like a valid ${state} license. ${stateFormat.hint}`,
+      error:   `This license number format doesn't match standard ${state} license formats. Please double-check your license number.`,
       warning: true, // warning = soft block, user can override
       hint:    stateFormat.hint,
       examples: stateFormat.examples,

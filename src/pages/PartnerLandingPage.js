@@ -179,7 +179,7 @@ export default function PartnerLandingPage({ go, partnerId }) {
     const ogDesc = document.querySelector("meta[property='og:description']");
     if (ogDesc) ogDesc.setAttribute("content", desc);
     return () => {
-      document.title = "ProRated — Bidding Made Better";
+      document.title = "ProRated — Built by Pros, Built for Pros";
       if (metaDesc) metaDesc.setAttribute("content", "Contractor-to-contractor job site ratings. Know access, payment history, obstacles before you bid.");
     };
   }, [partnerId]);
@@ -204,7 +204,7 @@ export default function PartnerLandingPage({ go, partnerId }) {
           ProRated — Exclusive for {p.name} Members
         </h1>
         <p style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", margin: 0 }}>
-          Free Pro access · Job site intelligence · Bidding Made Better
+          Free Pro access · Job site intelligence · Built by Pros, Built for Pros
         </p>
       </div>
 

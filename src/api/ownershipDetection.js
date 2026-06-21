@@ -115,7 +115,7 @@ export const getSaleWarning = (reviews, ownershipFlags) => {
     };
   }
 
-  if (monthsSinceReview > 18 && reviewSpanMonths > 12) {
+  if (monthsSinceReview > 36 && reviewSpanMonths > 12) {
     return {
       level: "low",
       message: `Most recent review is ${Math.round(monthsSinceReview)} months old. Ownership may have changed since these reviews were submitted.`,

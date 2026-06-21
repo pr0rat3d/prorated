@@ -61,33 +61,34 @@ export const clearSession = () => {
 };
 
 // ── Sign up a new contractor ──────────────────────────────────
-export const signUp = async ({ email, password, name, trade, state, license }) => {
-  // Create auth user
+export const signUp = async ({ email, password, name, trade, state, license, accountType = "solo", plan = "free", promoCode = null }) => {
   const data = await authFetch("/signup", {
     method: "POST",
     body: JSON.stringify({
       email,
       password,
-      data: { name, trade, state, license },
+      data: { name, trade, state, license, account_type: accountType, plan },
     }),
   });
 
   if (data.access_token) {
     saveSession({
-      access_token: data.access_token,
+      access_token:  data.access_token,
       refresh_token: data.refresh_token,
-      expires_at: data.expires_at,
-      user: { ...data.user, name, trade, state, license },
+      expires_at:    data.expires_at,
+      user: { ...data.user, name, trade, state, license, account_type: accountType, plan },
     });
 
-    // Save trade professional profile to contractors table
     await saveContractorProfile({
-      id:      data.user.id,
+      id:           data.user.id,
       email,
       name,
       trade,
       state,
       license,
+      plan,
+      account_type: accountType,
+      promo_code:   promoCode,
     }, data.access_token).catch(() => {});
   }
 
@@ -102,19 +103,33 @@ export const signIn = async ({ email, password }) => {
   });
 
   if (data.access_token) {
-    // Fetch trade professional profile
-    const profile = await dbFetch(
+    // Fetch trade professional profile — retry once if first attempt returns empty
+    const fetchProfile = () => dbFetch(
       `/contractors?id=eq.${data.user.id}&select=*`,
       { method: "GET" },
       data.access_token
     ).catch(() => []);
+
+    let profile = await fetchProfile();
+    // Retry after short delay if empty (RLS timing on fresh token)
+    if (!profile?.[0]) {
+      await new Promise(r => setTimeout(r, 800));
+      profile = await fetchProfile();
+    }
 
     const contractor = profile?.[0] || {};
     saveSession({
       access_token:  data.access_token,
       refresh_token: data.refresh_token,
       expires_at:    data.expires_at,
-      user: { ...data.user, ...contractor, status: contractor.status || "pending" },
+      user: {
+        ...data.user,
+        ...contractor,
+        // Preserve critical fields even if contractor row fetch failed
+        email: contractor.email || email,
+        status: contractor.status || "pending",
+        plan:   contractor.plan   || "free",
+      },
     });
   }
 
@@ -139,14 +154,16 @@ export const saveContractorProfile = async (profile, token) => {
     method: "POST",
     prefer: "return=minimal",
     body: JSON.stringify({
-      id:      profile.id,
-      email:   profile.email,
-      name:    profile.name,
-      trade:   profile.trade,
-      state:   profile.state,
-      license: profile.license,
-      plan:    "free",
-      status:  "pending",
+      id:           profile.id,
+      email:        profile.email,
+      name:         profile.name || "",
+      trade:        profile.trade || "",
+      state:        profile.state || "",
+      license:      profile.license || "",
+      plan:         profile.plan || "free",
+      account_type: profile.account_type || "solo",
+      promo_code:   profile.promo_code || null,
+      status:       "pending",
     }),
   }, token);
 };
@@ -233,6 +250,28 @@ export const refreshSession = async () => {
     clearSession();
   }
   return null;
+};
+
+// ── Send password reset email ────────────────────────────────
+export const resetPassword = async (email) => {
+  await authFetch("/recover", {
+    method: "POST",
+    body: JSON.stringify({
+      email,
+      gotrue_meta_security: {},
+    }),
+  });
+};
+
+// ── Update password after clicking reset link ─────────────────
+export const updatePassword = async (newPassword) => {
+  const session = loadSession();
+  const data = await authFetch("/user", {
+    method: "PUT",
+    headers: { "Authorization": `Bearer ${session?.access_token}` },
+    body: JSON.stringify({ password: newPassword }),
+  });
+  return data;
 };
 
 // ── Check and refresh if token expiring soon (within 5 min) ──

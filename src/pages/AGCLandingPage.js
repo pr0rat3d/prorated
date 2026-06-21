@@ -12,7 +12,7 @@ export default function AGCLandingPage({ go }) {
     document.title = "ProRated × AGC Alabama — Free Pro Access for Members";
     const d = document.querySelector("meta[name='description']");
     if (d) d.setAttribute("content", "AGC Alabama members get free ProRated Pro access during our beta. Search job site ratings, payment history, and access conditions before you bid. Use code AGC2026.");
-    return () => { document.title = "ProRated — Bidding Made Better"; };
+    return () => { document.title = "ProRated — Built by Pros, Built for Pros"; };
   }, []);
   const [started, setStarted] = useState(false);
 
@@ -37,7 +37,7 @@ export default function AGCLandingPage({ go }) {
           ProRated — Exclusive for AGC Alabama Members
         </h1>
         <p style={{ fontSize: 13, color: "#94A3B8", margin: 0 }}>
-          Free Pro access · Job site intelligence · Bidding Made Better
+          Free Pro access · Job site intelligence · Built by Pros, Built for Pros
         </p>
       </div>
 

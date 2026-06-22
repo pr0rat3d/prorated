@@ -44,9 +44,10 @@ export default function SignupPage({ go, goBack, initialMode }) {
   const [error, setError]       = useState(null);
   const [licenseErr, setLicErr]   = useState(null);
   const [licOverride, setOverride] = useState(false);
-  const [form, setForm] = useState({
-    name: "", email: inviteContext?.invitedEmail || "", phone: "", password: "",
-    trade: "", state: "", license: "",
+  const [form, setForm] = useState(() => {
+    let invEmail = "";
+    try { invEmail = JSON.parse(localStorage.getItem("pending_invite_context") || "null")?.invitedEmail || ""; } catch {}
+    return { name: "", email: invEmail, phone: "", password: "", trade: "", state: "", license: "" };
   });
 
   // Check for pending invite — skip plan step, inherit company plan

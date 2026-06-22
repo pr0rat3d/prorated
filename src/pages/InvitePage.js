@@ -49,18 +49,27 @@ export default function InvitePage({ go, goLogin }) {
     }
   };
 
+  const storeInviteContext = () => {
+    localStorage.setItem("pending_invite_token", token);
+    localStorage.setItem("pending_invite_context", JSON.stringify({
+      token,
+      companyId:    invite.company_id,
+      companyName:  company?.name,
+      plan:         company?.plan || "bronze",
+      invitedEmail: invite.email,
+    }));
+  };
+
   const handleAccept = async () => {
     if (!isLoggedIn) {
-      // Store full invite context so signup/login can skip plan selection
-      localStorage.setItem("pending_invite_token", token);
-      localStorage.setItem("pending_invite_context", JSON.stringify({
-        token,
-        companyId:   invite.company_id,
-        companyName: company?.name,
-        plan:        company?.plan || "bronze",
-      }));
-      // Default to login — invited users likely already have an account
+      storeInviteContext();
       if (goLogin) goLogin(); else go("signup");
+      return;
+    }
+
+    // Verify the logged-in user's email matches the invite
+    if (invite.email && user.email?.toLowerCase() !== invite.email.toLowerCase()) {
+      setError(`This invite was sent to ${invite.email}. Please sign in with that email address.`);
       return;
     }
 
@@ -125,14 +134,6 @@ export default function InvitePage({ go, goLogin }) {
     <div style={{ maxWidth: 420, margin: "80px auto", padding: "0 1.25rem", fontFamily: "'DM Sans', sans-serif" }}>
       <div style={{ textAlign: "center", marginBottom: 28 }}>
         <Logo size={56} />
-      </div>
-
-      {/* Debug panel — remove once invite flow is confirmed working */}
-      <div style={{ background: "#0F172A", color: "#94A3B8", fontSize: 10, fontFamily: "monospace", padding: "8px 12px", borderRadius: 8, marginBottom: 16, lineHeight: 1.8 }}>
-        <div><strong style={{ color: "#38BDF8" }}>path:</strong> {window.location.pathname}</div>
-        <div><strong style={{ color: "#38BDF8" }}>token:</strong> {token || "(none)"}</div>
-        <div><strong style={{ color: "#38BDF8" }}>status:</strong> {status}</div>
-        <div><strong style={{ color: "#38BDF8" }}>company:</strong> {company ? company.name : "(null)"}</div>
       </div>
 
       {!token && (
@@ -243,16 +244,7 @@ export default function InvitePage({ go, goLogin }) {
           {!isLoggedIn && (
             <p style={{ fontSize: 11, color: BRAND.gray, textAlign: "center", marginTop: 10 }}>
               New to ProRated?{" "}
-              <button onClick={() => {
-                localStorage.setItem("pending_invite_token", token);
-                localStorage.setItem("pending_invite_context", JSON.stringify({
-                  token,
-                  companyId:   invite.company_id,
-                  companyName: company?.name,
-                  plan:        company?.plan || "bronze",
-                }));
-                go("signup");
-              }}
+              <button onClick={() => { storeInviteContext(); go("signup"); }}
                 style={{ background: "none", border: "none", color: BRAND.blue, fontWeight: 700, cursor: "pointer", fontSize: 11, fontFamily: "'DM Sans', sans-serif" }}>
                 Create a free account →
               </button>

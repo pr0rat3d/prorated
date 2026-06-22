@@ -275,7 +275,7 @@ export default function AdminPage({ go }) {
       safe("/nda_signatures?select=*&order=agreed_at.desc&limit=200"),
       safe("/realtor_lookups?select=*&order=created_at.desc&limit=200"),
       safe("/companies?select=*&order=created_at.desc&limit=200"),
-      safe("/contractors?select=id,name,email,trade,company_id,company_role,plan,status,created_at&company_id=neq.null&order=created_at.desc&limit=500"),
+      safe("/contractors?select=id,name,email,trade,company_id,company_role,plan,status,created_at&company_id=not.is.null&order=created_at.desc&limit=500"),
     ]);
     setContractors(co); setRealtors(re); setReviews(rv);
     setEditRequests(er); setSubs(ss); setFeedback(fb);

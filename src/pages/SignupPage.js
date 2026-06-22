@@ -45,7 +45,7 @@ export default function SignupPage({ go, goBack, initialMode }) {
   const [licenseErr, setLicErr]   = useState(null);
   const [licOverride, setOverride] = useState(false);
   const [form, setForm] = useState({
-    name: "", email: "", phone: "", password: "",
+    name: "", email: inviteContext?.invitedEmail || "", phone: "", password: "",
     trade: "", state: "", license: "",
   });
 
@@ -283,7 +283,9 @@ export default function SignupPage({ go, goBack, initialMode }) {
             <Card style={{ animation: "fadeUp 0.25s ease both" }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: "1rem" }}>Basic info</div>
               <input type="text"     placeholder="Full name"         value={form.name}     onChange={upd("name")}     style={inp} />
-              <input type="email"    placeholder="Email address"     value={form.email}    onChange={upd("email")}    style={inp} />
+              <input type="email" placeholder="Email address" value={form.email} onChange={upd("email")}
+                readOnly={isInviteSignup && !!inviteContext?.invitedEmail}
+                style={{ ...inp, ...(isInviteSignup && inviteContext?.invitedEmail ? { background: "#F1F5F9", color: BRAND.gray, cursor: "not-allowed" } : {}) }} />
               <input type="tel"      placeholder="Phone (optional)"  value={form.phone}    onChange={upd("phone")}    style={inp} />
               <input type="password" placeholder="Create a password (6+ chars)" autoComplete="new-password" value={form.password} onChange={upd("password")} style={{ ...inp, marginBottom: 0 }} />
               <div style={{ marginTop: "1rem" }}>

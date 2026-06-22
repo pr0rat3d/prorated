@@ -245,7 +245,7 @@ export default function InvitePage({ go, goLogin }) {
           )}
 
           <Btn fullWidth onClick={handleAccept} disabled={accepting}>
-            {accepting ? "Joining..." : isLoggedIn ? `Join ${company.name} →` : "Sign in to accept →"}
+            {accepting ? "Joining..." : isLoggedIn ? `Join ${company?.name || "team"} →` : "Sign in to accept →"}
           </Btn>
 
           {!isLoggedIn && (

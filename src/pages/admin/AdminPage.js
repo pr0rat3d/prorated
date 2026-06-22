@@ -257,6 +257,7 @@ export default function AdminPage({ go }) {
   const [loading, setLoading]   = useState(true);
   const [userFilter, setUserFilter] = useState("all");
   const [reviewFilter, setReviewFilter] = useState("all");
+  const [actionMsg, setActionMsg] = useState(null); // { ok, text }
 
   useEffect(() => { loadData(); }, []);
 
@@ -287,14 +288,16 @@ export default function AdminPage({ go }) {
   };
 
   // ── Actions ────────────────────────────────────────────────
+  const flash = (ok, text) => { setActionMsg({ ok, text }); setTimeout(() => setActionMsg(null), 4000); };
+
   const approveContractor = async (id) => {
-    await patch("contractors", id, {
-      status: "approved",
-      verification_tier: "verified",
-      verified_at: new Date().toISOString(),
-      reviewed_by: "admin",
-    });
-    setContractors(cs => cs.map(c => c.id === id ? { ...c, status: "approved", verification_tier: "verified" } : c));
+    const result = await patch("contractors", id, { status: "approved" });
+    if (!result || (Array.isArray(result) && result.length === 0)) {
+      flash(false, "Approval failed — PATCH returned empty. Check Supabase service key in Vercel env vars.");
+      return;
+    }
+    setContractors(cs => cs.map(c => c.id === id ? { ...c, status: "approved" } : c));
+    flash(true, "Approved ✓");
     fetch(`${SUPABASE_URL}/functions/v1/send-approval-email`, {
       method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
       body: JSON.stringify({ contractorId: id, status: "approved" }),
@@ -426,6 +429,13 @@ export default function AdminPage({ go }) {
             style={{ background: "transparent", color: "#64748B", border: "none", fontSize: 11, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>Sign out</button>
         </div>
       </div>
+
+      {/* Action feedback banner */}
+      {actionMsg && (
+        <div style={{ background: actionMsg.ok ? "#166534" : "#991B1B", color: "#fff", padding: "10px 20px", fontSize: 13, fontWeight: 600, textAlign: "center" }}>
+          {actionMsg.text}
+        </div>
+      )}
 
       {/* Tabs */}
       <div style={{ background: "#1E293B", borderBottom: "1px solid #334155", padding: "0 16px", display: "flex", gap: 4, overflowX: "auto" }}>

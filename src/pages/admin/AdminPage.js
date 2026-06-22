@@ -337,21 +337,42 @@ export default function AdminPage({ go }) {
 
   const deleteUser = async (id, name) => {
     if (!window.confirm(`Permanently delete ${name || "this user"}? This cannot be undone.`)) return;
-    // Anonymize contractor record — null out PII
-    await adminPatch("/contractors", { deleted: true, deletion_requested: false, name: "Deleted Member", email: null, phone: null, license_number: null }, { id: `eq.${id}` });
-    // Anonymize reviews — only null out user_id, no reviewer_name column
+
+    // Step 1 — anonymize contractor record
+    const patchResult = await adminPatch(
+      "/contractors",
+      { deleted: true, deletion_requested: false, name: "Deleted Member", email: null, phone: null, license_number: null },
+      { id: `eq.${id}` }
+    );
+    if (!Array.isArray(patchResult) || !patchResult[0]?.deleted) {
+      flash(false, "Contractor record update failed — verify SUPABASE_SERVICE_KEY is set in Vercel and the x-admin-op header is reaching the proxy.");
+      return;
+    }
+
+    // Step 2 — anonymize reviews
     await adminPatch("/reviews", { user_id: null }, { user_id: `eq.${id}` });
-    // Delete from Supabase Auth via Edge Function
+
+    // Step 3 — delete from Supabase Auth
     try {
-      await fetch(`${SUPABASE_URL}/functions/v1/delete-user`, {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/delete-user`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
         body: JSON.stringify({ userId: id, adminPass: "LittlePigs6969!" }),
       });
+      if (!res.ok) {
+        const { error } = await res.json().catch(() => ({}));
+        flash(false, `Contractor anonymized but auth delete failed: ${error || res.status}`);
+        setContractors(cs => cs.map(c => c.id === id ? { ...c, deleted: true, name: "Deleted Member", email: null } : c));
+        return;
+      }
     } catch (e) {
-      console.warn("[ProRated] Auth delete note:", e);
+      flash(false, `Contractor anonymized but auth delete threw: ${e.message}`);
+      setContractors(cs => cs.map(c => c.id === id ? { ...c, deleted: true, name: "Deleted Member", email: null } : c));
+      return;
     }
+
     setContractors(cs => cs.filter(c => c.id !== id));
+    flash(true, `${name || "User"} deleted — record anonymized and auth account removed.`);
   };
 
   const completeDelete = deleteUser; // alias

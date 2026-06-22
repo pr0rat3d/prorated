@@ -69,6 +69,8 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
   const [pwError, setPwError]           = useState(null);
   const [pwSuccess, setPwSuccess]       = useState(false);
   const [pwLoading, setPwLoading]       = useState(false);
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false);
+  const [deleteAccountLoading, setDeleteAccountLoading] = useState(false);
 
   const handlePasswordChange = async () => {
     setPwError(null);
@@ -92,6 +94,29 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
     }
     setPwLoading(false);
   };
+  const handleDeleteAccount = async () => {
+    if (!window.confirm("Request account deletion? Your data will be permanently removed and cannot be recovered.")) return;
+    setDeleteAccountLoading(true);
+    try {
+      const session = JSON.parse(localStorage.getItem("prorated_session") || "{}");
+      const token = session.access_token;
+      await fetch(`${SUPABASE_URL}/rest/v1/contractors?id=eq.${user.id}`, {
+        method: "PATCH",
+        headers: {
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ deletion_requested: true }),
+      });
+      await logout();
+      go("home");
+    } catch (err) {
+      console.warn("[ProRated] Delete account error:", err);
+      setDeleteAccountLoading(false);
+    }
+  };
+
   const [saved, setSaved]       = useState([]);
   const [loadingSaved, setLS]   = useState(false);
   const [myReviews, setMyReviews] = useState([]);
@@ -1085,6 +1110,31 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
               </Card>
 
 
+
+              {/* Delete Account */}
+              <Card style={{ marginBottom: "0.85rem", border: showDeleteAccount ? "1.5px solid #FCA5A5" : undefined }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
+                  onClick={() => setShowDeleteAccount(s => !s)}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#DC2626" }}>🗑️ Delete Account</div>
+                    {!showDeleteAccount && <div style={{ fontSize: 11, color: BRAND.gray, marginTop: 2 }}>Permanently remove your account and data</div>}
+                  </div>
+                  <span style={{ fontSize: 18, color: BRAND.gray }}>{showDeleteAccount ? "−" : "+"}</span>
+                </div>
+                {showDeleteAccount && (
+                  <div style={{ marginTop: 14, borderTop: `1px solid ${BRAND.border}`, paddingTop: 14 }}>
+                    <div style={{ background: "#FEF2F2", border: "1px solid #FCA5A5", borderRadius: 10, padding: "10px 14px", fontSize: 12, color: "#991B1B", lineHeight: 1.6, marginBottom: 14 }}>
+                      <strong>This cannot be undone.</strong> Your account will be permanently deleted and your reviews anonymized. You'll be logged out immediately.
+                    </div>
+                    <button
+                      onClick={handleDeleteAccount}
+                      disabled={deleteAccountLoading}
+                      style={{ width: "100%", padding: "10px", background: "#DC2626", color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: deleteAccountLoading ? "not-allowed" : "pointer", opacity: deleteAccountLoading ? 0.6 : 1, fontFamily: "'DM Sans', sans-serif" }}>
+                      {deleteAccountLoading ? "Submitting request..." : "Request account deletion →"}
+                    </button>
+                  </div>
+                )}
+              </Card>
 
               {/* Log out */}
               <div style={{ marginTop: "1rem", display: "flex", gap: 8 }}>

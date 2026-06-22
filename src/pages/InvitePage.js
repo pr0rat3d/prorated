@@ -97,7 +97,7 @@ export default function InvitePage({ go, goLogin }) {
             "Content-Type":   "application/json",
           },
           body: JSON.stringify({
-            company_id:   company.id,
+            company_id:   company?.id || invite.company_id,
             company_role: "member",
           }),
         }
@@ -139,6 +139,7 @@ export default function InvitePage({ go, goLogin }) {
         <div><strong style={{ color: "#38BDF8" }}>path:</strong> {window.location.pathname}</div>
         <div><strong style={{ color: "#38BDF8" }}>token:</strong> {token || "(none)"}</div>
         <div><strong style={{ color: "#38BDF8" }}>status:</strong> {status}</div>
+        <div><strong style={{ color: "#38BDF8" }}>company:</strong> {company ? company.name : "(null — RLS blocking read)"}</div>
         <div><strong style={{ color: "#38BDF8" }}>supabase:</strong> {SUPABASE_URL || "(missing)"}</div>
       </div>
 
@@ -213,22 +214,24 @@ export default function InvitePage({ go, goLogin }) {
           <div style={{ textAlign: "center", padding: "1rem 0" }}>
             <div style={{ fontSize: 32, marginBottom: 12 }}>🎉</div>
             <div style={{ fontSize: 15, fontWeight: 700, color: BRAND.dark, marginBottom: 8 }}>You're in!</div>
-            <div style={{ fontSize: 13, color: BRAND.gray }}>You've joined {company?.name}. Redirecting you now...</div>
+            <div style={{ fontSize: 13, color: BRAND.gray }}>You've joined {company?.name || "the team"}. Redirecting you now...</div>
           </div>
         </Card>
       )}
 
-      {status === "valid" && invite && company && (
+      {status === "valid" && invite && (
         <Card>
           <div style={{ textAlign: "center", marginBottom: 20 }}>
             <div style={{ fontSize: 32, marginBottom: 10 }}>🏗️</div>
             <div style={{ fontSize: 15, fontWeight: 700, color: BRAND.dark, marginBottom: 6 }}>
               You've been invited to join
             </div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: BRAND.dark, marginBottom: 6 }}>{company.name}</div>
-            <div style={{ display: "inline-block", background: "#EFF6FF", color: BRAND.blue, fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 20 }}>
-              {TIER_LABELS[company.plan] || company.plan} Plan
-            </div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: BRAND.dark, marginBottom: 6 }}>{company?.name || "your team"}</div>
+            {company?.plan && (
+              <div style={{ display: "inline-block", background: "#EFF6FF", color: BRAND.blue, fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 20 }}>
+                {TIER_LABELS[company.plan] || company.plan} Plan
+              </div>
+            )}
           </div>
 
           <div style={{ background: "#F8FAFC", border: `1px solid ${BRAND.border}`, borderRadius: 10, padding: "12px 14px", marginBottom: 16, fontSize: 12, color: BRAND.gray, lineHeight: 1.7 }}>

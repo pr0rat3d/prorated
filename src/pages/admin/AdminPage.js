@@ -254,6 +254,7 @@ export default function AdminPage({ go }) {
   const [ndaSigs, setNdaSigs]   = useState([]);
   const [companies, setCompanies] = useState([]);
   const [companyMembers, setCompanyMembers] = useState([]);
+  const [orphanedAuthUsers, setOrphanedAuthUsers] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [userFilter, setUserFilter] = useState("all");
   const [reviewFilter, setReviewFilter] = useState("all");
@@ -261,21 +262,37 @@ export default function AdminPage({ go }) {
 
   useEffect(() => { loadData(); }, []);
 
+  const fetchAuthUsers = async () => {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/list-auth-users`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
+        body: JSON.stringify({ adminPass: "LittlePigs6969!" }),
+      });
+      if (!res.ok) return [];
+      const { users } = await res.json();
+      return users || [];
+    } catch { return []; }
+  };
+
   const loadData = async () => {
     setLoading(true);
     const safe = async (path) => { try { const r = await sb(path); return Array.isArray(r) ? r : []; } catch { return []; } };
-    const [co, re, rv, er, ss, fb, rp, nd, rl, cm, cmem] = await Promise.all([
-      safe("/contractors?select=*&order=created_at.desc&limit=500"),
-      safe("/realtor_subscriptions?select=*&order=created_at.desc&limit=200"),
-      safe("/reviews?select=*&order=created_at.desc&limit=200"),
-      safe("/review_edit_requests?select=*&order=created_at.desc&limit=100"),
-      safe("/push_subscriptions?select=*&order=created_at.desc&limit=200"),
-      safe("/beta_feedback?select=*&order=created_at.desc&limit=200"),
-      safe("/reported_reviews?select=*&order=reported_at.desc&limit=100"),
-      safe("/nda_signatures?select=*&order=agreed_at.desc&limit=200"),
-      safe("/realtor_lookups?select=*&order=created_at.desc&limit=200"),
-      safe("/companies?select=*&order=created_at.desc&limit=200"),
-      safe("/contractors?select=id,name,email,trade,company_id,company_role,plan,status,created_at&company_id=not.is.null&order=created_at.desc&limit=500"),
+    const [[co, re, rv, er, ss, fb, rp, nd, rl, cm, cmem], authUsers] = await Promise.all([
+      Promise.all([
+        safe("/contractors?select=*&order=created_at.desc&limit=500"),
+        safe("/realtor_subscriptions?select=*&order=created_at.desc&limit=200"),
+        safe("/reviews?select=*&order=created_at.desc&limit=200"),
+        safe("/review_edit_requests?select=*&order=created_at.desc&limit=100"),
+        safe("/push_subscriptions?select=*&order=created_at.desc&limit=200"),
+        safe("/beta_feedback?select=*&order=created_at.desc&limit=200"),
+        safe("/reported_reviews?select=*&order=reported_at.desc&limit=100"),
+        safe("/nda_signatures?select=*&order=agreed_at.desc&limit=200"),
+        safe("/realtor_lookups?select=*&order=created_at.desc&limit=200"),
+        safe("/companies?select=*&order=created_at.desc&limit=200"),
+        safe("/contractors?select=id,name,email,trade,company_id,company_role,plan,status,created_at&company_id=not.is.null&order=created_at.desc&limit=500"),
+      ]),
+      fetchAuthUsers(),
     ]);
     setContractors(co); setRealtors(re); setReviews(rv);
     setEditRequests(er); setSubs(ss); setFeedback(fb);
@@ -284,6 +301,9 @@ export default function AdminPage({ go }) {
     // Enrich realtor rows with lookup counts
     const lookupCounts = rl.reduce((acc, l) => { acc[l.user_id] = (acc[l.user_id] || 0) + 1; return acc; }, {});
     setRealtors(re.map(r => ({ ...r, lookup_count: lookupCounts[r.user_id] || 0 })));
+    // Find auth users with no matching contractor row
+    const contractorIds = new Set(co.map(c => c.id));
+    setOrphanedAuthUsers(authUsers.filter(u => !contractorIds.has(u.id)));
     setLoading(false);
   };
 
@@ -334,6 +354,26 @@ export default function AdminPage({ go }) {
   };
 
   const completeDelete = deleteUser; // alias
+
+  const deleteOrphanedAuthUser = async (userId, email) => {
+    if (!window.confirm(`Permanently delete auth account for ${email || userId}? This cannot be undone.`)) return;
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/delete-user`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
+        body: JSON.stringify({ userId, adminPass: "LittlePigs6969!" }),
+      });
+      if (!res.ok) {
+        const { error } = await res.json().catch(() => ({}));
+        flash(false, `Delete failed: ${error || res.status}`);
+        return;
+      }
+      setOrphanedAuthUsers(prev => prev.filter(u => u.id !== userId));
+      flash(true, `Deleted auth account for ${email || userId}`);
+    } catch (e) {
+      flash(false, "Failed to delete auth account — check edge function deployment");
+    }
+  };
 
   const deleteReview = async (id) => {
     if (!window.confirm("Delete this review?")) return;
@@ -541,7 +581,7 @@ export default function AdminPage({ go }) {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: 8 }}>
               <SectionHead title="Contractors" count={contractors.length} />
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {[["all","All"],["pending","⏳ Pending"],["approved","✓ Verified"],["rejected","✗ Rejected"],["deletion","🗑️ Deletion Req"],["deleted","🚫 Deleted"],["bronze","🥉 Bronze"],["silver","🥈 Silver"],["gold","🥇 Gold"],["platinum","💎 Platinum"]].map(([val, label]) => (
+                {[["all","All"],["pending","⏳ Pending"],["approved","✓ Verified"],["rejected","✗ Rejected"],["deletion","🗑️ Deletion Req"],["deleted","🚫 Deleted"],["bronze","🥉 Bronze"],["silver","🥈 Silver"],["gold","🥇 Gold"],["platinum","💎 Platinum"],["orphaned",`🔍 Orphaned${orphanedAuthUsers.length > 0 ? ` (${orphanedAuthUsers.length})` : ""}`]].map(([val, label]) => (
                   <button key={val} onClick={() => setUserFilter(val)}
                     style={{ padding: "4px 10px", borderRadius: 8, border: `1px solid ${userFilter === val ? BRAND.blue : BRAND.border}`, background: userFilter === val ? BRAND.blue : "#fff", color: userFilter === val ? "#fff" : BRAND.gray, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
                     {label}
@@ -549,11 +589,33 @@ export default function AdminPage({ go }) {
                 ))}
               </div>
             </div>
-            {filteredContractors.length === 0 ? <Empty msg="No contractors match this filter" /> :
-              filteredContractors.map(c => (
-                <UserRow key={c.id} user={c} onApprove={approveContractor} onReject={rejectContractor} onCompleteDelete={completeDelete} onAdminDelete={deleteUser} />
-              ))
-            }
+            {userFilter === "orphaned" ? (
+              orphanedAuthUsers.length === 0
+                ? <Empty msg="No orphaned auth users — all auth accounts have contractor rows" />
+                : orphanedAuthUsers.map(u => (
+                    <Row key={u.id}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: 4 }}>
+                            {u.email || "Unknown email"}
+                          </div>
+                          <div style={{ fontSize: 11, color: BRAND.gray, display: "flex", gap: 12, flexWrap: "wrap" }}>
+                            <span>🔑 Auth-only — no contractor row</span>
+                            <span>📅 {u.created_at ? new Date(u.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</span>
+                            {u.last_sign_in_at && <span>🕐 Last sign-in: {new Date(u.last_sign_in_at).toLocaleDateString()}</span>}
+                          </div>
+                          <div style={{ fontSize: 10, color: BRAND.gray, marginTop: 3, fontFamily: "monospace" }}>{u.id}</div>
+                        </div>
+                        <Btn small color="#DC2626" onClick={() => deleteOrphanedAuthUser(u.id, u.email)}>🗑️ Delete Auth</Btn>
+                      </div>
+                    </Row>
+                  ))
+            ) : (
+              filteredContractors.length === 0 ? <Empty msg="No contractors match this filter" /> :
+                filteredContractors.map(c => (
+                  <UserRow key={c.id} user={c} onApprove={approveContractor} onReject={rejectContractor} onCompleteDelete={completeDelete} onAdminDelete={deleteUser} />
+                ))
+            )}
           </div>
         )}
 

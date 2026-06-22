@@ -208,7 +208,7 @@ export default function SignupPage({ go, goBack, initialMode }) {
       {/* Mode toggle */}
       <div style={{ display: "flex", background: "#F1F5F9", borderRadius: 12, padding: 4, marginBottom: "1.5rem" }}>
         {[["signup", aSignupTab],["login", aLoginTab]].map(([m, label]) => (
-          <button key={m} onClick={() => { setMode(m); setStep(1); setError(null); setForm({ name: "", email: "", phone: "", password: "", trade: "", state: "", license: "" }); setReset(false); setResetSent(false); }}
+          <button key={m} onClick={() => { setMode(m); setStep(1); setError(null); setForm({ name: "", email: inviteContext?.invitedEmail || "", phone: "", password: "", trade: "", state: "", license: "" }); setReset(false); setResetSent(false); }}
             style={{ flex: 1, padding: "8px", border: "none", borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", transition: "all 0.2s", background: mode === m ? "#fff" : "transparent", color: mode === m ? BRAND.blue : BRAND.gray, boxShadow: mode === m ? "0 1px 4px rgba(0,0,0,0.1)" : "none" }}>
             {label}
           </button>

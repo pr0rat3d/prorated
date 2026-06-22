@@ -89,7 +89,10 @@ export const signUp = async ({ email, password, name, trade, state, license, acc
       plan,
       account_type: accountType,
       promo_code:   promoCode,
-    }, data.access_token).catch(() => {});
+    }, data.access_token).catch(err => {
+      console.error("[ProRated] saveContractorProfile failed:", err.message);
+      throw new Error("Account created but profile setup failed. Please contact hello@prorated.app with your email to complete setup.");
+    });
   }
 
   return data;
@@ -150,9 +153,14 @@ export const signOut = async () => {
 
 // ── Save trade professional profile to DB ─────────────────────────────
 export const saveContractorProfile = async (profile, token) => {
-  await dbFetch("/contractors", {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/contractors`, {
     method: "POST",
-    prefer: "return=minimal",
+    headers: {
+      "Content-Type":  "application/json",
+      "apikey":        SUPABASE_ANON_KEY,
+      "Authorization": `Bearer ${token}`,
+      "Prefer":        "return=minimal",
+    },
     body: JSON.stringify({
       id:           profile.id,
       email:        profile.email,
@@ -165,7 +173,11 @@ export const saveContractorProfile = async (profile, token) => {
       promo_code:   profile.promo_code || null,
       status:       "pending",
     }),
-  }, token);
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Profile setup failed (${res.status})${body ? ": " + body : ""}`);
+  }
 };
 
 // ── Get current user from session ────────────────────────────

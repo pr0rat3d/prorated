@@ -100,6 +100,16 @@ export default function InvitePage({ go, goLogin }) {
         }
       );
 
+      // Sync company into session so dashboard team tab loads correctly
+      try {
+        const currentSession = JSON.parse(localStorage.getItem("prorated_session") || "{}");
+        if (currentSession.user) {
+          currentSession.user.company_id   = company?.id || invite.company_id;
+          currentSession.user.company_role = "member";
+          localStorage.setItem("prorated_session", JSON.stringify(currentSession));
+        }
+      } catch {}
+
       localStorage.removeItem("pending_invite_token");
       setStatus("joined");
       setTimeout(() => go("home"), 2500);

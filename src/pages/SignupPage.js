@@ -56,7 +56,7 @@ export default function SignupPage({ go, goBack, initialMode }) {
   })();
   const isInviteSignup = !!inviteContext;
 
-  const [accountType, setAccountType] = useState(isInviteSignup ? "member" : null);
+  const [accountType, setAccountType] = useState(isInviteSignup ? "solo" : null);
   const [selectedTier, setSelectedTier] = useState(isInviteSignup ? (inviteContext?.plan || "bronze") : null);
   const [signupPromo, setSignupPromo]   = useState("");
   const [promoApplied, setPromoApplied] = useState(null);

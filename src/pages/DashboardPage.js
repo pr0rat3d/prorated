@@ -98,7 +98,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
   const [loadingReviews, setLR]   = useState(false);
 
   useEffect(() => {
-    if (isLoggedIn && tab === "team" && !companyDeletedRef.current) {
+    if (isLoggedIn && tab === "company" && !companyDeletedRef.current) {
       fetchCompanyData();
     }
   }, [tab, isLoggedIn]);
@@ -644,10 +644,22 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
       {/* Company / Team */}
       {tab === "company" && (
         <div style={{ animation: "fadeUp 0.25s ease both" }}>
-          {companyLoading ? (
+          {(() => {
+            const currentUserIsOwner = user?.company_role === "owner" || (company && company.owner_id === user?.id);
+            return (
+          companyLoading ? (
             <div style={{ textAlign: "center", padding: "2rem", color: BRAND.gray, fontSize: 13 }}>Loading team data...</div>
           ) : !company ? (
-            // No company yet — show setup CTA
+            // No company yet — only owners/paid solos see setup CTA; members shouldn't reach here
+            user?.company_role === "member" ? (
+              <Card>
+                <div style={{ textAlign: "center", padding: "1rem 0" }}>
+                  <div style={{ fontSize: 32, marginBottom: 12 }}>⏳</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: BRAND.dark, marginBottom: 6 }}>Team loading…</div>
+                  <div style={{ fontSize: 13, color: BRAND.gray }}>Your team info is syncing. Try refreshing in a moment.</div>
+                </div>
+              </Card>
+            ) : (
             <Card>
               <div style={{ textAlign: "center", padding: "1rem 0" }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>🏗️</div>
@@ -658,6 +670,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                 <Btn fullWidth onClick={() => go("company-setup")}>Set up company →</Btn>
               </div>
             </Card>
+            )
           ) : (
             <>
               {/* Company header */}
@@ -697,11 +710,13 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                       </div>
                       <div style={{ fontSize: 10, color: BRAND.gray }}>team members</div>
                     </div>
-                    <button onClick={() => setShowTeamSettings(s => !s)}
-                      title="Team settings"
-                      style={{ background: showTeamSettings ? "#EFF6FF" : "#F1F5F9", border: `1px solid ${showTeamSettings ? BRAND.blue : BRAND.border}`, borderRadius: 8, width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, fontSize: 14 }}>
-                      ⚙️
-                    </button>
+                    {currentUserIsOwner && (
+                      <button onClick={() => setShowTeamSettings(s => !s)}
+                        title="Team settings"
+                        style={{ background: showTeamSettings ? "#EFF6FF" : "#F1F5F9", border: `1px solid ${showTeamSettings ? BRAND.blue : BRAND.border}`, borderRadius: 8, width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, fontSize: 14 }}>
+                        ⚙️
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -747,8 +762,8 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                 )}
               </Card>
 
-              {/* Invite member */}
-              <Card style={{ marginBottom: "0.85rem" }}>
+              {/* Invite member — owners only */}
+              {currentUserIsOwner && <Card style={{ marginBottom: "0.85rem" }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: 4 }}>Invite a team member</div>
                 <div style={{ fontSize: 11, color: BRAND.gray, marginBottom: 12 }}>They'll get an email to create their ProRated account and join your team.</div>
 
@@ -787,7 +802,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                     {inviteLoading ? "..." : "Invite"}
                   </button>
                 </div>
-              </Card>
+              </Card>}
 
               {/* Team members list */}
               <Card style={{ marginBottom: "0.85rem" }}>
@@ -807,7 +822,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                           </div>
                           <div style={{ fontSize: 11, color: BRAND.gray }}>{member.email} · {trade}</div>
                         </div>
-                        {!isOwner && (
+                        {currentUserIsOwner && !isOwner && (
                           <button
                             onClick={() => handleRemoveMember(member.id)}
                             style={{ background: "none", border: "1px solid #FCA5A5", color: "#DC2626", fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 7, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", flexShrink: 0 }}>
@@ -820,8 +835,8 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                 )}
               </Card>
 
-              {/* Upgrade plan */}
-              {company.plan !== "gold" && (
+              {/* Upgrade plan — owners only */}
+              {currentUserIsOwner && company.plan !== "gold" && (
                 <div onClick={() => go("pricing")}
                   style={{ background: "linear-gradient(135deg, #0F172A, #1E3A5F)", borderRadius: 14, padding: "1rem 1.25rem", marginBottom: "0.85rem", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
                   <div>
@@ -836,7 +851,9 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                 </div>
               )}
             </>
-          )}
+          )
+            );
+          })()}
         </div>
       )}
 

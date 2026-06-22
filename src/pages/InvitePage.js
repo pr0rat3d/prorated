@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../config.js";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../config.js"; // still used in handleAccept PATCH
 import { BRAND } from "../components/UI";
 import { Btn, Card } from "../components/UI";
 import Logo from "../components/Logo";
@@ -29,36 +29,19 @@ export default function InvitePage({ go, goLogin }) {
 
   const fetchInvite = async () => {
     try {
-      const session   = JSON.parse(localStorage.getItem("prorated_session") || "{}");
-      const authToken = session.access_token || ANON;
+      const res = await fetch(`/api/invite-lookup?token=${token}`);
 
-      const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/invites?token=eq.${token}&select=*`,
-        { headers: { "apikey": ANON, "Authorization": `Bearer ${authToken}` } }
-      );
+      if (res.status === 404) { setStatus("invalid"); return; }
+      if (!res.ok) { setStatus("invalid"); return; }
 
-      if (!res.ok) {
-        console.warn("[ProRated] Invite fetch failed:", res.status, await res.text().catch(() => ""));
-        setStatus("invalid");
-        return;
-      }
-
-      const data = await res.json();
-      console.log("[ProRated] Invite data:", data, "token searched:", token);
-      const inv  = data?.[0];
+      const { invite: inv, company: comp } = await res.json();
 
       if (!inv) { setStatus("invalid"); return; }
       if (inv.accepted_at) { setStatus("accepted"); return; }
       if (inv.expires_at && new Date(inv.expires_at) < new Date()) { setStatus("expired"); return; }
 
       setInvite(inv);
-
-      const compRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/companies?id=eq.${inv.company_id}&select=id,name,plan`,
-        { headers: { "apikey": ANON, "Authorization": `Bearer ${authToken}` } }
-      );
-      const compData = await compRes.json();
-      setCompany(compData?.[0] || null);
+      setCompany(comp);
       setStatus("valid");
     } catch (err) {
       console.warn("[ProRated] Invite error:", err);
@@ -139,8 +122,7 @@ export default function InvitePage({ go, goLogin }) {
         <div><strong style={{ color: "#38BDF8" }}>path:</strong> {window.location.pathname}</div>
         <div><strong style={{ color: "#38BDF8" }}>token:</strong> {token || "(none)"}</div>
         <div><strong style={{ color: "#38BDF8" }}>status:</strong> {status}</div>
-        <div><strong style={{ color: "#38BDF8" }}>company:</strong> {company ? company.name : "(null — RLS blocking read)"}</div>
-        <div><strong style={{ color: "#38BDF8" }}>supabase:</strong> {SUPABASE_URL || "(missing)"}</div>
+        <div><strong style={{ color: "#38BDF8" }}>company:</strong> {company ? company.name : "(null)"}</div>
       </div>
 
       {!token && (

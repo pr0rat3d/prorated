@@ -61,12 +61,6 @@ export default function InvitePage({ go, goLogin }) {
   };
 
   const handleAccept = async () => {
-    if (!isLoggedIn) {
-      storeInviteContext();
-      if (goLogin) goLogin(); else go("signup");
-      return;
-    }
-
     // Verify the logged-in user's email matches the invite
     if (invite.email && user.email?.toLowerCase() !== invite.email.toLowerCase()) {
       setError(`This invite was sent to ${invite.email}. Please sign in with that email address.`);
@@ -237,18 +231,28 @@ export default function InvitePage({ go, goLogin }) {
             </div>
           )}
 
-          <Btn fullWidth onClick={handleAccept} disabled={accepting}>
-            {accepting ? "Joining..." : isLoggedIn ? `Join ${company?.name || "team"} →` : "Sign in to accept →"}
-          </Btn>
-
-          {!isLoggedIn && (
-            <p style={{ fontSize: 11, color: BRAND.gray, textAlign: "center", marginTop: 10 }}>
-              New to ProRated?{" "}
-              <button onClick={() => { storeInviteContext(); go("signup"); }}
-                style={{ background: "none", border: "none", color: BRAND.blue, fontWeight: 700, cursor: "pointer", fontSize: 11, fontFamily: "'DM Sans', sans-serif" }}>
-                Create a free account →
-              </button>
-            </p>
+          {isLoggedIn ? (
+            <Btn fullWidth onClick={handleAccept} disabled={accepting}>
+              {accepting ? "Joining..." : `Join ${company?.name || "team"} →`}
+            </Btn>
+          ) : (
+            <>
+              {invite.email && (
+                <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 8, padding: "8px 12px", fontSize: 12, color: "#1E40AF", marginBottom: 12, textAlign: "center" }}>
+                  📧 Invite sent to <strong>{invite.email}</strong>
+                </div>
+              )}
+              <Btn fullWidth onClick={() => { storeInviteContext(); go("signup"); }}>
+                Create account to join →
+              </Btn>
+              <p style={{ fontSize: 11, color: BRAND.gray, textAlign: "center", marginTop: 10, marginBottom: 0 }}>
+                Already have an account?{" "}
+                <button onClick={() => { storeInviteContext(); if (goLogin) goLogin(); else go("signup"); }}
+                  style={{ background: "none", border: "none", color: BRAND.blue, fontWeight: 700, cursor: "pointer", fontSize: 11, fontFamily: "'DM Sans', sans-serif" }}>
+                  Sign in →
+                </button>
+              </p>
+            </>
           )}
         </Card>
       )}

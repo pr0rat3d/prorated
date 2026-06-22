@@ -47,7 +47,7 @@ self.addEventListener("fetch", (event) => {
     // Never cache dynamic paths — always fetch fresh from network
     const dynamicPaths = ["/invite/", "/reset-password", "/dashboard", "/company-setup"];
     if (dynamicPaths.some(p => url.pathname.startsWith(p))) {
-      event.respondWith(fetch(request).catch(() => caches.match("/index.html")));
+      event.respondWith(fetch(request).catch(() => caches.match("/")));
       return;
     }
     event.respondWith(

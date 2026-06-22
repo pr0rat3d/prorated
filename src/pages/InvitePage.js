@@ -134,6 +134,14 @@ export default function InvitePage({ go, goLogin }) {
         <Logo size={56} />
       </div>
 
+      {/* Debug panel — remove once invite flow is confirmed working */}
+      <div style={{ background: "#0F172A", color: "#94A3B8", fontSize: 10, fontFamily: "monospace", padding: "8px 12px", borderRadius: 8, marginBottom: 16, lineHeight: 1.8 }}>
+        <div><strong style={{ color: "#38BDF8" }}>path:</strong> {window.location.pathname}</div>
+        <div><strong style={{ color: "#38BDF8" }}>token:</strong> {token || "(none)"}</div>
+        <div><strong style={{ color: "#38BDF8" }}>status:</strong> {status}</div>
+        <div><strong style={{ color: "#38BDF8" }}>supabase:</strong> {SUPABASE_URL || "(missing)"}</div>
+      </div>
+
       {!token && (
         <Card>
           <div style={{ textAlign: "center", padding: "1rem 0" }}>

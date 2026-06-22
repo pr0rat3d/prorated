@@ -292,12 +292,13 @@ export default function AdminPage({ go }) {
 
   const approveContractor = async (id) => {
     const result = await patch("contractors", id, { status: "approved" });
-    if (!result || (Array.isArray(result) && result.length === 0)) {
-      flash(false, "Approval failed — PATCH returned empty. Check Supabase service key in Vercel env vars.");
+    const savedStatus = Array.isArray(result) ? result[0]?.status : null;
+    if (savedStatus !== "approved") {
+      flash(false, `Approval failed — DB returned status="${savedStatus ?? "empty"}". Check SUPABASE_SERVICE_KEY in Vercel env vars, or look for a trigger resetting status in Supabase Dashboard → Database → Triggers.`);
       return;
     }
     setContractors(cs => cs.map(c => c.id === id ? { ...c, status: "approved" } : c));
-    flash(true, "Approved ✓");
+    flash(true, "Approved ✓ — confirmed in DB");
     fetch(`${SUPABASE_URL}/functions/v1/send-approval-email`, {
       method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
       body: JSON.stringify({ contractorId: id, status: "approved" }),

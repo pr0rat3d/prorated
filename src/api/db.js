@@ -18,8 +18,9 @@ const call = async (path, method = "GET", body, params, adminOp = false) => {
     body: JSON.stringify({ path, method, body, params }),
   });
 
+  if (!res.ok) return [];
   const data = await res.json();
-  return Array.isArray(data) ? data : data.error ? [] : data;
+  return Array.isArray(data) ? data : (data?.error || data?.message) ? [] : data;
 };
 
 // Convenience methods

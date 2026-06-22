@@ -301,9 +301,10 @@ export default function AdminPage({ go }) {
     // Enrich realtor rows with lookup counts
     const lookupCounts = rl.reduce((acc, l) => { acc[l.user_id] = (acc[l.user_id] || 0) + 1; return acc; }, {});
     setRealtors(re.map(r => ({ ...r, lookup_count: lookupCounts[r.user_id] || 0 })));
-    // Find auth users with no matching contractor row
+    // Find auth users with no matching contractor or realtor row
     const contractorIds = new Set(co.map(c => c.id));
-    setOrphanedAuthUsers(authUsers.filter(u => !contractorIds.has(u.id)));
+    const realtorIds    = new Set(re.map(r => r.user_id || r.id));
+    setOrphanedAuthUsers(authUsers.filter(u => !contractorIds.has(u.id) && !realtorIds.has(u.id)));
     setLoading(false);
   };
 

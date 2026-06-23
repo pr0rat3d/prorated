@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { isNativeIOS } from "./utils/platform";
 import Nav from "./components/Nav";
 import BottomNav from "./components/BottomNav";
 import { OfflineBanner, InstallBanner, IOSInstallBanner } from "./components/Banners";
@@ -424,10 +425,10 @@ export default function App() {
             { label: "Contact Us",       page: "contact" },
             { label: "Support",          page: "support" },
             { label: "Resources",        page: "resources" },
-            { label: "Merch",            page: "merch" },
+            { label: "Merch",            page: "merch", hideOnIOS: true },
             { label: "Blog",             page: "blog" },
             { label: "Our Mission",      page: "mission" },
-          ].map(({ label, page: p }) => (
+          ].filter(item => !(item.hideOnIOS && isNativeIOS())).map(({ label, page: p }) => (
             <button key={label} onClick={() => go(p)}
               style={{ background: "none", border: "none", color: BRAND.gray, fontSize: 11, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", padding: 0, textDecoration: "underline", textDecorationColor: BRAND.border }}>
               {label}

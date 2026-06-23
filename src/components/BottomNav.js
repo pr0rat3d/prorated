@@ -3,6 +3,7 @@ import { BRAND } from "./UI";
 import { useAuth } from "../hooks/useAuth";
 import { useLang } from "../hooks/useLang";
 import { t } from "../i18n/translations";
+import { isNativeIOS } from "../utils/platform";
 
 export default function BottomNav({ page, go, goLogin }) {
   const { lang } = useLang();
@@ -79,14 +80,14 @@ export default function BottomNav({ page, go, goLogin }) {
             {[
               { label: "💬 Support",         page: "support"   },
               { label: "🎬 Resources",       page: "resources" },
-              { label: "🛍️ Merch",            page: "merch"      },
+              { label: "🛍️ Merch",            page: "merch",  hideOnIOS: true },
               { label: "📝 Blog",             page: "blog"       },
               { label: "🎯 Our Mission",      page: "mission"    },
               { label: "💰 Pricing",         page: "pricing"   },
               { label: "📞 Contact Us",      page: "contact"   },
               { label: "📄 Terms",           page: "terms"     },
               { label: "🔒 Privacy",         page: "privacy"   },
-            ].map(({ label, page: p }) => (
+            ].filter(item => !(item.hideOnIOS && isNativeIOS())).map(({ label, page: p }) => (
               <button key={p} onClick={() => { go(p); setShowMore(false); }}
                 style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: 10, padding: "10px 12px", fontSize: 13, fontWeight: 600, color: "#0F172A", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", textAlign: "left" }}>
                 {label}

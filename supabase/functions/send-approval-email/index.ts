@@ -204,13 +204,15 @@ serve(async (req) => {
     const emailData = await emailRes.json();
 
     // Log to notification_log
-    await supabase.from("notification_log").insert({
-      user_id: contractorId,
-      type:    `contractor_${status}`,
-      title:   subject,
-      body:    `Sent to ${email}`,
-      success: emailRes.ok,
-    }).catch(() => {});
+    try {
+      await supabase.from("notification_log").insert({
+        user_id: contractorId,
+        type:    `contractor_${status}`,
+        title:   subject,
+        body:    `Sent to ${email}`,
+        success: emailRes.ok,
+      });
+    } catch {}
 
     return new Response(
       JSON.stringify({ sent: emailRes.ok, email, emailId: emailData.id }),

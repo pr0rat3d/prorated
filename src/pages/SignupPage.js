@@ -81,7 +81,10 @@ export default function SignupPage({ go, goBack, initialMode }) {
       await fetch(`${SUPABASE_URL}/auth/v1/recover`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
-        body: JSON.stringify({ email: resetEmail }),
+        body: JSON.stringify({
+          email:       resetEmail,
+          redirect_to: window.location.origin + "/",
+        }),
       });
       setResetSent(true);
     } catch {}

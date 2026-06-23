@@ -80,8 +80,15 @@ export default function CompanySetupPage({ go, goBack }) {
     fetchCompany();
   }, [user?.id, user?.company_id]);
 
+  const PAID_PLANS = ["bronze", "silver", "gold", "platinum", "pro"];
+
   const handleCreate = async () => {
     if (!companyName.trim() || !selectedTier) return;
+    // Guard: free-plan users can't create companies
+    if (!alreadyPaid && !PAID_PLANS.includes(selectedTier)) {
+      setError("A paid plan is required to create a team workspace. Choose a plan below.");
+      return;
+    }
     setLoading(true); setError(null);
 
     try {
@@ -108,7 +115,11 @@ export default function CompanySetupPage({ go, goBack }) {
 
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({}));
-        throw new Error(errBody?.message || errBody?.hint || `Server error ${res.status}`);
+        const rawMsg = errBody?.message || errBody?.hint || "";
+        const isRLS = errBody?.code === "42501" || rawMsg.includes("row-level security");
+        throw new Error(isRLS
+          ? "A paid plan is required to create a team workspace. Upgrade your plan to unlock team seats."
+          : rawMsg || `Server error ${res.status}`);
       }
 
       const companies = await res.json();

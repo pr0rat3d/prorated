@@ -11,12 +11,19 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../config.js";
 
 // ── Lightweight fetch wrapper (no SDK needed) ─────────────────
 const sb = async (path, options = {}) => {
+  // Use user session token when available so RLS policies see auth.uid() correctly
+  let authToken = SUPABASE_ANON_KEY;
+  try {
+    const session = JSON.parse(localStorage.getItem("prorated_session") || "{}");
+    if (session.access_token) authToken = session.access_token;
+  } catch {}
+
   const res = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
       "apikey": SUPABASE_ANON_KEY,
-      "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+      "Authorization": `Bearer ${authToken}`,
       ...(options.prefer ? { "Prefer": options.prefer } : {}),
       ...options.headers,
     },
@@ -72,15 +79,10 @@ export const saveReview = async (formData) => {
   const contractorName     = formData.contractor_name     || formData.contractorName     || "Anonymous";
   const contractorInitials = formData.contractor_initials || formData.contractorInitials || "PR";
 
-  // Get the live session token from localStorage — anon key alone may not satisfy RLS
-  let authToken = SUPABASE_ANON_KEY;
+  let sessionToken = SUPABASE_ANON_KEY;
   try {
-    const storageKey = Object.keys(localStorage).find(k => k.includes("auth-token") || k.includes("supabase.auth"));
-    if (storageKey) {
-      const stored = JSON.parse(localStorage.getItem(storageKey));
-      const token = stored?.access_token || stored?.currentSession?.access_token;
-      if (token) authToken = token;
-    }
+    const s = JSON.parse(localStorage.getItem("prorated_session") || "{}");
+    if (s.access_token) sessionToken = s.access_token;
   } catch {}
 
   try {
@@ -92,7 +94,7 @@ export const saveReview = async (formData) => {
       headers: {
         "Content-Type": "application/json",
         "apikey": SUPABASE_ANON_KEY,
-        "Authorization": `Bearer ${authToken}`,
+        "Authorization": `Bearer ${sessionToken}`,
         "Prefer": "return=minimal",
       },
       body: JSON.stringify({

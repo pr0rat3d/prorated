@@ -4,11 +4,19 @@
 const call = async (path, method = "GET", body, params, adminOp = false) => {
   const headers = { "Content-Type": "application/json" };
 
-  // For admin write ops — pass admin token for service key elevation
+  // For admin write ops — pass admin token for service key elevation (8hr expiry)
   if (adminOp) {
     try {
       const token = sessionStorage.getItem("pr_admin_auth");
-      if (token) headers["x-admin-op"] = atob(token).split(":")[0];
+      if (token) {
+        const decoded  = atob(token);
+        const colonIdx = decoded.indexOf(":");
+        const pw = decoded.slice(0, colonIdx);
+        const ts = parseInt(decoded.slice(colonIdx + 1), 10);
+        if (Date.now() - ts < 8 * 60 * 60 * 1000) {
+          headers["x-admin-op"] = pw;
+        }
+      }
     } catch {}
   }
 

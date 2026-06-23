@@ -684,7 +684,6 @@ export const TRADE_LICENSE_REQUIREMENTS = {
   flooring:     { tier: 2, required: true,  label: "Business License #",             hint: "Enter your city or county business license number",  example: "BL-12345"  },
   pest_control: { tier: 2, required: true,  label: "Business License #",             hint: "Enter your city or county business license number",  example: "BL-12345"  },
   landscaping:  { tier: 2, required: true,  label: "Business License #",             hint: "Enter your city or county business license number",  example: "BL-12345"  },
-  concrete:     { tier: 2, required: true,  label: "Business License #",             hint: "Enter your city or county business license number",  example: "BL-12345"  },
   windows:      { tier: 2, required: true,  label: "Business License #",             hint: "Enter your city or county business license number",  example: "BL-12345"  },
   foundation:   { tier: 1, required: true,  label: "AL Contractor License #",        hint: "Foundation work requires an AL GC or Structural license", example: "1234567" },
   siding:       { tier: 2, required: true,  label: "Business License #",             hint: "Enter your city or county business license number",  example: "BL-12345"  },

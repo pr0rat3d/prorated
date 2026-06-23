@@ -96,7 +96,7 @@ serve(async (req) => {
     // Get contractor details + email from auth.users
     const { data: contractor } = await supabase
       .from("contractors")
-      .select("name, email, trade, state, license")
+      .select("name, email, trade, state, license, plan")
       .eq("id", contractorId)
       .single();
 
@@ -106,6 +106,8 @@ serve(async (req) => {
 
     const name  = contractor.name || "Contractor";
     const email = contractor.email;
+    const isPaid = contractor.plan && contractor.plan !== "free";
+    const searchLimit = isPaid ? "Unlimited searches" : "10 searches/month";
 
     let subject: string;
     let html: string;
@@ -128,7 +130,7 @@ serve(async (req) => {
             </div>
             <div style="background: #F0FDF4; border: 1px solid #86EFAC; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
               <p style="color: #166534; font-size: 13px; font-weight: 700; margin: 0 0 12px;">You can now:</p>
-              <p style="color: #166534; font-size: 13px; margin: 4px 0;">✓ Search job site addresses (${Deno.env.get("FREE_MONTHLY_LOOKUPS") || "25"}/month free)</p>
+              <p style="color: #166534; font-size: 13px; margin: 4px 0;">✓ Search job site addresses (${searchLimit})</p>
               <p style="color: #166534; font-size: 13px; margin: 4px 0;">✓ Leave reviews for job sites you've worked</p>
               <p style="color: #166534; font-size: 13px; margin: 4px 0;">✓ Save addresses to your watchlist</p>
               <p style="color: #166534; font-size: 13px; margin: 4px 0;">✓ Get push notifications on saved addresses</p>

@@ -288,15 +288,15 @@ export default function SignupPage({ go, goBack, initialMode }) {
           {step === 1 && (
             <Card style={{ animation: "fadeUp 0.25s ease both" }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: "1rem" }}>Basic info</div>
-              <input type="text"     placeholder="Full name"              value={form.name}         onChange={upd("name")}         style={inp} />
-              <input type="text"     placeholder="Company name (optional)" value={form.company_name} onChange={upd("company_name")} style={inp} />
-              <input type="email" placeholder="Email address" value={form.email} onChange={upd("email")}
+              <input type="text"  placeholder="Full name"     value={form.name}         onChange={upd("name")}         style={inp} />
+              <input type="text"  placeholder={isInviteSignup ? "Company name (optional)" : "Company name"} value={form.company_name} onChange={upd("company_name")} style={inp} />
+              <input type="email" placeholder="Email address"  value={form.email}        onChange={upd("email")}
                 readOnly={isInviteSignup && !!inviteContext?.invitedEmail}
                 style={{ ...inp, ...(isInviteSignup && inviteContext?.invitedEmail ? { background: "#F1F5F9", color: BRAND.gray, cursor: "not-allowed" } : {}) }} />
               <input type="tel"      placeholder="Phone (optional)"  value={form.phone}    onChange={upd("phone")}    style={inp} />
               <input type="password" placeholder="Create a password (6+ chars)" autoComplete="new-password" value={form.password} onChange={upd("password")} style={{ ...inp, marginBottom: 0 }} />
               <div style={{ marginTop: "1rem" }}>
-                <Btn fullWidth onClick={() => setStep(2)} disabled={!form.name || !form.email || form.password.length < 6}>Continue →</Btn>
+                <Btn fullWidth onClick={() => setStep(2)} disabled={!form.name || (!isInviteSignup && !form.company_name) || !form.email || form.password.length < 6}>Continue →</Btn>
               </div>
             </Card>
           )}

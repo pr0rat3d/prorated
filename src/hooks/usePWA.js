@@ -13,7 +13,6 @@ export default function usePWA() {
         navigator.serviceWorker
           .register("/service-worker.js")
           .then((reg) => {
-            console.log("[ProRated] Service worker registered:", reg.scope);
             setSwReady(true);
           })
           .catch((err) => {

@@ -19,7 +19,6 @@ export default function usePush() {
   useEffect(() => {
     const supported = isPushSupported();
     setSupported(supported);
-    console.log("[ProRated] Push supported:", supported, "Permission:", typeof Notification !== "undefined" ? Notification.permission : "N/A");
     isSubscribed().then(setSubscribed);
   }, []);
 

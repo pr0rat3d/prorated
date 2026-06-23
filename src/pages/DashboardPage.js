@@ -983,6 +983,34 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                 ))}
               </Card>
 
+              {/* Company card — shown for paid members */}
+              {user?.plan && user.plan !== "free" && user?.company_name && (
+                <Card style={{ marginBottom: "0.85rem" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: 2 }}>🏗️ {user.company_name}</div>
+                      <div style={{ fontSize: 11, color: BRAND.gray }}>
+                        {user.company_id
+                          ? "Your team workspace is active"
+                          : "Set up a team workspace to invite your crew"}
+                      </div>
+                    </div>
+                    {!user.company_id && (
+                      <button onClick={() => go("company-setup")}
+                        style={{ background: BRAND.blue, color: "#fff", border: "none", padding: "7px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", flexShrink: 0 }}>
+                        Set up team →
+                      </button>
+                    )}
+                    {user.company_id && (
+                      <button onClick={() => setTab("company")}
+                        style={{ background: "#EFF6FF", color: BRAND.blue, border: "none", padding: "7px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", flexShrink: 0 }}>
+                        View team →
+                      </button>
+                    )}
+                  </div>
+                </Card>
+              )}
+
               {/* Review Points */}
               {user?.plan !== "platinum" && (
                 <Card style={{ marginBottom: "0.85rem" }}>

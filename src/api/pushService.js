@@ -57,7 +57,6 @@ export const subscribeToPush = async (userId) => {
     // Save subscription to Supabase
     await saveSubscriptionToSupabase(subscription, userId);
 
-    console.log("[ProRated] Push subscription created");
     return { success: true, subscription };
   } catch (err) {
     console.error("[ProRated] Push subscription failed:", err);

@@ -53,6 +53,8 @@ export const logLookup = async (userId, address) => {
   } catch {}
 };
 
+const PAID_PLANS = ["bronze", "silver", "gold", "platinum"];
+
 // ── Check if user can do a lookup (main enforcement function) ─
 export const canDoLookup = async () => {
   const session = loadSession();
@@ -62,29 +64,32 @@ export const canDoLookup = async () => {
 
   const user = session.user;
 
-  // Pro users have unlimited lookups
-  if (user.plan === "pro") return { allowed: true, reason: "pro", remaining: null };
+  // Paid subscribers — unlimited lookups
+  if (PAID_PLANS.includes(user.plan)) return { allowed: true, reason: "paid", remaining: null };
 
-  // Demo account — unlimited
-  // Demo bypass — remove before public launch
+  // Demo accounts — unlimited
   if (user.email === "demo@prorated.io" || user.email === "demo@prorated.app") return { allowed: true, reason: "demo", remaining: null };
 
-  // Check monthly count
+  // Pending users get a tighter limit until their license is verified
+  const isPending = user.status === "pending";
+  const limit     = isPending ? PENDING_MONTHLY_LOOKUPS : FREE_MONTHLY_LOOKUPS;
+
   const count     = await getMonthlyLookupCount(user.id);
-  const remaining = FREE_MONTHLY_LOOKUPS - count;
+  const remaining = limit - count;
 
   if (remaining <= 0) {
-    return { allowed: false, reason: "limit_reached", remaining: 0, count, limit: FREE_MONTHLY_LOOKUPS };
+    return { allowed: false, reason: "limit_reached", remaining: 0, count, limit };
   }
 
-  return { allowed: true, reason: "free", remaining, count, limit: FREE_MONTHLY_LOOKUPS };
+  return { allowed: true, reason: isPending ? "pending" : "free", remaining, count, limit };
 };
 
 // ── Get remaining lookups for display ────────────────────────
 export const getRemainingLookups = async () => {
   const session = loadSession();
   if (!session?.user) return null;
-  if (session.user.plan === "pro") return null; // unlimited
+  if (PAID_PLANS.includes(session.user.plan)) return null; // unlimited
+  const limit = session.user.status === "pending" ? PENDING_MONTHLY_LOOKUPS : FREE_MONTHLY_LOOKUPS;
   const count = await getMonthlyLookupCount(session.user.id);
-  return Math.max(0, FREE_MONTHLY_LOOKUPS - count);
+  return Math.max(0, limit - count);
 };

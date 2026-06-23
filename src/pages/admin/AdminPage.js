@@ -322,7 +322,7 @@ export default function AdminPage({ go }) {
     fetch(`${SUPABASE_URL}/functions/v1/send-approval-email`, {
       method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
       body: JSON.stringify({ contractorId: id, status: "approved" }),
-    }).catch(() => {});
+    }).then(r => { if (!r.ok) flash(false, "Approved but approval email failed — check Resend in Supabase logs"); }).catch(() => {});
   };
 
   const rejectContractor = async (id, reason) => {
@@ -331,7 +331,7 @@ export default function AdminPage({ go }) {
     fetch(`${SUPABASE_URL}/functions/v1/send-approval-email`, {
       method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
       body: JSON.stringify({ contractorId: id, status: "rejected", rejectionReason: reason }),
-    }).catch(() => {});
+    }).then(r => { if (!r.ok) console.warn("[ProRated] Rejection email failed:", r.status); }).catch(() => {});
   };
 
   const deleteUser = async (id, name) => {

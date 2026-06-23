@@ -97,7 +97,10 @@ export default function ReviewPage({ go, goBack, initialAddress, editReviewId })
           would_return: r.would_return ?? null,
         });
       })
-      .catch(() => {});
+      .catch(err => {
+        console.warn("[ProRated] Failed to load review for editing:", err);
+        setError("Could not load review data. Please go back and try again.");
+      });
   }, [editReviewId]);
 
   const setRating = (cat, val) => setForm(f => ({ ...f, ratings: { ...f.ratings, [cat]: val } }));

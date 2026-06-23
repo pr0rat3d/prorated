@@ -38,6 +38,7 @@ export const dbPatch  = (path, body, params) => call(path, "PATCH",  body, param
 export const dbDelete = (path, params)       => call(path, "DELETE", null, params);
 
 // Admin-elevated versions
+export const adminPost   = (path, body)         => call(path, "POST",   body, null,   true);
 export const adminPatch  = (path, body, params) => call(path, "PATCH",  body, params, true);
 export const adminDelete = (path, params)       => call(path, "DELETE", null, params, true);
 

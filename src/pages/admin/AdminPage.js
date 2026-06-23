@@ -2,7 +2,7 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../../config.js";
 import { useState, useEffect } from "react";
 import { BRAND } from "../../components/UI";
 import Logo from "../../components/Logo";
-import { dbGet, adminPatch, adminDelete } from "../../api/db";
+import { dbGet, adminPost, adminPatch, adminDelete } from "../../api/db";
 
 const STATE_LICENSE_URLS = {
   AL: "https://genlic.alabama.gov/contractor/public/index.cfm?action=search&licenseNumber={license}",
@@ -72,7 +72,7 @@ const Empty = ({ msg = "Nothing here yet" }) => (
 );
 
 // ── User Row (contractors) ───────────────────────────────────
-function UserRow({ user: u, onApprove, onReject, onCompleteDelete, onAdminDelete }) {
+function UserRow({ user: u, onApprove, onReject, onCompleteDelete, onAdminDelete, onChangePlan, onResendWelcome }) {
   const [expanded, setExpanded] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [rejecting, setRejecting] = useState(false);
@@ -128,6 +128,23 @@ function UserRow({ user: u, onApprove, onReject, onCompleteDelete, onAdminDelete
               <div><strong>Promo Code:</strong> {u.promo_code || "—"}</div>
               <div><strong>Trust Score:</strong> {u.trust_score ?? "—"}</div>
               <div><strong>User ID:</strong> <span style={{ fontFamily: "monospace" }}>{u.id}</span></div>
+              <div style={{ marginTop: 8, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                <span style={{ fontWeight: 600 }}>Change plan:</span>
+                <select defaultValue={u.plan || "free"} onChange={e => onChangePlan && onChangePlan(u.id, e.target.value)}
+                  style={{ fontSize: 11, padding: "3px 6px", borderRadius: 6, border: `1px solid ${BRAND.border}`, fontFamily: "'DM Sans', sans-serif", cursor: "pointer" }}>
+                  <option value="free">Free</option>
+                  <option value="bronze">🥉 Bronze</option>
+                  <option value="silver">🥈 Silver</option>
+                  <option value="gold">🥇 Gold</option>
+                  <option value="platinum">💎 Platinum</option>
+                </select>
+                {u.status === "approved" && onResendWelcome && (
+                  <button onClick={() => onResendWelcome(u.id)}
+                    style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 6, border: `1px solid ${BRAND.border}`, background: "#F8FAFC", color: BRAND.dark, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+                    📧 Resend Welcome
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -192,7 +209,7 @@ function RealtorRow({ realtor: r, onUpgrade, onDowngrade }) {
 }
 
 // ── Review Row ───────────────────────────────────────────────
-function ReviewRow({ review: r, onDelete, editRequests = [] }) {
+function ReviewRow({ review: r, onDelete, editRequests = [], onResolveEditRequest }) {
   const [expanded, setExpanded] = useState(false);
   const score = r.overall_score;
   const scoreColor = score >= 4 ? "#166534" : score >= 3 ? "#854D0E" : "#991B1B";
@@ -223,9 +240,21 @@ function ReviewRow({ review: r, onDelete, editRequests = [] }) {
                 <div><strong>Review ID:</strong> <span style={{ fontFamily: "monospace" }}>{r.id}</span></div>
               </div>
               {myEditReqs.map(er => (
-                <div key={er.id} style={{ background: "#FFFBEB", border: "1px solid #FCD34D", borderRadius: 8, padding: "8px 12px", marginBottom: 6, fontSize: 11 }}>
-                  <div style={{ fontWeight: 700, color: "#92400E", marginBottom: 4 }}>✏️ Edit Request — {new Date(er.created_at).toLocaleDateString()}</div>
-                  <div style={{ color: BRAND.gray }}>{er.reason || "No reason provided"}</div>
+                <div key={er.id} style={{ background: er.resolved ? "#F0FDF4" : "#FFFBEB", border: `1px solid ${er.resolved ? "#86EFAC" : "#FCD34D"}`, borderRadius: 8, padding: "8px 12px", marginBottom: 6, fontSize: 11 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <div>
+                      <div style={{ fontWeight: 700, color: er.resolved ? "#166534" : "#92400E", marginBottom: 4 }}>
+                        {er.resolved ? "✓ Resolved" : "✏️ Edit Request"} — {new Date(er.created_at).toLocaleDateString()}
+                      </div>
+                      <div style={{ color: BRAND.gray }}>{er.reason || "No reason provided"}</div>
+                    </div>
+                    {!er.resolved && onResolveEditRequest && (
+                      <button onClick={() => onResolveEditRequest(er.id)}
+                        style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 6, border: "1px solid #86EFAC", background: "#F0FDF4", color: "#166534", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", flexShrink: 0, marginLeft: 8 }}>
+                        ✓ Mark Resolved
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -237,6 +266,114 @@ function ReviewRow({ review: r, onDelete, editRequests = [] }) {
         </div>
       </div>
     </Row>
+  );
+}
+
+// ── Supplier Tab ─────────────────────────────────────────────
+function SupplierTab({ suppliers, setSuppliers, toggleActive, onDelete, flash }) {
+  const [showForm, setShowForm] = useState(false);
+  const [editId, setEditId]     = useState(null);
+  const [saving, setSaving]     = useState(false);
+  const blank = { name: "", category: "", address: "", phone: "", website: "", description: "", states: "", radius_miles: "", tier: "free", monthly_fee: "", expires_at: "", active: true };
+  const [form, setForm]         = useState(blank);
+  const upd = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
+
+  const openAdd = () => { setForm(blank); setEditId(null); setShowForm(true); };
+  const openEdit = (s) => {
+    setForm({ ...s, states: Array.isArray(s.states) ? s.states.join(", ") : (s.states || ""), expires_at: s.expires_at ? s.expires_at.slice(0, 10) : "" });
+    setEditId(s.id); setShowForm(true);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    const payload = { ...form, states: form.states ? form.states.split(",").map(s => s.trim()).filter(Boolean) : [], radius_miles: form.radius_miles ? Number(form.radius_miles) : null, monthly_fee: form.monthly_fee ? Number(form.monthly_fee) : null, expires_at: form.expires_at || null };
+    if (editId) {
+      await adminPatch("/featured_suppliers", payload, { id: `eq.${editId}` });
+      setSuppliers(ss => ss.map(s => s.id === editId ? { ...s, ...payload } : s));
+      flash(true, "Supplier updated");
+    } else {
+      const result = await adminPost("/featured_suppliers", payload);
+      if (result?.id) setSuppliers(ss => [...ss, result]);
+      flash(true, "Supplier added");
+    }
+    setSaving(false); setShowForm(false); setEditId(null);
+  };
+
+  const inp = { width: "100%", padding: "8px 10px", border: `1px solid ${BRAND.border}`, borderRadius: 8, fontSize: 12, fontFamily: "'DM Sans', sans-serif", marginBottom: 8, outline: "none", boxSizing: "border-box", background: "#F8FAFC", color: BRAND.dark };
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+        <SectionHead title="Featured Suppliers" count={suppliers.length} />
+        <button onClick={openAdd} style={{ background: BRAND.blue, color: "#fff", border: "none", padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>+ Add Supplier</button>
+      </div>
+      <div style={{ fontSize: 12, color: BRAND.gray, marginBottom: "1rem" }}>
+        These appear as "Local Points of Interest" to paid subscribers searching job sites.
+      </div>
+
+      {showForm && (
+        <div style={{ background: "#fff", border: `1.5px solid ${BRAND.blue}`, borderRadius: 14, padding: "1.25rem", marginBottom: "1.25rem" }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: 12 }}>{editId ? "Edit Supplier" : "New Supplier"}</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 12px" }}>
+            <div><label style={{ fontSize: 11, color: BRAND.gray, fontWeight: 600 }}>Business Name *</label><input style={inp} value={form.name} onChange={upd("name")} placeholder="Acme Supply Co." /></div>
+            <div><label style={{ fontSize: 11, color: BRAND.gray, fontWeight: 600 }}>Category</label><input style={inp} value={form.category} onChange={upd("category")} placeholder="Lumber, Electrical, HVAC..." /></div>
+            <div><label style={{ fontSize: 11, color: BRAND.gray, fontWeight: 600 }}>Address</label><input style={inp} value={form.address} onChange={upd("address")} placeholder="123 Main St, Birmingham AL" /></div>
+            <div><label style={{ fontSize: 11, color: BRAND.gray, fontWeight: 600 }}>Phone</label><input style={inp} value={form.phone} onChange={upd("phone")} placeholder="(205) 555-0100" /></div>
+            <div><label style={{ fontSize: 11, color: BRAND.gray, fontWeight: 600 }}>Website</label><input style={inp} value={form.website} onChange={upd("website")} placeholder="https://..." /></div>
+            <div><label style={{ fontSize: 11, color: BRAND.gray, fontWeight: 600 }}>States (comma-separated)</label><input style={inp} value={form.states} onChange={upd("states")} placeholder="AL, TN, GA" /></div>
+            <div><label style={{ fontSize: 11, color: BRAND.gray, fontWeight: 600 }}>Tier</label>
+              <select style={{ ...inp, appearance: "none" }} value={form.tier} onChange={upd("tier")}>
+                <option value="free">Free listing</option>
+                <option value="sponsored">Sponsored</option>
+                <option value="featured">Featured</option>
+              </select>
+            </div>
+            <div><label style={{ fontSize: 11, color: BRAND.gray, fontWeight: 600 }}>Monthly Fee ($)</label><input style={inp} type="number" value={form.monthly_fee} onChange={upd("monthly_fee")} placeholder="0" /></div>
+            <div><label style={{ fontSize: 11, color: BRAND.gray, fontWeight: 600 }}>Expires</label><input style={inp} type="date" value={form.expires_at} onChange={upd("expires_at")} /></div>
+          </div>
+          <div style={{ marginBottom: 12 }}><label style={{ fontSize: 11, color: BRAND.gray, fontWeight: 600 }}>Description</label><textarea style={{ ...inp, resize: "vertical", minHeight: 64 }} value={form.description} onChange={upd("description")} placeholder="Brief description shown to contractors" /></div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={handleSave} disabled={!form.name || saving} style={{ background: BRAND.blue, color: "#fff", border: "none", padding: "8px 18px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: form.name && !saving ? "pointer" : "not-allowed", fontFamily: "'DM Sans', sans-serif" }}>
+              {saving ? "Saving..." : editId ? "Save Changes" : "Add Supplier"}
+            </button>
+            <button onClick={() => setShowForm(false)} style={{ background: "none", border: `1px solid ${BRAND.border}`, padding: "8px 14px", borderRadius: 8, fontSize: 12, color: BRAND.gray, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {suppliers.length === 0 ? <Empty msg="No suppliers yet — add one above" /> : suppliers.map(s => {
+        const expired = s.expires_at && new Date(s.expires_at) < new Date();
+        return (
+          <Row key={s.id}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, flexWrap: "wrap" }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 4, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark }}>{s.name}</span>
+                  <button onClick={() => toggleActive(s.id, s.active)} style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20, border: "none", background: s.active ? "#DCFCE7" : "#F1F5F9", color: s.active ? "#166534" : BRAND.gray, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+                    {s.active ? "● Active" : "○ Inactive"}
+                  </button>
+                  {s.category && <Badge color="#F0F4FF" text="#3730A3">{s.category}</Badge>}
+                  {s.tier !== "free" && <Badge color="#FFFBEB" text="#B45309">{s.tier}</Badge>}
+                  {expired && <Badge color="#FEE2E2" text="#991B1B">⚠️ Expired</Badge>}
+                </div>
+                <div style={{ fontSize: 11, color: BRAND.gray, display: "flex", gap: 12, flexWrap: "wrap" }}>
+                  {s.address && <span>📍 {s.address}</span>}
+                  {s.phone && <span>📞 {s.phone}</span>}
+                  {s.states?.length > 0 && <span>🗺️ {Array.isArray(s.states) ? s.states.join(", ") : s.states}</span>}
+                  {s.monthly_fee > 0 && <span>💰 ${s.monthly_fee}/mo</span>}
+                  {s.expires_at && <span style={{ color: expired ? "#DC2626" : BRAND.gray }}>📅 Expires {new Date(s.expires_at).toLocaleDateString()}</span>}
+                </div>
+                {s.description && <div style={{ fontSize: 11, color: BRAND.gray, marginTop: 4, fontStyle: "italic" }}>{s.description}</div>}
+              </div>
+              <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                <button onClick={() => openEdit(s)} style={{ background: "#EFF6FF", border: `1px solid #BFDBFE`, color: BRAND.blue, fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 7, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>✏️ Edit</button>
+                <button onClick={() => onDelete(s.id, s.name)} style={{ background: "#FEF2F2", border: "1px solid #FCA5A5", color: "#DC2626", fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 7, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>🗑️</button>
+              </div>
+            </div>
+          </Row>
+        );
+      })}
+    </div>
   );
 }
 
@@ -254,6 +391,10 @@ export default function AdminPage({ go }) {
   const [companies, setCompanies] = useState([]);
   const [companyMembers, setCompanyMembers] = useState([]);
   const [orphanedAuthUsers, setOrphanedAuthUsers] = useState([]);
+  const [redemptions, setRedemptions]   = useState([]);
+  const [suppliers, setSuppliers]       = useState([]);
+  const [ownershipFlags, setOwnershipFlags] = useState([]);
+  const [allInvites, setAllInvites]     = useState([]);
   const [loading, setLoading]   = useState(true);
   const [userFilter, setUserFilter] = useState("all");
   const [reviewFilter, setReviewFilter] = useState("all");
@@ -277,7 +418,7 @@ export default function AdminPage({ go }) {
   const loadData = async () => {
     setLoading(true);
     const safe = async (path) => { try { const r = await sb(path); return Array.isArray(r) ? r : []; } catch { return []; } };
-    const [[co, re, rv, er, ss, fb, rp, nd, rl, cm, cmem], authUsers] = await Promise.all([
+    const [[co, re, rv, er, ss, fb, rp, nd, rl, cm, cmem, rd, sup, of_, inv], authUsers] = await Promise.all([
       Promise.all([
         safe("/contractors?select=*&order=created_at.desc&limit=500"),
         safe("/realtor_subscriptions?select=*&order=created_at.desc&limit=200"),
@@ -290,6 +431,10 @@ export default function AdminPage({ go }) {
         safe("/realtor_lookups?select=*&order=created_at.desc&limit=200"),
         safe("/companies?select=*&order=created_at.desc&limit=200"),
         safe("/contractors?select=id,name,email,trade,company_id,company_role,plan,status,created_at&company_id=not.is.null&order=created_at.desc&limit=500"),
+        safe("/points_redemptions?select=*&order=created_at.desc&limit=200"),
+        safe("/featured_suppliers?select=*&order=name.asc"),
+        safe("/ownership_flags?select=*&order=created_at.desc&limit=100"),
+        safe("/invites?select=*&order=created_at.desc&limit=200"),
       ]),
       fetchAuthUsers(),
     ]);
@@ -297,6 +442,7 @@ export default function AdminPage({ go }) {
     setEditRequests(er); setSubs(ss); setFeedback(fb);
     setReported(rp); setNdaSigs(nd);
     setCompanies(cm); setCompanyMembers(cmem);
+    setRedemptions(rd); setSuppliers(sup); setOwnershipFlags(of_); setAllInvites(inv);
     // Enrich realtor rows with lookup counts
     const lookupCounts = rl.reduce((acc, l) => { acc[l.user_id] = (acc[l.user_id] || 0) + 1; return acc; }, {});
     setRealtors(re.map(r => ({ ...r, lookup_count: lookupCounts[r.user_id] || 0 })));
@@ -402,6 +548,69 @@ export default function AdminPage({ go }) {
     setReported(rp => rp.map(r => r.id === id ? { ...r, resolved: !current } : r));
   };
 
+  // G4 — Edit request resolve/deny
+  const resolveEditRequest = async (id) => {
+    await adminPatch("/review_edit_requests", { resolved: true }, { id: `eq.${id}` });
+    setEditRequests(ers => ers.map(e => e.id === id ? { ...e, resolved: true } : e));
+    flash(true, "Edit request marked resolved");
+  };
+
+  // G1 — Redemptions
+  const approveRedemption = async (id) => {
+    await adminPatch("/points_redemptions", { status: "approved" }, { id: `eq.${id}` });
+    setRedemptions(rs => rs.map(r => r.id === id ? { ...r, status: "approved" } : r));
+    flash(true, "Redemption approved");
+  };
+  const rejectRedemption = async (id) => {
+    const reason = window.prompt("Reason for rejection (optional):");
+    if (reason === null) return;
+    await adminPatch("/points_redemptions", { status: "rejected", notes: reason || "Rejected by admin" }, { id: `eq.${id}` });
+    setRedemptions(rs => rs.map(r => r.id === id ? { ...r, status: "rejected" } : r));
+    flash(true, "Redemption rejected");
+  };
+  const fulfillRedemption = async (id) => {
+    await adminPatch("/points_redemptions", { status: "fulfilled", resolved_at: new Date().toISOString() }, { id: `eq.${id}` });
+    setRedemptions(rs => rs.map(r => r.id === id ? { ...r, status: "fulfilled" } : r));
+    flash(true, "Marked as fulfilled ✓");
+  };
+
+  // G6 — Plan override + resend welcome
+  const changePlan = async (id, plan) => {
+    await adminPatch("/contractors", { plan }, { id: `eq.${id}` });
+    setContractors(cs => cs.map(c => c.id === id ? { ...c, plan } : c));
+    flash(true, `Plan updated to ${plan || "free"}`);
+  };
+  const resendWelcome = async (id) => {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/send-approval-email`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
+      body: JSON.stringify({ contractorId: id, status: "approved" }),
+    });
+    flash(res.ok, res.ok ? "Welcome email resent ✓" : "Email failed — check Resend logs");
+  };
+
+  // G3 — Ownership flags
+  const resolveOwnershipFlag = async (id) => {
+    await adminPatch("/ownership_flags", { resolved: true }, { id: `eq.${id}` });
+    setOwnershipFlags(fs => fs.map(f => f.id === id ? { ...f, resolved: true } : f));
+  };
+  const deleteOwnershipFlag = async (id) => {
+    await adminDelete("/ownership_flags", { id: `eq.${id}` });
+    setOwnershipFlags(fs => fs.filter(f => f.id !== id));
+  };
+
+  // G2 — Suppliers
+  const toggleSupplierActive = async (id, current) => {
+    await adminPatch("/featured_suppliers", { active: !current }, { id: `eq.${id}` });
+    setSuppliers(ss => ss.map(s => s.id === id ? { ...s, active: !current } : s));
+  };
+  const deleteSupplier = async (id, name) => {
+    if (!window.confirm(`Delete supplier "${name}"?`)) return;
+    await adminDelete("/featured_suppliers", { id: `eq.${id}` });
+    setSuppliers(ss => ss.filter(s => s.id !== id));
+    flash(true, "Supplier deleted");
+  };
+
   // ── Derived counts ──────────────────────────────────────────
   const pendingContractors  = contractors.filter(c => !c.status || c.status === "pending");
   const deletionRequests    = contractors.filter(c => c.deletion_requested && !c.deleted);
@@ -433,14 +642,19 @@ export default function AdminPage({ go }) {
     : reviewFilter === "low"   ? reviews.filter(r => r.overall_score < 3)
     : reviews;
 
+  const pendingRedemptions  = redemptions.filter(r => r.status === "pending");
+  const openOwnershipFlags  = ownershipFlags.filter(f => !f.resolved);
+
   const TABS = [
     { id: "overview",     label: "Overview",    icon: "📊" },
     { id: "contractors",  label: `Contractors${pendingContractors.length > 0 ? ` (${pendingContractors.length})` : ""}`, icon: "🔨" },
     { id: "companies",    label: `Companies (${companies.length})`, icon: "🏗️" },
+    { id: "suppliers",    label: `🏪 Suppliers (${suppliers.length})`, icon: "🏪" },
     { id: "realtors",     label: `Realtors (${realtors.length})`, icon: "🏡" },
     { id: "reviews",      label: `Reviews${pendingEditRequests.length > 0 ? ` (${pendingEditRequests.length} edits)` : ""}`, icon: "⭐" },
+    { id: "rewards",      label: `💰 Rewards${pendingRedemptions.length > 0 ? ` (${pendingRedemptions.length})` : ""}`, icon: "💰" },
     { id: "feedback",     label: `Feedback${openFeedback.length > 0 ? ` (${openFeedback.length})` : ""}`, icon: "💬" },
-    { id: "reported",     label: `Reports${openReports.length > 0 ? ` (${openReports.length})` : ""}`, icon: "🚩" },
+    { id: "reported",     label: `Reports${(openReports.length + openOwnershipFlags.length) > 0 ? ` (${openReports.length + openOwnershipFlags.length})` : ""}`, icon: "🚩" },
     { id: "nda",          label: `NDA (${ndaSigs.length})`, icon: "📄" },
     { id: "push",         label: `Push (${subs.length})`, icon: "🔔" },
   ];
@@ -567,7 +781,25 @@ export default function AdminPage({ go }) {
                   <Btn color="#0EA5E9" onClick={() => setTab("feedback")}>Review →</Btn>
                 </div>
               )}
-              {pendingContractors.length === 0 && deletionRequests.length === 0 && openReports.length === 0 && pendingEditRequests.length === 0 && openFeedback.length === 0 && (
+              {pendingRedemptions.length > 0 && (
+                <div style={{ background: "#431407", border: "1px solid #D97706", borderRadius: 12, padding: "1rem 1.25rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#FED7AA" }}>💰 {pendingRedemptions.length} merch redemption{pendingRedemptions.length !== 1 ? "s" : ""} awaiting approval</div>
+                    <div style={{ fontSize: 11, color: "#64748B", marginTop: 2 }}>Contractors redeeming review points for merch credit</div>
+                  </div>
+                  <Btn color="#D97706" onClick={() => setTab("rewards")}>Review →</Btn>
+                </div>
+              )}
+              {openOwnershipFlags.length > 0 && (
+                <div style={{ background: "#1E3A5F", border: "1px solid #0EA5E9", borderRadius: 12, padding: "1rem 1.25rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#7DD3FC" }}>🏠 {openOwnershipFlags.length} property ownership claim{openOwnershipFlags.length !== 1 ? "s" : ""} need review</div>
+                    <div style={{ fontSize: 11, color: "#64748B", marginTop: 2 }}>Homeowners claiming their address in the app</div>
+                  </div>
+                  <Btn color="#0EA5E9" onClick={() => setTab("reported")}>Review →</Btn>
+                </div>
+              )}
+              {pendingContractors.length === 0 && deletionRequests.length === 0 && openReports.length === 0 && pendingEditRequests.length === 0 && openFeedback.length === 0 && pendingRedemptions.length === 0 && openOwnershipFlags.length === 0 && (
                 <div style={{ textAlign: "center", padding: "2rem", color: "#64748B", fontSize: 13 }}>✅ All clear — no action items</div>
               )}
             </div>
@@ -614,7 +846,7 @@ export default function AdminPage({ go }) {
             ) : (
               filteredContractors.length === 0 ? <Empty msg="No contractors match this filter" /> :
                 filteredContractors.map(c => (
-                  <UserRow key={c.id} user={c} onApprove={approveContractor} onReject={rejectContractor} onCompleteDelete={completeDelete} onAdminDelete={deleteUser} />
+                  <UserRow key={c.id} user={c} onApprove={approveContractor} onReject={rejectContractor} onCompleteDelete={completeDelete} onAdminDelete={deleteUser} onChangePlan={changePlan} onResendWelcome={resendWelcome} />
                 ))
             )}
           </div>
@@ -715,6 +947,56 @@ export default function AdminPage({ go }) {
                     <div style={{ fontSize: 12, color: BRAND.gray, textAlign: "center", padding: "8px 0" }}>No members yet</div>
                   )}
 
+                  {/* Invites for this company */}
+                  {(() => {
+                    const compInvites = allInvites.filter(i => i.company_id === company.id);
+                    if (!compInvites.length) return null;
+                    return (
+                      <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${BRAND.border}` }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: BRAND.dark, marginBottom: 8 }}>Invites ({compInvites.length})</div>
+                        {compInvites.map(inv => {
+                          const accepted = !!inv.accepted_at;
+                          const expired  = inv.expires_at && new Date(inv.expires_at) < new Date() && !accepted;
+                          return (
+                            <div key={inv.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: `1px solid ${BRAND.border}` }}>
+                              <div>
+                                <div style={{ fontSize: 12, fontWeight: 600, color: BRAND.dark }}>{inv.email}</div>
+                                <div style={{ fontSize: 11, color: BRAND.gray }}>
+                                  Sent {new Date(inv.created_at).toLocaleDateString()} ·
+                                  {accepted ? <span style={{ color: "#166534" }}> ✓ Accepted</span>
+                                    : expired ? <span style={{ color: "#DC2626" }}> ⏰ Expired</span>
+                                    : <span style={{ color: "#D97706" }}> ⏳ Pending</span>}
+                                </div>
+                              </div>
+                              {!accepted && (
+                                <div style={{ display: "flex", gap: 5 }}>
+                                  <button onClick={async () => {
+                                    await fetch(`${SUPABASE_URL}/functions/v1/send-approval-email`, {
+                                      method: "POST",
+                                      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
+                                      body: JSON.stringify({ type: "invite", inviteEmail: inv.email, companyName: company.name, invitedByName: "ProRated Admin", inviteLink: `https://prorated.app/invite/${inv.token}` }),
+                                    });
+                                    flash(true, `Invite resent to ${inv.email}`);
+                                  }} style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 6, border: `1px solid ${BRAND.border}`, background: "#EFF6FF", color: BRAND.blue, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+                                    📧 Resend
+                                  </button>
+                                  <button onClick={async () => {
+                                    if (!window.confirm(`Revoke invite for ${inv.email}?`)) return;
+                                    await adminDelete("/invites", { id: `eq.${inv.id}` });
+                                    setAllInvites(prev => prev.filter(i => i.id !== inv.id));
+                                    flash(true, `Invite revoked for ${inv.email}`);
+                                  }} style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 6, border: "1px solid #FCA5A5", background: "#FEF2F2", color: "#DC2626", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+                                    Revoke
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+
                   {/* Stripe / billing info */}
                   {company.stripe_subscription_id && (
                     <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${BRAND.border}`, fontSize: 11, color: BRAND.gray }}>
@@ -799,7 +1081,7 @@ export default function AdminPage({ go }) {
             </div>
             {filteredReviews.length === 0 ? <Empty msg="No reviews match this filter" /> :
               filteredReviews.map(r => (
-                <ReviewRow key={r.id} review={r} onDelete={deleteReview} editRequests={editRequests} />
+                <ReviewRow key={r.id} review={r} onDelete={deleteReview} editRequests={editRequests} onResolveEditRequest={resolveEditRequest} />
               ))
             }
           </div>
@@ -863,7 +1145,83 @@ export default function AdminPage({ go }) {
                 </Row>
               ))
             }
+
+            {/* G3 — Ownership Flags */}
+            {ownershipFlags.length > 0 && (
+              <div style={{ marginTop: "1.5rem" }}>
+                <SectionHead title="Property Ownership Claims" count={ownershipFlags.length} />
+                <div style={{ background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 12, padding: "0.75rem 1rem", marginBottom: "1rem", fontSize: 12, color: "#92400E" }}>
+                  Homeowners claiming their address. Verify proof of ownership before removing reviews at their request.
+                </div>
+                {ownershipFlags.map(f => (
+                  <Row key={f.id} faded={f.resolved}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, flexWrap: "wrap" }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: 4 }}>🏠 {f.address || "Unknown address"}</div>
+                        {f.notes && <div style={{ fontSize: 12, color: BRAND.gray, marginBottom: 4 }}>{f.notes}</div>}
+                        <div style={{ fontSize: 11, color: BRAND.gray }}>{f.created_at ? new Date(f.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</div>
+                      </div>
+                      <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                        {!f.resolved && <Btn small color="#16A34A" onClick={() => resolveOwnershipFlag(f.id)}>✓ Resolved</Btn>}
+                        <Btn small color="#DC2626" onClick={() => deleteOwnershipFlag(f.id)}>🗑️</Btn>
+                      </div>
+                    </div>
+                  </Row>
+                ))}
+              </div>
+            )}
           </div>
+        )}
+
+        {/* ── REWARDS ── */}
+        {!loading && tab === "rewards" && (
+          <div>
+            <SectionHead title="Merch Redemptions" count={redemptions.length} />
+            <div style={{ background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 12, padding: "0.75rem 1rem", marginBottom: "1rem", fontSize: 12, color: "#92400E", lineHeight: 1.6 }}>
+              Contractors earn 1 point per review ($0.25/pt). At 40 pts they can redeem for $10 merch credit. Approve → coordinate merch → mark Fulfilled.
+            </div>
+            {redemptions.length === 0 ? <Empty msg="No redemptions yet" /> : redemptions.map(r => {
+              const contractor = contractors.find(c => c.id === r.contractor_id);
+              const statusBadge = r.status === "fulfilled" ? { bg: "#DCFCE7", text: "#166534", label: "✓ Fulfilled" }
+                : r.status === "approved"  ? { bg: "#DBEAFE", text: "#1E40AF", label: "✓ Approved" }
+                : r.status === "rejected"  ? { bg: "#FEE2E2", text: "#991B1B", label: "✗ Rejected" }
+                : { bg: "#FEF9C3", text: "#854D0E", label: "⏳ Pending" };
+              return (
+                <Row key={r.id}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, flexWrap: "wrap" }}>
+                    <div>
+                      <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 4, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark }}>{contractor?.name || r.contractor_id?.slice(0, 8) || "Unknown"}</span>
+                        <Badge color={statusBadge.bg} text={statusBadge.text}>{statusBadge.label}</Badge>
+                      </div>
+                      <div style={{ fontSize: 11, color: BRAND.gray, display: "flex", gap: 12, flexWrap: "wrap" }}>
+                        <span>📧 {contractor?.email || "—"}</span>
+                        <span>💰 {r.points_requested || 0} pts → ${((r.points_requested || 0) * 0.25).toFixed(2)}</span>
+                        <span>📅 {r.created_at ? new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</span>
+                        {r.notes && <span>📝 {r.notes}</span>}
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                      {r.status === "pending"  && <Btn small color="#16A34A" onClick={() => approveRedemption(r.id)}>✓ Approve</Btn>}
+                      {r.status === "pending"  && <Btn small color="#64748B" onClick={() => rejectRedemption(r.id)}>✗ Reject</Btn>}
+                      {r.status === "approved" && <Btn small color="#7C3AED" onClick={() => fulfillRedemption(r.id)}>Mark Fulfilled</Btn>}
+                    </div>
+                  </div>
+                </Row>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ── SUPPLIERS ── */}
+        {!loading && tab === "suppliers" && (
+          <SupplierTab
+            suppliers={suppliers}
+            setSuppliers={setSuppliers}
+            toggleActive={toggleSupplierActive}
+            onDelete={deleteSupplier}
+            flash={flash}
+          />
         )}
 
         {/* ── NDA ── */}

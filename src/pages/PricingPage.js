@@ -5,6 +5,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useLang } from "../hooks/useLang";
 import { t } from "../i18n/translations";
 import { FREE_MONTHLY_LOOKUPS } from "../data/constants";
+import { isNativeIOS, IOS_SUBSCRIPTION_MSG } from "../utils/platform";
 
 // ── Stripe live links (replace test_ links before launch) ────
 const STRIPE_BRONZE = "https://buy.stripe.com/4gMfZg9mL8TM9HI9szeQM00";
@@ -131,6 +132,7 @@ export default function PricingPage({ go, goBack }) {
   const { user, isLoggedIn } = useAuth();
   const currentPlan = user?.plan || "free";
   const { lang }             = useLang();
+  const nativeIOS            = isNativeIOS();
   const [promoCode, setPromoCode]   = useState("");
   const [promoResult, setPromoResult] = useState(null);
   const [promoChecked, setPromoChecked] = useState(false);
@@ -166,9 +168,11 @@ export default function PricingPage({ go, goBack }) {
         <h1 style={{ fontSize: 26, fontWeight: 800, color: "#F8FAFC", margin: "12px 0 6px" }}>Simple team pricing</h1>
         <p style={{ fontSize: 14, color: "#94A3B8", margin: 0 }}>One flat monthly price. No annual lock-in. Cancel anytime.</p>
 
-        <div style={{ maxWidth: 360, margin: "20px auto 0", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 10, padding: "10px 16px", textAlign: "center" }}>
-          <span style={{ fontSize: 12, color: "#94A3B8" }}>🏷️ Have a promo code? Enter it on the next screen in Stripe checkout.</span>
-        </div>
+        {!nativeIOS && (
+          <div style={{ maxWidth: 360, margin: "20px auto 0", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 10, padding: "10px 16px", textAlign: "center" }}>
+            <span style={{ fontSize: 12, color: "#94A3B8" }}>🏷️ Have a promo code? Enter it on the next screen in Stripe checkout.</span>
+          </div>
+        )}
       </div>
 
       {/* Free tier */}
@@ -257,6 +261,10 @@ export default function PricingPage({ go, goBack }) {
             {currentPlan === tier.id ? (
               <div style={{ width: "100%", padding: "11px", background: "#EFF6FF", border: "1.5px solid #BFDBFE", borderRadius: 10, fontSize: 14, fontWeight: 700, color: BRAND.blue, textAlign: "center" }}>
                 ✓ Your current plan
+              </div>
+            ) : nativeIOS ? (
+              <div style={{ width: "100%", padding: "11px", background: "#F8FAFC", border: `1.5px solid ${BRAND.border}`, borderRadius: 10, fontSize: 12, color: BRAND.gray, textAlign: "center", lineHeight: 1.5 }}>
+                {IOS_SUBSCRIPTION_MSG}
               </div>
             ) : tier.contact ? (
               <a href={"mailto:hello@prorated.app?subject=Platinum%20Plan%20Inquiry%20-%20" + encodeURIComponent(tier.name)}

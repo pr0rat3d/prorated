@@ -4,6 +4,7 @@ import { BRAND, Btn, Card } from "../components/UI";
 import Logo from "../components/Logo";
 import { useAuth } from "../hooks/useAuth";
 import { COMPANY_TIERS, PROMO_CODES } from "../data/constants";
+import { isNativeIOS, IOS_SUBSCRIPTION_MSG } from "../utils/platform";
 
 const STRIPE_LINKS = {
   bronze: "https://buy.stripe.com/4gMfZg9mL8TM9HI9szeQM00",
@@ -331,10 +332,12 @@ export default function CompanySetupPage({ go, goBack }) {
               <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark }}>{tierMeta.icon} {tierMeta.name || plan} Plan</div>
               <div style={{ fontSize: 11, color: BRAND.gray, marginTop: 2 }}>${tierMeta.price || "—"}/month · renews monthly</div>
             </div>
-            <button onClick={() => go("pricing")}
-              style={{ fontSize: 11, fontWeight: 700, color: BRAND.blue, background: "#EFF6FF", border: "none", padding: "6px 12px", borderRadius: 8, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
-              Upgrade →
-            </button>
+            {!isNativeIOS() && (
+              <button onClick={() => go("pricing")}
+                style={{ fontSize: 11, fontWeight: 700, color: BRAND.blue, background: "#EFF6FF", border: "none", padding: "6px 12px", borderRadius: 8, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+                Upgrade →
+              </button>
+            )}
           </div>
 
           {/* Seat usage */}
@@ -409,7 +412,10 @@ export default function CompanySetupPage({ go, goBack }) {
           <Card style={{ background: "#FEF3C7", border: "1px solid #FDE68A", marginBottom: 14 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "#92400E", marginBottom: 4 }}>⚠️ All seats filled</div>
             <div style={{ fontSize: 12, color: "#92400E" }}>Upgrade your plan to add more team members.</div>
-            <Btn onClick={() => go("pricing")} style={{ marginTop: 10 }}>Upgrade plan →</Btn>
+            {isNativeIOS()
+              ? <div style={{ marginTop: 10, fontSize: 12, color: BRAND.gray, lineHeight: 1.6 }}>{IOS_SUBSCRIPTION_MSG}</div>
+              : <Btn onClick={() => go("pricing")} style={{ marginTop: 10 }}>Upgrade plan →</Btn>
+            }
           </Card>
         )}
 
@@ -535,17 +541,24 @@ export default function CompanySetupPage({ go, goBack }) {
             </div>
           ))}
 
-          <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 10, padding: "10px 14px", marginTop: 12 }}>
-            <div style={{ fontSize: 12, color: "#1E40AF", lineHeight: 1.6 }}>
-              🏷️ <strong>Have a promo code?</strong> Enter it on the next screen in Stripe checkout.
+          {!isNativeIOS() && (
+            <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 10, padding: "10px 14px", marginTop: 12 }}>
+              <div style={{ fontSize: 12, color: "#1E40AF", lineHeight: 1.6 }}>
+                🏷️ <strong>Have a promo code?</strong> Enter it on the next screen in Stripe checkout.
+              </div>
             </div>
-          </div>
+          )}
+          {isNativeIOS() && (
+            <div style={{ background: "#F8FAFC", border: `1px solid ${BRAND.border}`, borderRadius: 10, padding: "10px 14px", marginTop: 12, fontSize: 12, color: BRAND.gray, lineHeight: 1.6, textAlign: "center" }}>
+              {IOS_SUBSCRIPTION_MSG}
+            </div>
+          )}
 
           <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
             <Btn variant="secondary" onClick={() => setStep(1)}>← Back</Btn>
             <Btn fullWidth
               onClick={handleCreate}
-              disabled={!selectedTier || (selectedTier === "bronze" && !accountType) || loading}>
+              disabled={!selectedTier || (selectedTier === "bronze" && !accountType) || loading || isNativeIOS()}>
               {loading ? "Setting up..." : "Create company →"}
             </Btn>
           </div>

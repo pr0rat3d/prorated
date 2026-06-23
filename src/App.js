@@ -349,10 +349,9 @@ export default function App() {
         {page === "trade-plumbing"   && <TradePage go={go} trade="plumbing" />}
         {page === "trade-hvac"       && <TradePage go={go} trade="hvac" />}
         {page === "trade-general"    && <TradePage go={go} trade="general" />}
-        {page === "nda" && <NDAPage go={go} user={user} onAccepted={() => {
+        {page === "nda" && <NDAPage go={go} user={user} onAccepted={async () => {
           localStorage.setItem("pr_nda_signed", "true");
           setNdaSigned(true);
-          // Check where to go after NDA
           const stored = localStorage.getItem("post_nda_destination");
           localStorage.removeItem("post_nda_destination");
           if (stored) {
@@ -360,6 +359,27 @@ export default function App() {
               const dest = JSON.parse(stored);
               if (dest.type === "stripe") { window.location.href = dest.url; return; }
               if (dest.type === "invite") {
+                // Auto-accept — user signed up specifically to join this team, no need for a second click
+                const session = JSON.parse(localStorage.getItem("prorated_session") || "{}");
+                try {
+                  const acceptRes = await fetch("/api/accept-invite", {
+                    method:  "POST",
+                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session.access_token}` },
+                    body:    JSON.stringify({ token: dest.token }),
+                  });
+                  if (acceptRes.ok) {
+                    const data = await acceptRes.json();
+                    if (session.user && data.company_id) {
+                      session.user.company_id   = data.company_id;
+                      session.user.company_role = "member";
+                      localStorage.setItem("prorated_session", JSON.stringify(session));
+                    }
+                    localStorage.removeItem("pending_invite_token");
+                    go("dashboard");
+                    return;
+                  }
+                } catch {}
+                // Fallback: show InvitePage for manual accept if the call failed
                 window.history.pushState({}, "", `/invite/${dest.token}`);
                 go("invite"); return;
               }

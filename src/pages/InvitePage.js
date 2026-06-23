@@ -61,62 +61,38 @@ export default function InvitePage({ go, goLogin }) {
   };
 
   const handleAccept = async () => {
-    // Verify the logged-in user's email matches the invite
-    if (invite.email && user.email?.toLowerCase() !== invite.email.toLowerCase()) {
-      setError(`This invite was sent to ${invite.email}. Please sign in with that email address.`);
-      return;
-    }
-
     setAccepting(true); setError(null);
     try {
       const session = JSON.parse(localStorage.getItem("prorated_session") || "{}");
       const tok     = session.access_token;
 
-      // Link contractor to company
-      await fetch(
-        `${SUPABASE_URL}/rest/v1/contractors?id=eq.${user.id}`,
-        {
-          method: "PATCH",
-          headers: {
-            "apikey":         ANON,
-            "Authorization":  `Bearer ${tok}`,
-            "Content-Type":   "application/json",
-          },
-          body: JSON.stringify({
-            company_id:   company?.id || invite.company_id,
-            company_role: "member",
-          }),
-        }
-      );
+      const res  = await fetch("/api/accept-invite", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${tok}` },
+        body:    JSON.stringify({ token }),
+      });
+      const data = await res.json();
 
-      // Mark invite as accepted
-      await fetch(
-        `${SUPABASE_URL}/rest/v1/invites?token=eq.${token}`,
-        {
-          method: "PATCH",
-          headers: {
-            "apikey":         ANON,
-            "Authorization":  `Bearer ${tok}`,
-            "Content-Type":   "application/json",
-          },
-          body: JSON.stringify({ accepted_at: new Date().toISOString() }),
-        }
-      );
+      if (!res.ok) {
+        setError(data.error || "Could not accept invite. Please try again or contact support.");
+        setAccepting(false);
+        return;
+      }
 
-      // Sync company into session so dashboard team tab loads correctly
+      // Sync company into session so Team tab loads immediately
       try {
-        const currentSession = JSON.parse(localStorage.getItem("prorated_session") || "{}");
-        if (currentSession.user) {
-          currentSession.user.company_id   = company?.id || invite.company_id;
-          currentSession.user.company_role = "member";
-          localStorage.setItem("prorated_session", JSON.stringify(currentSession));
+        const cur = JSON.parse(localStorage.getItem("prorated_session") || "{}");
+        if (cur.user) {
+          cur.user.company_id   = data.company_id;
+          cur.user.company_role = "member";
+          localStorage.setItem("prorated_session", JSON.stringify(cur));
         }
       } catch {}
 
       localStorage.removeItem("pending_invite_token");
       setStatus("joined");
       window.history.replaceState({}, "", "/");
-      setTimeout(() => go("home"), 2500);
+      setTimeout(() => go("dashboard"), 2500);
     } catch (err) {
       setError("Could not accept invite. Please try again or contact support.");
     }

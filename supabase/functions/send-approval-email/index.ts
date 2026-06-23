@@ -37,10 +37,17 @@ serve(async (req) => {
       if (!inviteEmail) {
         return new Response(JSON.stringify({ error: "inviteEmail required" }), { status: 400 });
       }
+      const inviteResendKey = Deno.env.get("RESEND_API_KEY");
+      if (!inviteResendKey) {
+        console.log(`[ProRated] Would send invite email to ${inviteEmail} — no RESEND_API_KEY`);
+        return new Response(JSON.stringify({ sent: false, reason: "no-resend-key" }), {
+          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+        });
+      }
       const link = body.inviteLink || `https://prorated.app/invite/`;
       const inviteRes = await fetch("https://api.resend.com/emails", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${Deno.env.get("RESEND_API_KEY")}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${inviteResendKey}` },
         body: JSON.stringify({
           from: "ProRated <hello@prorated.app>",
           to: inviteEmail,

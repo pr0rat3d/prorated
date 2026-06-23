@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const supabaseUrl   = Deno.env.get("SUPABASE_URL")!;
 const serviceKey    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const adminPassword = Deno.env.get("ADMIN_PASSWORD") || "LittlePigs6969!";
+const adminPassword = Deno.env.get("ADMIN_PASSWORD");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

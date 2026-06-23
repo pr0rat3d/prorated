@@ -1,5 +1,4 @@
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../../config.js";
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || "LittlePigs6969!";
 import { useState, useEffect } from "react";
 import { BRAND } from "../../components/UI";
 import Logo from "../../components/Logo";
@@ -267,7 +266,7 @@ export default function AdminPage({ go }) {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/list-auth-users`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
-        body: JSON.stringify({ adminPass: "LittlePigs6969!" }),
+        body: JSON.stringify({ adminPass: import.meta.env.VITE_ADMIN_PASSWORD }),
       });
       if (!res.ok) return [];
       const { users } = await res.json();
@@ -341,7 +340,7 @@ export default function AdminPage({ go }) {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/delete-user`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
-        body: JSON.stringify({ userId: id, adminPass: "LittlePigs6969!" }),
+        body: JSON.stringify({ userId: id, adminPass: import.meta.env.VITE_ADMIN_PASSWORD }),
       });
       const payload = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -363,7 +362,7 @@ export default function AdminPage({ go }) {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/delete-user`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
-        body: JSON.stringify({ userId, adminPass: "LittlePigs6969!" }),
+        body: JSON.stringify({ userId, adminPass: import.meta.env.VITE_ADMIN_PASSWORD }),
       });
       if (!res.ok) {
         const { error } = await res.json().catch(() => ({}));

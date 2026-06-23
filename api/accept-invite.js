@@ -45,16 +45,17 @@ export default async function handler(req, res) {
       return res.status(410).json({ error: "invite expired" });
     }
 
-    // Verify email match if invite is email-specific
+    // Verify email match if invite is email-specific — fail closed
     if (invite.email) {
-      const userRes  = await fetch(`${base}/auth/v1/user`, {
+      const userRes = await fetch(`${base}/auth/v1/user`, {
         headers: { "apikey": anonKey, "Authorization": `Bearer ${userJwt}` }
       });
-      if (userRes.ok) {
-        const userData = await userRes.json();
-        if (userData.email?.toLowerCase() !== invite.email.toLowerCase()) {
-          return res.status(403).json({ error: `This invite was sent to ${invite.email}. Please sign in with that email address.` });
-        }
+      if (!userRes.ok) {
+        return res.status(401).json({ error: "Could not verify your identity. Please try signing in again." });
+      }
+      const userData = await userRes.json();
+      if (userData.email?.toLowerCase() !== invite.email.toLowerCase()) {
+        return res.status(403).json({ error: `This invite was sent to ${invite.email}. Please sign in with that email address.` });
       }
     }
 

@@ -21,7 +21,6 @@ export default function InvitePage({ go, goLogin }) {
   const token = window.location.pathname.split("/invite/")[1]?.split("/")[0]
     || localStorage.getItem("pending_invite_token");
 
-  const ANON = SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndzZHJiZG9qbnptdHduZHN3cHdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NzI3OTgsImV4cCI6MjA5NTA0ODc5OH0.2PJv-XQUjmbMhzaXkZSjWzCeDUtTWAmcAvobjJymQDs";
 
   useEffect(() => {
     if (token) fetchInvite();

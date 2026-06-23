@@ -95,6 +95,7 @@ serve(async (req) => {
     let sent = 0;
     let failed = 0;
     const expiredEndpoints: string[] = [];
+    const sentIds: string[] = [];
 
     for (const sub of subscriptions) {
       try {
@@ -106,13 +107,7 @@ serve(async (req) => {
           payload,
           vapidKeys,
         );
-
-        // Update last_used timestamp
-        await supabase
-          .from("push_subscriptions")
-          .update({ last_used: new Date().toISOString() })
-          .eq("id", sub.id);
-
+        sentIds.push(sub.id);
         sent++;
       } catch (err: any) {
         // 404/410 = subscription expired, clean it up
@@ -121,6 +116,14 @@ serve(async (req) => {
         }
         failed++;
       }
+    }
+
+    // Batch update last_used for all successful sends (was N individual writes)
+    if (sentIds.length > 0) {
+      await supabase
+        .from("push_subscriptions")
+        .update({ last_used: new Date().toISOString() })
+        .in("id", sentIds);
     }
 
     // 5. Clean up expired subscriptions

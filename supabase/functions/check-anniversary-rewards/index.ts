@@ -71,25 +71,28 @@ serve(async (req) => {
         .eq("company_role", "owner")
         .single();
 
-      if (ownerData?.email) {
-        // Send via Supabase email (or your email provider)
-        await supabase.auth.admin.sendRawEmail({
-          to: ownerData.email,
-          subject: "🎁 ProRated — Your team earned a free month!",
-          html: `
-            <div style="font-family: 'DM Sans', sans-serif; max-width: 500px; margin: 0 auto;">
-              <h2>Congratulations, ${ownerData.name || "Pro"}!</h2>
-              <p>Your team at <strong>${company.name}</strong> averaged 3 or more reviews per week over the past year.</p>
-              <p>We've added <strong>one free month</strong> to your ProRated subscription as a thank-you.</p>
-              <p>Keep up the great work — the more your team reviews, the better the data gets for everyone.</p>
-              <p>— The ProRated Team</p>
-              <hr />
-              <p style="font-size: 12px; color: #94A3B8;">
-                Built by Pros, Built for Pros · prorated.app
-              </p>
-            </div>
-          `,
-        }).catch(() => {}); // Don't fail if email errors
+      const resendKey = Deno.env.get("RESEND_API_KEY");
+      if (ownerData?.email && resendKey) {
+        await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${resendKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            from:    "ProRated <hello@prorated.app>",
+            to:      ownerData.email,
+            subject: "🎁 ProRated — Your team earned a free month!",
+            html: `
+              <div style="font-family: 'DM Sans', sans-serif; max-width: 500px; margin: 0 auto;">
+                <h2>Congratulations, ${ownerData.name || "Pro"}!</h2>
+                <p>Your team at <strong>${company.name}</strong> averaged 3 or more reviews per week over the past year.</p>
+                <p>We've added <strong>one free month</strong> to your ProRated subscription as a thank-you.</p>
+                <p>Keep up the great work — the more your team reviews, the better the data gets for everyone.</p>
+                <p>— The ProRated Team</p>
+                <hr />
+                <p style="font-size: 12px; color: #94A3B8;">Built by Pros, Built for Pros · prorated.app</p>
+              </div>
+            `,
+          }),
+        }).catch(() => {});
       }
     }
   }

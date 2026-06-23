@@ -115,6 +115,7 @@ export default function InvitePage({ go, goLogin }) {
 
       localStorage.removeItem("pending_invite_token");
       setStatus("joined");
+      window.history.replaceState({}, "", "/");
       setTimeout(() => go("home"), 2500);
     } catch (err) {
       setError("Could not accept invite. Please try again or contact support.");

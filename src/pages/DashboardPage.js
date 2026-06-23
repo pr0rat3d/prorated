@@ -962,11 +962,12 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
               <Card style={{ marginBottom: "0.85rem" }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: "0.85rem" }}>Account details</div>
                 {[
-                  ["Name",    user?.name    || "—"],
-                  ["Email",   user?.email   || "—"],
-                  ["State",   user?.state   || "—"],
-                  ["Trade",   trade?.label  || "—"],
-                  ["License", user?.license || "—"],
+                  ["Name",    user?.name         || "—"],
+                  ["Company", user?.company_name || "—"],
+                  ["Email",   user?.email        || "—"],
+                  ["State",   user?.state        || "—"],
+                  ["Trade",   trade?.label       || "—"],
+                  ["License", user?.license      || "—"],
                   ["Plan", (
                     user?.plan === "bronze" ? `🥉 Bronze — $${COMPANY_TIERS.bronze.price}/mo` :
                     user?.plan === "silver" ? `🥈 Silver — $${COMPANY_TIERS.silver.price}/mo` :

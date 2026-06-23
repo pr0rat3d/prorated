@@ -47,7 +47,7 @@ export default function SignupPage({ go, goBack, initialMode }) {
   const [form, setForm] = useState(() => {
     let invEmail = "";
     try { invEmail = JSON.parse(localStorage.getItem("pending_invite_context") || "null")?.invitedEmail || ""; } catch {}
-    return { name: "", email: invEmail, phone: "", password: "", trade: "", state: "", license: "" };
+    return { name: "", email: invEmail, phone: "", password: "", trade: "", state: "", license: "", company_name: "" };
   });
 
   // Check for pending invite — skip plan step, inherit company plan
@@ -112,21 +112,23 @@ export default function SignupPage({ go, goBack, initialMode }) {
       }
 
       const data = await signUp({
-        email:       form.email,
-        password:    form.password,
-        name:        form.name,
-        trade:       form.trade,
-        state:       form.state,
-        license:     form.license,
-        accountType: accountType || "solo",
-        plan:        selectedTier || "free",
-        promoCode:   promoApplied ? signupPromo.toUpperCase() : null,
+        email:        form.email,
+        password:     form.password,
+        name:         form.name,
+        company_name: form.company_name || null,
+        trade:        form.trade,
+        state:        form.state,
+        license:      form.license,
+        accountType:  accountType || "solo",
+        plan:         selectedTier || "free",
+        promoCode:    promoApplied ? signupPromo.toUpperCase() : null,
       });
 
       if (data.user) {
         login({
           ...data.user,
           name:         form.name,
+          company_name: form.company_name || null,
           trade:        form.trade,
           state:        form.state,
           license:      form.license,
@@ -211,7 +213,7 @@ export default function SignupPage({ go, goBack, initialMode }) {
       {/* Mode toggle */}
       <div style={{ display: "flex", background: "#F1F5F9", borderRadius: 12, padding: 4, marginBottom: "1.5rem" }}>
         {[["signup", aSignupTab],["login", aLoginTab]].map(([m, label]) => (
-          <button key={m} onClick={() => { setMode(m); setStep(1); setError(null); setForm({ name: "", email: inviteContext?.invitedEmail || "", phone: "", password: "", trade: "", state: "", license: "" }); setReset(false); setResetSent(false); }}
+          <button key={m} onClick={() => { setMode(m); setStep(1); setError(null); setForm({ name: "", email: inviteContext?.invitedEmail || "", phone: "", password: "", trade: "", state: "", license: "", company_name: "" }); setReset(false); setResetSent(false); }}
             style={{ flex: 1, padding: "8px", border: "none", borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", transition: "all 0.2s", background: mode === m ? "#fff" : "transparent", color: mode === m ? BRAND.blue : BRAND.gray, boxShadow: mode === m ? "0 1px 4px rgba(0,0,0,0.1)" : "none" }}>
             {label}
           </button>
@@ -286,7 +288,8 @@ export default function SignupPage({ go, goBack, initialMode }) {
           {step === 1 && (
             <Card style={{ animation: "fadeUp 0.25s ease both" }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: "1rem" }}>Basic info</div>
-              <input type="text"     placeholder="Full name"         value={form.name}     onChange={upd("name")}     style={inp} />
+              <input type="text"     placeholder="Full name"              value={form.name}         onChange={upd("name")}         style={inp} />
+              <input type="text"     placeholder="Company name (optional)" value={form.company_name} onChange={upd("company_name")} style={inp} />
               <input type="email" placeholder="Email address" value={form.email} onChange={upd("email")}
                 readOnly={isInviteSignup && !!inviteContext?.invitedEmail}
                 style={{ ...inp, ...(isInviteSignup && inviteContext?.invitedEmail ? { background: "#F1F5F9", color: BRAND.gray, cursor: "not-allowed" } : {}) }} />

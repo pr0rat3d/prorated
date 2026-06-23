@@ -22,7 +22,7 @@ export default function CompanySetupPage({ go, goBack }) {
   const alreadyPaid  = !!existingPlan || !!user?.stripe_customer_id;
 
   const [step, setStep]               = useState(1);
-  const [companyName, setCompanyName] = useState("");
+  const [companyName, setCompanyName] = useState(user?.company_name || "");
   const [selectedTier, setSelectedTier] = useState(existingPlan || null);
   const [accountType, setAccountType] = useState(existingPlan ? "company" : null);
   const [loading, setLoading]         = useState(false);

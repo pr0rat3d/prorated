@@ -114,6 +114,15 @@ const VIDEOS = [
     icon:    "🏠",
     src:     "https://pub-adda1244317b474f9827ed482efd0c69.r2.dev/RPReplay_Final1781289300.mp4",
   },
+  {
+    id:      "managing-team-access",
+    tab:     "advanced",
+    title:   "Managing Team Access",
+    desc:    "Learn how to create your company workspace, invite team members, manage seats, and control member permissions.",
+    runtime: "1:30",
+    icon:    "🏗️",
+    src:     "https://pub-adda1244317b474f9827ed482efd0c69.r2.dev/managing-team-access.mp4",
+  },
 ];
 
 function VideoCard({ video, onPlay }) {

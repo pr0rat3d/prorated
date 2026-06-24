@@ -402,12 +402,17 @@ export default function AdminPage({ go }) {
 
   useEffect(() => { loadData(); }, []);
 
+  const getAdminPass = () => {
+    const token = sessionStorage.getItem("pr_admin_auth");
+    return token ? atob(token).split(":")[0] : null;
+  };
+
   const fetchAuthUsers = async () => {
     try {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/list-auth-users`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
-        body: JSON.stringify({ adminPass: import.meta.env.VITE_ADMIN_PASSWORD }),
+        body: JSON.stringify({ adminPass: getAdminPass() }),
       });
       if (!res.ok) return [];
       const { users } = await res.json();
@@ -486,7 +491,7 @@ export default function AdminPage({ go }) {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/delete-user`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
-        body: JSON.stringify({ userId: id, adminPass: import.meta.env.VITE_ADMIN_PASSWORD }),
+        body: JSON.stringify({ userId: id, adminPass: getAdminPass() }),
       });
       const payload = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -508,7 +513,7 @@ export default function AdminPage({ go }) {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/delete-user`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
-        body: JSON.stringify({ userId, adminPass: import.meta.env.VITE_ADMIN_PASSWORD }),
+        body: JSON.stringify({ userId, adminPass: getAdminPass() }),
       });
       if (!res.ok) {
         const { error } = await res.json().catch(() => ({}));

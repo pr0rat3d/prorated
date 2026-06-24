@@ -16,49 +16,60 @@ const OBVIOUS_FAKES = [
 // pattern: regex, example, hint text
 const STATE_FORMATS = {
   AL: {
-    pattern:  /^\d{6,8}$|^[A-Z]{1,4}[-]?\d{4,8}$/i,
-    hint: "",
-    examples: ["1234567", "AL-C-12345", "GC-12345"],
+    // ACLB (GC, roofing, specialty): 5–8 digit numbers
+    // Electrical Board: E-XXXXX | Plumbing Board: PG-XXXXX | HVAC: H-XXXXX
+    // General prefix pattern: 1–4 letters + optional dash + 3–8 digits
+    pattern:  /^\d{5,10}$|^[A-Z]{1,4}[-\s]?\d{3,8}$|^[A-Z]{1,4}[-][A-Z]{1,4}[-]?\d{3,8}$/i,
+    hint: "ACLB licenses are 5–8 digits. Electrical, plumbing, and HVAC licenses may have a letter prefix (e.g. E-12345).",
+    examples: ["32085", "1234567", "E-12345", "PG-12345"],
   },
   FL: {
-    pattern:  /^[A-Z]{2,4}\d{6,8}$/i,
+    // Florida DBPR: 2–4 letter prefix + 6–9 digits (CBC, CGC, CCC, CMC, EC, etc.)
+    pattern:  /^[A-Z]{2,4}\d{5,9}$/i,
     hint: "",
-    examples: ["CBC123456", "EC13005866"],
+    examples: ["CBC123456", "CGC1326092", "EC13005866"],
   },
   GA: {
-    pattern:  /^[A-Z]{2,5}\d{5,8}$/i,
+    // Georgia: 2–6 letter prefix + 5–9 digits
+    pattern:  /^[A-Z]{2,6}\d{5,9}$/i,
     hint: "",
     examples: ["GCCO123456", "EN123456"],
   },
   TN: {
-    pattern:  /^\d{7,9}$/,
-    hint:     "Tennessee licenses are 7-9 digits",
-    examples: ["12345678"],
+    // Tennessee contractor licenses: 7–9 digits
+    pattern:  /^\d{6,9}$/,
+    hint:     "Tennessee licenses are typically 6–9 digits",
+    examples: ["1234567", "12345678"],
   },
   TX: {
-    pattern:  /^[A-Z]{3,8}\d{4,8}$/i,
+    // Texas: 3–8 letter prefix + 4–9 digits
+    pattern:  /^[A-Z]{2,8}\d{4,9}$/i,
     hint: "",
     examples: ["TACLB012345", "TECL12345"],
   },
   CA: {
-    pattern:  /^\d{7}$|^[A-Z]\d{6,7}$/i,
+    // California CSLB: 6–7 digits, or optional letter prefix + 6–7 digits
+    pattern:  /^\d{6,7}$|^[A-Z]\d{5,7}$/i,
     hint: "",
     examples: ["1012345", "B1234567"],
   },
   NC: {
-    pattern:  /^\d{5,8}$/,
-    hint:     "North Carolina licenses are 5-8 digits",
+    // North Carolina: 4–8 digits
+    pattern:  /^\d{4,8}$/,
+    hint:     "North Carolina licenses are 4–8 digits",
     examples: ["12345", "12345678"],
   },
   SC: {
-    pattern:  /^\d{5,8}$|^[A-Z]{1,3}\d{5,8}$/i,
-    hint:     "South Carolina licenses are digits or letter prefix + digits",
+    // South Carolina: digits or 1–4 letter prefix + digits
+    pattern:  /^\d{4,8}$|^[A-Z]{1,4}\d{4,8}$/i,
+    hint:     "South Carolina licenses are digits or a letter prefix + digits",
     examples: ["12345", "RBC12345"],
   },
   MS: {
-    pattern:  /^\d{5,8}$/,
-    hint:     "Mississippi licenses are 5-8 digits",
-    examples: ["12345678"],
+    // Mississippi: 4–8 digits
+    pattern:  /^\d{4,8}$/,
+    hint:     "Mississippi licenses are 4–8 digits",
+    examples: ["12345", "12345678"],
   },
 };
 
@@ -131,13 +142,22 @@ export const validateLicense = (license, state) => {
 };
 
 // ── Business license validation (Tier 2 trades) ──────────────
+// Business licenses are city/county issued — formats vary widely.
+// We validate loosely: must be alphanumeric, >= 4 chars, not an obvious fake.
+const BIZ_FAKES = [
+  "test","none","na","n/a","null","123","1234","12345","abcde",
+  "business","license","bl","mybusiness","company","000000","111111",
+];
 export const validateBusinessLicense = (license) => {
   const clean = (license || "").trim();
   if (!clean) return { valid: false, error: "Business license number is required" };
   if (clean.length < 4) return { valid: false, error: "Must be at least 4 characters" };
   if (!/[a-zA-Z0-9]/.test(clean)) return { valid: false, error: "Please enter a valid license number" };
+  if (!/\d/.test(clean)) return { valid: false, error: "Business license numbers contain at least one digit" };
   const lower = clean.toLowerCase().replace(/[-\s]/g, "");
-  if (["test","none","na","123","12345","abcde"].includes(lower))
+  if (BIZ_FAKES.includes(lower)) return { valid: false, error: "Please enter your actual business license number" };
+  // All same character
+  if (lower.length > 3 && new Set(lower).size === 1)
     return { valid: false, error: "Please enter your actual business license number" };
   return { valid: true };
 };

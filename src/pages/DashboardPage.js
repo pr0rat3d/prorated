@@ -537,6 +537,12 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                           {tr?.icon} {tr?.label || r.trade}
                           {date && ` · ${new Date(date).toLocaleDateString("en-US", { month: "short", year: "numeric" })}`}
                         </span>
+                        {(() => {
+                          const s = user?.trust_score || 0;
+                          const badge = s >= 90 ? "🛡️" : s >= 75 ? "⭐" : s >= 50 ? "🟢" : s >= 25 ? "🔵" : "⚪";
+                          const color = s >= 90 ? "#7C3AED" : s >= 75 ? "#D97706" : s >= 50 ? "#16A34A" : s >= 25 ? "#2563EB" : "#94A3B8";
+                          return <span style={{ fontSize: 10, fontWeight: 700, color }}>{badge} {s}</span>;
+                        })()}
                       </div>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>

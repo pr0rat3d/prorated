@@ -78,12 +78,14 @@ export default function InvitePage({ go, goLogin }) {
         return;
       }
 
-      // Sync company into session so Team tab loads immediately
+      // Sync company + approval into session so app reflects immediately
       try {
         const cur = JSON.parse(localStorage.getItem("prorated_session") || "{}");
         if (cur.user) {
-          cur.user.company_id   = data.company_id;
-          cur.user.company_role = "member";
+          cur.user.company_id        = data.company_id;
+          cur.user.company_role      = "member";
+          cur.user.status            = "approved";
+          cur.user.verification_tier = "verified";
           localStorage.setItem("prorated_session", JSON.stringify(cur));
         }
       } catch {}

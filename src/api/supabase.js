@@ -181,16 +181,33 @@ export const fetchMyReviews = async (userId) => {
   } catch { return []; }
 };
 
-// ── Increment helpful count ───────────────────────────────────
+// ── Increment helpful count (deduped via helpful_votes) ───────
 export const incrementHelpful = async (reviewId) => {
+  let userId = null;
   try {
-    // Fetch current count first
+    const session = JSON.parse(localStorage.getItem("prorated_session") || "{}");
+    userId = session.user?.id;
+  } catch {}
+  if (!userId) return;
+
+  // Insert vote — UNIQUE(review_id, voter_id) rejects double votes
+  try {
+    await sb("/helpful_votes", {
+      method: "POST",
+      prefer: "return=minimal",
+      body: JSON.stringify({ review_id: reviewId, voter_id: userId }),
+    });
+  } catch {
+    return; // Already voted or unauthenticated — do not increment
+  }
+
+  // Vote was new — increment count
+  try {
     const rows = await sb(`/reviews?id=eq.${reviewId}&select=helpful_count`);
     if (!rows?.length) return;
-    const current = rows[0].helpful_count || 0;
     await sb(`/reviews?id=eq.${reviewId}`, {
       method: "PATCH",
-      body: JSON.stringify({ helpful_count: current + 1 }),
+      body: JSON.stringify({ helpful_count: (rows[0].helpful_count || 0) + 1 }),
     });
   } catch (err) {
     console.warn("[ProRated] Could not update helpful count:", err.message);

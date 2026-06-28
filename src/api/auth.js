@@ -61,7 +61,7 @@ export const clearSession = () => {
 };
 
 // ── Sign up a new contractor ──────────────────────────────────
-export const signUp = async ({ email, password, name, company_name = null, trade, state, license, accountType = "solo", plan = "free", promoCode = null }) => {
+export const signUp = async ({ email, password, name, company_name = null, trade, state, license, accountType = "solo", plan = "free", promoCode = null, status = "pending" }) => {
   const data = await authFetch("/signup", {
     method: "POST",
     body: JSON.stringify({
@@ -90,6 +90,7 @@ export const signUp = async ({ email, password, name, company_name = null, trade
       plan,
       account_type: accountType,
       promo_code:   promoCode,
+      status,
     }, data.access_token).catch(err => {
       console.error("[ProRated] saveContractorProfile failed:", err.message);
       throw new Error("Account created but profile setup failed. Please contact hello@prorated.app with your email to complete setup.");
@@ -173,7 +174,7 @@ export const saveContractorProfile = async (profile, token) => {
       plan:         profile.plan || "free",
       account_type: profile.account_type || "solo",
       promo_code:   profile.promo_code || null,
-      status:       "pending",
+      status:       profile.status || "pending",
     }),
   });
   if (!res.ok) {

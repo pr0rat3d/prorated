@@ -124,6 +124,7 @@ export default function SignupPage({ go, goBack, initialMode }) {
         accountType:  accountType || "solo",
         plan:         selectedTier || "free",
         promoCode:    promoApplied ? signupPromo.toUpperCase() : null,
+        status:       isInviteSignup ? "approved" : "pending",
       });
 
       if (data.user) {
@@ -136,7 +137,7 @@ export default function SignupPage({ go, goBack, initialMode }) {
           license:      form.license,
           plan:         selectedTier || "free",
           account_type: accountType || "solo",
-          status:       "pending",
+          status:       isInviteSignup ? "approved" : "pending",
         });
 
         // Check for pending invite

@@ -65,7 +65,12 @@ export default async function handler(req, res) {
       {
         method:  "PATCH",
         headers: { ...svcHeaders, "Prefer": "return=representation" },
-        body:    JSON.stringify({ company_id: invite.company_id, company_role: "member" }),
+        body:    JSON.stringify({
+          company_id:        invite.company_id,
+          company_role:      "member",
+          status:            "approved",
+          verification_tier: "verified",
+        }),
       }
     );
 

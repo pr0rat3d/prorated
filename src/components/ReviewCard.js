@@ -54,11 +54,14 @@ export default function ReviewCard({ review, idx }) {
             {(() => {
               const s = review.reviewerTrustScore;
               if (s === null || s === undefined) return null;
-              const badge = s >= 90 ? "🛡️" : s >= 75 ? "⭐" : s >= 50 ? "🟢" : s >= 25 ? "🔵" : "⚪";
-              const color = s >= 90 ? "#7C3AED" : s >= 75 ? "#D97706" : s >= 50 ? "#16A34A" : s >= 25 ? "#2563EB" : "#94A3B8";
+              const t = s >= 90 ? { badge: "🛡️", label: "Elite Pro",    color: "#7C3AED", bg: "#FAF5FF", border: "#DDD6FE" }
+                      : s >= 75 ? { badge: "⭐",  label: "Verified Pro", color: "#D97706", bg: "#FFFBEB", border: "#FDE68A" }
+                      : s >= 50 ? { badge: "🟢",  label: "Trusted",      color: "#16A34A", bg: "#F0FDF4", border: "#86EFAC" }
+                      : s >= 25 ? { badge: "🔵",  label: "Established",  color: "#2563EB", bg: "#EFF6FF", border: "#BFDBFE" }
+                      :           { badge: "⚪",  label: "New Member",   color: "#64748B", bg: "#F8FAFC", border: "#E2E8F0" };
               return (
-                <span style={{ fontSize: 10, fontWeight: 700, color, display: "flex", alignItems: "center", gap: 2 }}>
-                  {badge} {s}
+                <span style={{ background: t.bg, border: `1px solid ${t.border}`, color: t.color, fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 20, display: "inline-flex", alignItems: "center", gap: 3, whiteSpace: "nowrap" }}>
+                  {t.badge} {s} · {t.label}
                 </span>
               );
             })()}

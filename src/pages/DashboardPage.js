@@ -389,6 +389,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
             </div>
             {isLoggedIn && (() => {
               const score = user?.trust_score || 0;
+              const helpful = myReviews.reduce((sum, r) => sum + (r.helpfulCount || 0), 0);
               const tier = score >= 90 ? { badge: "🛡️", label: "Elite Pro",    color: "#7C3AED" }
                          : score >= 75 ? { badge: "⭐", label: "Verified Pro", color: "#D97706" }
                          : score >= 50 ? { badge: "🟢", label: "Trusted",      color: "#16A34A" }
@@ -397,6 +398,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
               return (
                 <div style={{ fontSize: 11, fontWeight: 700, color: tier.color, marginTop: 3 }}>
                   {tier.badge} {score}/100 · {tier.label}
+                  {helpful > 0 && <span style={{ color: BRAND.gray, fontWeight: 600 }}> · 👍 {helpful} helpful</span>}
                 </div>
               );
             })()}

@@ -102,6 +102,17 @@ const TRADE_SPECIFIC = {
     { id: "permit_issues",   label: "Permit complications", severity: "warn",  icon: "📄", desc: "Permit required or HOA approval needed before fencing work can begin." },
     { id: "aggressive_dog",  label: "Aggressive dog",       severity: "alert", icon: "🐕", desc: "Dog on property was aggressive or unsecured." },
   ],
+  pressure_washing: [
+    { id: "tight_access",     label: "Tight access / gate",      severity: "warn",  icon: "🚧", desc: "Gate or driveway access may limit hose reach or equipment positioning." },
+    { id: "no_water_source",  label: "No outdoor water source",  severity: "warn",  icon: "💧", desc: "No exterior spigot or accessible water hookup on site." },
+    { id: "hoa",              label: "HOA restrictions",          severity: "warn",  icon: "🏘️", desc: "HOA may restrict pressure washing hours, runoff, or chemical use." },
+    { id: "steep_driveway",   label: "Steep driveway / grade",   severity: "warn",  icon: "⛰️", desc: "Steep grade makes equipment positioning or runoff management difficult." },
+    { id: "delicate_surface", label: "Delicate surfaces",         severity: "warn",  icon: "🪟", desc: "Windows, paint, stucco, or wood siding that requires low-pressure or soft-wash approach." },
+    { id: "heavy_mold",       label: "Heavy mold / algae",        severity: "alert", icon: "🟢", desc: "Significant biological growth requiring treatment beyond a standard wash." },
+    { id: "chemical_hazard",  label: "Chemical runoff concern",   severity: "warn",  icon: "⚗️", desc: "Drainage or landscaping near wash area — monitor chemical runoff carefully." },
+    { id: "scope_creep",      label: "Scope creep",               severity: "bad",   icon: "📋", desc: "Homeowner added surfaces or areas after the job started." },
+    { id: "slow_payment",     label: "Slow payment",              severity: "bad",   icon: "⏰", desc: "Payment delayed after job completion." },
+  ],
   pool_service: [
     { id: "pool_access",     label: "Difficult pool access", severity: "warn",  icon: "🚧", desc: "Gate or yard access is tight — may affect equipment delivery or hose reach." },
     { id: "hoa_pool",        label: "HOA restrictions",      severity: "warn",  icon: "🏘️", desc: "HOA rules may affect work hours, chemical storage, or equipment on site." },

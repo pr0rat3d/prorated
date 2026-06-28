@@ -72,7 +72,7 @@ const Empty = ({ msg = "Nothing here yet" }) => (
 );
 
 // ── User Row (contractors) ───────────────────────────────────
-function UserRow({ user: u, onApprove, onReject, onCompleteDelete, onAdminDelete, onChangePlan, onResendWelcome }) {
+function UserRow({ user: u, onApprove, onReject, onCompleteDelete, onAdminDelete, onChangePlan, onResendWelcome, companies = [] }) {
   const [expanded, setExpanded] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [rejecting, setRejecting] = useState(false);
@@ -112,8 +112,8 @@ function UserRow({ user: u, onApprove, onReject, onCompleteDelete, onAdminDelete
           </div>
           {expanded && (
             <div style={{ marginTop: 10, padding: "10px 12px", background: "#F8FAFC", borderRadius: 8, fontSize: 11, color: BRAND.gray, lineHeight: 1.8 }}>
-              <div><strong>License #:</strong> {u.license_number || "—"}
-                {licUrl && <a href={licUrl} target="_blank" rel="noreferrer" style={{ marginLeft: 8, color: BRAND.blue }}>Verify ↗</a>}
+              <div><strong>License #:</strong> {u.license_number || (u.company_role === "member" ? "No license (team member)" : "—")}
+                {licUrl && u.license_number && <a href={licUrl} target="_blank" rel="noreferrer" style={{ marginLeft: 8, color: BRAND.blue }}>Verify ↗</a>}
               </div>
               <div><strong>Trade:</strong> {u.trade || "—"}</div>
               <div><strong>Phone:</strong> {u.phone || "—"}</div>
@@ -124,7 +124,9 @@ function UserRow({ user: u, onApprove, onReject, onCompleteDelete, onAdminDelete
                 "Free"
               }</div>
               <div><strong>Account Type:</strong> {u.account_type === "company" ? "🏗️ Company" : "👤 Solo"}</div>
-              <div><strong>Company Role:</strong> {u.company_role || "—"}</div>
+              {u.company_id && (
+                <div><strong>Company:</strong> {companies.find(c => c.id === u.company_id)?.name || u.company_id.slice(0, 8)} · <strong>Role:</strong> {u.company_role || "member"}</div>
+              )}
               <div><strong>Promo Code:</strong> {u.promo_code || "—"}</div>
               <div><strong>Trust Score:</strong> {u.trust_score ?? "—"}</div>
               <div><strong>User ID:</strong> <span style={{ fontFamily: "monospace" }}>{u.id}</span></div>
@@ -630,16 +632,17 @@ export default function AdminPage({ go }) {
   const avgScore            = reviews.length ? (reviews.reduce((s, r) => s + (r.overall_score || 0), 0) / reviews.length).toFixed(1) : "—";
 
   // ── Filtered views ──────────────────────────────────────────
-  const filteredContractors = userFilter === "all"      ? contractors.filter(c => !c.deleted)
-    : userFilter === "pending"  ? pendingContractors
-    : userFilter === "approved" ? contractors.filter(c => c.status === "approved" && !c.deleted)
-    : userFilter === "rejected" ? contractors.filter(c => c.status === "rejected" && !c.deleted)
-    : userFilter === "deletion" ? deletionRequests
-    : userFilter === "deleted"  ? contractors.filter(c => c.deleted)
-    : userFilter === "bronze"   ? contractors.filter(c => c.plan === "bronze")
-    : userFilter === "silver"   ? contractors.filter(c => c.plan === "silver")
-    : userFilter === "gold"     ? contractors.filter(c => c.plan === "gold")
-    : userFilter === "platinum" ? contractors.filter(c => c.plan === "platinum")
+  const filteredContractors = userFilter === "all"        ? contractors.filter(c => !c.deleted)
+    : userFilter === "pending"    ? pendingContractors
+    : userFilter === "approved"   ? contractors.filter(c => c.status === "approved" && !c.deleted)
+    : userFilter === "rejected"   ? contractors.filter(c => c.status === "rejected" && !c.deleted)
+    : userFilter === "deletion"   ? deletionRequests
+    : userFilter === "deleted"    ? contractors.filter(c => c.deleted)
+    : userFilter === "bronze"     ? contractors.filter(c => c.plan === "bronze")
+    : userFilter === "silver"     ? contractors.filter(c => c.plan === "silver")
+    : userFilter === "gold"       ? contractors.filter(c => c.plan === "gold")
+    : userFilter === "platinum"   ? contractors.filter(c => c.plan === "platinum")
+    : userFilter === "no_license" ? contractors.filter(c => !c.license_number && !c.company_id && !c.deleted)
     : contractors.filter(c => !c.deleted);
 
   const filteredReviews = reviewFilter === "all"     ? reviews
@@ -819,7 +822,7 @@ export default function AdminPage({ go }) {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: 8 }}>
               <SectionHead title="Contractors" count={contractors.length} />
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {[["all","All"],["pending","⏳ Pending"],["approved","✓ Verified"],["rejected","✗ Rejected"],["deletion","🗑️ Deletion Req"],["deleted","🚫 Deleted"],["bronze","🥉 Bronze"],["silver","🥈 Silver"],["gold","🥇 Gold"],["platinum","💎 Platinum"],["orphaned",`🔍 Orphaned${orphanedAuthUsers.length > 0 ? ` (${orphanedAuthUsers.length})` : ""}`]].map(([val, label]) => (
+                {[["all","All"],["pending","⏳ Pending"],["approved","✓ Verified"],["rejected","✗ Rejected"],["deletion","🗑️ Deletion Req"],["deleted","🚫 Deleted"],["bronze","🥉 Bronze"],["silver","🥈 Silver"],["gold","🥇 Gold"],["platinum","💎 Platinum"],["no_license",`🪪 No License`],["orphaned",`🔍 Orphaned${orphanedAuthUsers.length > 0 ? ` (${orphanedAuthUsers.length})` : ""}`]].map(([val, label]) => (
                   <button key={val} onClick={() => setUserFilter(val)}
                     style={{ padding: "4px 10px", borderRadius: 8, border: `1px solid ${userFilter === val ? BRAND.blue : BRAND.border}`, background: userFilter === val ? BRAND.blue : "#fff", color: userFilter === val ? "#fff" : BRAND.gray, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
                     {label}
@@ -851,7 +854,7 @@ export default function AdminPage({ go }) {
             ) : (
               filteredContractors.length === 0 ? <Empty msg="No contractors match this filter" /> :
                 filteredContractors.map(c => (
-                  <UserRow key={c.id} user={c} onApprove={approveContractor} onReject={rejectContractor} onCompleteDelete={completeDelete} onAdminDelete={deleteUser} onChangePlan={changePlan} onResendWelcome={resendWelcome} />
+                  <UserRow key={c.id} user={c} onApprove={approveContractor} onReject={rejectContractor} onCompleteDelete={completeDelete} onAdminDelete={deleteUser} onChangePlan={changePlan} onResendWelcome={resendWelcome} companies={companies} />
                 ))
             )}
           </div>

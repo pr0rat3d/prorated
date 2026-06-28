@@ -90,7 +90,7 @@ export default function InvitePage({ go, goLogin }) {
 
       localStorage.removeItem("pending_invite_token");
       setStatus("joined");
-      window.history.replaceState({}, "", "/");
+      window.history.replaceState({}, "", "/dashboard");
       setTimeout(() => go("dashboard"), 2500);
     } catch (err) {
       setError("Could not accept invite. Please try again or contact support.");

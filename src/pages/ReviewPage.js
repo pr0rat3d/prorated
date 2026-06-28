@@ -63,7 +63,7 @@ export default function ReviewPage({ go, goBack, initialAddress, editReviewId })
   const [form, setForm] = useState({
     address: initialAddress ? toTitleCase(initialAddress) : "", trade: user?.trade || "", propertyType: "", overall: 0,
     ratings: { access: 0, payment: 0, timeline: 0, communication: 0, obstacles: 0 },
-    tags: [], text: "", workCategory: "", workItem: "", would_return: null,
+    tags: [], text: "", workCategory: "", workItems: [], would_return: null,
   });
 
   // If in edit mode, fetch the existing review and pre-fill the form
@@ -93,7 +93,7 @@ export default function ReviewPage({ go, goBack, initialAddress, editReviewId })
           tags:        r.tags || [],
           text:        r.review_text || "",
           workCategory: r.work_category || "",
-          workItem:     r.work_item || "",
+          workItems:   r.work_items || (r.work_item ? [r.work_item] : []),
           would_return: r.would_return ?? null,
         });
       })
@@ -105,10 +105,10 @@ export default function ReviewPage({ go, goBack, initialAddress, editReviewId })
 
   const setRating = (cat, val) => setForm(f => ({ ...f, ratings: { ...f.ratings, [cat]: val } }));
   const toggleTag = (id) => setForm(f => ({
-    ...f, tags: f.tags.includes(id) ? f.tags.filter(t => t !== id) : [...f.tags, id].slice(0, 8)
+    ...f, tags: f.tags.includes(id) ? f.tags.filter(t => t !== id) : [...f.tags, id]
   }));
 
-  const ok1 = form.address.trim().length > 5 && form.trade && form.workItem;
+  const ok1 = form.address.trim().length > 5 && form.trade && form.workItems.length > 0;
   const ok2 = form.overall > 0;
   const availableTags = getTagsForTrade(form.trade || user?.trade || "general");
 
@@ -137,8 +137,8 @@ export default function ReviewPage({ go, goBack, initialAddress, editReviewId })
           tags: form.tags,
           text: form.text,
           workCategory: form.workCategory,
-          workItem: form.workItem,
-          workLabel: WORK_CATEGORIES.find(c => c.id === form.workCategory)?.items.find(i => i.id === form.workItem)?.label || "",
+          workItems: form.workItems,
+          workLabel: WORK_CATEGORIES.find(c => c.id === form.workCategory)?.items.find(i => form.workItems.includes(i.id))?.label || "",
         });
         setDone(true);
         return;
@@ -162,8 +162,8 @@ export default function ReviewPage({ go, goBack, initialAddress, editReviewId })
         obstacles:        form.ratings.obstacles,
         tags:             form.tags,
         work_category:    form.workCategory,
-        work_item:        form.workItem,
-        work_label:       WORK_CATEGORIES.find(c => c.id === form.workCategory)?.items.find(i => i.id === form.workItem)?.label || "",
+        work_items:       form.workItems,
+        work_label:       WORK_CATEGORIES.find(c => c.id === form.workCategory)?.items.find(i => form.workItems.includes(i.id))?.label || "",
         review_text:      form.text,
         helpful_count:    0,
         would_return:     form.would_return,
@@ -193,7 +193,7 @@ export default function ReviewPage({ go, goBack, initialAddress, editReviewId })
 
   const reset = () => {
     setDone(false); setStep(1);
-    setForm({ address: "", trade: user?.trade || "", overall: 0, ratings: { access: 0, payment: 0, timeline: 0, communication: 0, obstacles: 0 }, tags: [], text: "", would_return: null });
+    setForm({ address: "", trade: user?.trade || "", overall: 0, ratings: { access: 0, payment: 0, timeline: 0, communication: 0, obstacles: 0 }, tags: [], text: "", workCategory: "", workItems: [], would_return: null });
     try {
       const count = getReviewCount();
       const show = isMilestone(count);
@@ -422,11 +422,12 @@ export default function ReviewPage({ go, goBack, initialAddress, editReviewId })
           <Card style={{ marginBottom: "1.35rem" }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: 3 }}>Property type</div>
             <div style={{ fontSize: 11, color: BRAND.gray, marginBottom: 10 }}>Help other trade professionals understand who they're dealing with. Select your best guess — you can skip if unsure.</div>
-            <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {[
-                { id: "homestead",  label: "🏠 Primary Home",     sub: "Owner-occupied" },
-                { id: "secondary",  label: "🌴 Secondary / Vacation", sub: "Part-time owner" },
-                { id: "rental",     label: "🔑 Rental Property",  sub: "Tenant-occupied" },
+                { id: "homestead",  label: "🏠 Primary Home",          sub: "Owner-occupied" },
+                { id: "secondary",  label: "🌴 Secondary / Vacation",   sub: "Part-time owner" },
+                { id: "rental",     label: "🔑 Rental Property",        sub: "Tenant-occupied" },
+                { id: "commercial", label: "🏢 Commercial / Business",  sub: "Business property" },
               ].map(opt => (
                 <button key={opt.id}
                   onClick={() => setForm(f => ({ ...f, propertyType: f.propertyType === opt.id ? "" : opt.id }))}
@@ -492,7 +493,7 @@ export default function ReviewPage({ go, goBack, initialAddress, editReviewId })
                 onError={e => { e.target.parentElement.style.display = "none"; }}
               />
               <div style={{ background: "#F8FAFC", padding: "6px 10px", fontSize: 10, color: BRAND.gray }}>
-                📍 Confirm this is the correct property before continuing
+                Google Street View · {form.address.split(",")[0]}
               </div>
             </div>
           )}
@@ -501,7 +502,7 @@ export default function ReviewPage({ go, goBack, initialAddress, editReviewId })
           {form.trade && (
             <Card style={{ marginBottom: "1.35rem" }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: 3 }}>Work performed <span style={{ color: "#EF4444", fontSize: 12 }}>*</span></div>
-              <div style={{ fontSize: 11, color: BRAND.gray, marginBottom: "0.75rem" }}>What type of work did you do at this job site?</div>
+              <div style={{ fontSize: 11, color: BRAND.gray, marginBottom: "0.75rem" }}>Select all that apply</div>
 
               {/* Category tabs */}
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: "0.75rem" }}>
@@ -514,6 +515,7 @@ export default function ReviewPage({ go, goBack, initialAddress, editReviewId })
                     siding: "siding", insulation: "insulation", pest_control: "pest_control",
                     landscaping: "landscaping", concrete: "concrete", garage_door: "garage_door",
                     pool_service: "pool_service", fencing: "fencing",
+                    pressure_washing: "pressure_washing",
                   };
                   const defaultCat = tradeToCategory[form.trade] || null;
                   // Auto-select if not already set
@@ -533,21 +535,29 @@ export default function ReviewPage({ go, goBack, initialAddress, editReviewId })
                 })()}
               </div>
 
-              {/* Work items for selected category */}
+              {/* Work items for selected category — multi-select */}
               {form.workCategory && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  {WORK_CATEGORIES.find(c => c.id === form.workCategory)?.items.map(item => (
-                    <button key={item.id} onClick={() => setForm(f => ({ ...f, workItem: item.id }))}
-                      style={{ padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${form.workItem === item.id ? BRAND.green : BRAND.border}`, background: form.workItem === item.id ? "#F0FDF4" : "#F8FAFC", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: form.workItem === item.id ? 700 : 500, color: form.workItem === item.id ? "#166534" : BRAND.dark, textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}>
-                      {form.workItem === item.id ? "✓" : "○"} {item.label}
-                    </button>
-                  ))}
+                  {WORK_CATEGORIES.find(c => c.id === form.workCategory)?.items.map(item => {
+                    const sel = form.workItems.includes(item.id);
+                    return (
+                      <button key={item.id} onClick={() => setForm(f => ({
+                        ...f,
+                        workItems: f.workItems.includes(item.id)
+                          ? f.workItems.filter(id => id !== item.id)
+                          : [...f.workItems, item.id],
+                      }))}
+                        style={{ padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${sel ? BRAND.green : BRAND.border}`, background: sel ? "#F0FDF4" : "#F8FAFC", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: sel ? 700 : 500, color: sel ? "#166534" : BRAND.dark, textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}>
+                        {sel ? "✓" : "○"} {item.label}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </Card>
           )}
 
-          <Btn onClick={() => setStep(2)} disabled={!ok1 || !form.workItem} style={{ width: "100%" }}>
+          <Btn onClick={() => setStep(2)} disabled={!ok1} style={{ width: "100%" }}>
             Continue to ratings →
           </Btn>
         </div>
@@ -605,13 +615,13 @@ export default function ReviewPage({ go, goBack, initialAddress, editReviewId })
             <div style={{ fontSize: 11, color: BRAND.gray, marginBottom: "0.75rem" }}>Your honest take helps other contractors make better decisions</div>
             <div style={{ display: "flex", gap: 10 }}>
               {[
-                { val: true,  label: "👍  Yes, I'd return",     activeColor: BRAND.green, activeBg: "#F0FDF4", activeBorder: BRAND.green },
-                { val: false, label: "👎  No, I wouldn't",      activeColor: "#DC2626",   activeBg: "#FEF2F2", activeBorder: "#DC2626"  },
-              ].map(({ val, label, activeColor, activeBg, activeBorder }) => {
+                { val: true,  label: "👍  Yes, I'd return",  activeColor: BRAND.green, activeBg: "#DCFCE7", activeBorder: BRAND.green, inactiveBg: "#F0FDF4", inactiveBorder: "#86EFAC" },
+                { val: false, label: "👎  No, I wouldn't",   activeColor: "#DC2626",   activeBg: "#FECACA", activeBorder: "#DC2626",  inactiveBg: "#FEF2F2", inactiveBorder: "#FCA5A5" },
+              ].map(({ val, label, activeColor, activeBg, activeBorder, inactiveBg, inactiveBorder }) => {
                 const active = form.would_return === val;
                 return (
                   <button key={String(val)} onClick={() => setForm(f => ({ ...f, would_return: f.would_return === val ? null : val }))}
-                    style={{ flex: 1, padding: "10px 8px", borderRadius: 10, border: `1.5px solid ${active ? activeBorder : BRAND.border}`, background: active ? activeBg : "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", color: active ? activeColor : BRAND.gray, fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s" }}>
+                    style={{ flex: 1, padding: "10px 8px", borderRadius: 10, border: `1.5px solid ${active ? activeBorder : inactiveBorder}`, background: active ? activeBg : inactiveBg, fontSize: 12, fontWeight: 700, cursor: "pointer", color: active ? activeColor : BRAND.gray, fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s" }}>
                     {label}
                   </button>
                 );
@@ -622,10 +632,10 @@ export default function ReviewPage({ go, goBack, initialAddress, editReviewId })
           {/* Grouped tag sections */}
           <Card style={{ marginBottom: "0.85rem" }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: 2 }}>
-              Job site tags <span style={{ color: BRAND.gray, fontWeight: 400 }}>(optional, up to 8)</span>
+              Job site tags <span style={{ color: BRAND.gray, fontWeight: 400 }}>(optional)</span>
             </div>
             <div style={{ fontSize: 11, color: BRAND.gray, marginBottom: "0.85rem" }}>
-              Select all that apply — {8 - form.tags.length} remaining
+              Select all that apply — {form.tags.length} selected
             </div>
 
             {[
@@ -643,11 +653,10 @@ export default function ReviewPage({ go, goBack, initialAddress, editReviewId })
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                     {groupTags.map(tag => {
                       const selected = form.tags.includes(tag.id);
-                      const atLimit = form.tags.length >= 8 && !selected;
                       return (
-                        <button key={tag.id} onClick={() => !atLimit && toggleTag(tag.id)}
+                        <button key={tag.id} onClick={() => toggleTag(tag.id)}
                           title={tag.desc || undefined}
-                          style={{ padding: "5px 12px", borderRadius: 20, border: `1.5px solid ${selected ? headerColor : BRAND.border}`, background: selected ? headerBg : "#fff", fontSize: 11, fontWeight: 600, cursor: atLimit ? "not-allowed" : "pointer", color: selected ? headerColor : atLimit ? "#CBD5E1" : BRAND.dark, fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s", opacity: atLimit ? 0.5 : 1 }}>
+                          style={{ padding: "5px 12px", borderRadius: 20, border: `1.5px solid ${selected ? headerColor : BRAND.border}`, background: selected ? headerBg : "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer", color: selected ? headerColor : BRAND.dark, fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s" }}>
                           <span style={{ position: "relative", display: "inline-flex", alignItems: "center", gap: 3 }}>
                           {tag.icon} {tag.label}
                           {tag.desc && (
@@ -718,7 +727,7 @@ export default function ReviewPage({ go, goBack, initialAddress, editReviewId })
             <div style={{ fontSize: 12, fontWeight: 700, color: "#166534", marginBottom: "0.65rem" }}>Review summary</div>
             {[
               ["📍 Address", form.address],
-              ["🏠 Property Type", form.propertyType ? { homestead: "Primary Home", secondary: "Secondary / Vacation", rental: "Rental Property" }[form.propertyType] : "Not specified"],
+              ["🏠 Property Type", form.propertyType ? { homestead: "Primary Home", secondary: "Secondary / Vacation", rental: "Rental Property", commercial: "Commercial / Business" }[form.propertyType] : "Not specified"],
               ["🔨 Trade", TRADES.find(t => t.id === form.trade)?.label],
               ["⭐ Overall", `${form.overall}/5`],
               ["🏷 Tags", form.tags.length > 0 ? `${form.tags.length} selected` : "None"],

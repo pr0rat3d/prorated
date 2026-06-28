@@ -150,12 +150,12 @@ export default function AddressCard({ address, go, goLogin, goReview }) {
             {propertyType && (
               <div style={{ marginLeft: 23, marginTop: 5, display: "flex", alignItems: "center", gap: 6 }}>
                 <span style={{
-                  background: propertyType.type === "homestead" ? "#F0FDF4" : propertyType.type === "rental" ? "#FFF7ED" : "#EFF6FF",
-                  color:      propertyType.type === "homestead" ? "#166534" : propertyType.type === "rental" ? "#C2410C" : "#1E40AF",
-                  border:     `1px solid ${propertyType.type === "homestead" ? "#86EFAC" : propertyType.type === "rental" ? "#FED7AA" : "#BFDBFE"}`,
+                  background: propertyType.type === "homestead" ? "#F0FDF4" : propertyType.type === "rental" ? "#FFF7ED" : propertyType.type === "commercial" ? "#F5F3FF" : "#EFF6FF",
+                  color:      propertyType.type === "homestead" ? "#166534" : propertyType.type === "rental" ? "#C2410C" : propertyType.type === "commercial" ? "#6D28D9" : "#1E40AF",
+                  border:     `1px solid ${propertyType.type === "homestead" ? "#86EFAC" : propertyType.type === "rental" ? "#FED7AA" : propertyType.type === "commercial" ? "#C4B5FD" : "#BFDBFE"}`,
                   fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 8,
                 }}>
-                  {propertyType.type === "homestead" ? "🏠 Primary Home" : propertyType.type === "rental" ? "🔑 Rental Property" : "🌴 Secondary / Vacation"}
+                  {propertyType.type === "homestead" ? "🏠 Primary Home" : propertyType.type === "rental" ? "🔑 Rental Property" : propertyType.type === "commercial" ? "🏢 Commercial / Business" : "🌴 Secondary / Vacation"}
                 </span>
                 <span style={{ fontSize: 9, color: "#94A3B8" }}>
                   {propertyType.votes}/{propertyType.total} trade professional{propertyType.total !== 1 ? "s" : ""} identified

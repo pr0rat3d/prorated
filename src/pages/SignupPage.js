@@ -104,11 +104,13 @@ export default function SignupPage({ go, goBack, initialMode }) {
   const handleSignup = async () => {
     setLoad(true); setError(null);
     try {
-      const licResult = validateLicense(form.license, form.state);
-      if (!licResult.valid && !licOverride) {
-        setLicErr(licResult);
-        setLoad(false);
-        return;
+      if (!isInviteSignup) {
+        const licResult = validateLicense(form.license, form.state);
+        if (!licResult.valid && !licOverride) {
+          setLicErr(licResult);
+          setLoad(false);
+          return;
+        }
       }
 
       const data = await signUp({
@@ -322,10 +324,10 @@ export default function SignupPage({ go, goBack, initialMode }) {
                 ))}
               </select>
               <input
-                placeholder={licReq.example || getLicensePlaceholder(form.state)}
+                placeholder={isInviteSignup ? "License # (optional)" : (licReq.example || getLicensePlaceholder(form.state))}
                 value={form.license}
                 onChange={e => { upd("license")(e); setLicErr(null); setOverride(false); }}
-                onBlur={() => { if (form.license && form.state) { const r = validateLicense(form.license, form.state); if (!r.valid) setLicErr(r); } }}
+                onBlur={() => { if (!isInviteSignup && form.license && form.state) { const r = validateLicense(form.license, form.state); if (!r.valid) setLicErr(r); } }}
                 style={{ ...inp, fontFamily: "'DM Mono', monospace", borderColor: licenseErr && !licOverride ? "#FCA5A5" : undefined }}
               />
               {form.trade && licReq.hint && (
@@ -378,7 +380,7 @@ export default function SignupPage({ go, goBack, initialMode }) {
 
               <div style={{ display: "flex", gap: 8 }}>
                 <Btn variant="secondary" onClick={() => setStep(1)}>← Back</Btn>
-                <Btn fullWidth onClick={() => { if (!form.trade || !form.license || !form.state || !termsAgreed) { setError("Please complete all fields and agree to the terms."); return; } setError(null); if (isInviteSignup) { handleSignup(); } else { setStep(3); } }} disabled={!form.trade || !form.license || !form.state || !termsAgreed}>
+                <Btn fullWidth onClick={() => { if (!form.trade || (!isInviteSignup && !form.license) || !form.state || !termsAgreed) { setError("Please complete all fields and agree to the terms."); return; } setError(null); if (isInviteSignup) { handleSignup(); } else { setStep(3); } }} disabled={!form.trade || (!isInviteSignup && !form.license) || !form.state || !termsAgreed}>
                   Continue →
                 </Btn>
               </div>

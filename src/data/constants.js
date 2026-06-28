@@ -60,8 +60,9 @@ export const TRADES = [
   { id: "siding",       label: "Siding & Exterior",       icon: "🏘️" },
   { id: "insulation",   label: "Insulation",                icon: "🧤" },
   { id: "garage_door",  label: "Garage Door Services",       icon: "🚪" },
-  { id: "fencing",      label: "Fencing",                      icon: "🪧" },
-  { id: "pool_service",  label: "Pool Service",                  icon: "🏊" },
+  { id: "fencing",           label: "Fencing",            icon: "🪧" },
+  { id: "pool_service",      label: "Pool Service",        icon: "🏊" },
+  { id: "pressure_washing",  label: "Pressure Washing",   icon: "💦" },
 ];
 
 export const RATING_CATEGORIES = [
@@ -648,6 +649,21 @@ export const WORK_CATEGORIES = [
     ]
   },
   {
+    id: "pressure_washing",
+    label: "Pressure Washing",
+    icon: "💦",
+    items: [
+      { id: "pw_house",      label: "House wash" },
+      { id: "pw_driveway",   label: "Driveway / concrete wash" },
+      { id: "pw_deck",       label: "Deck / patio wash" },
+      { id: "pw_roof",       label: "Roof soft wash" },
+      { id: "pw_fence",      label: "Fence wash" },
+      { id: "pw_gutters",    label: "Gutter flush / exterior" },
+      { id: "pw_commercial", label: "Commercial / fleet wash" },
+      { id: "pw_prep",       label: "Pre-paint prep wash" },
+    ]
+  },
+  {
     id: "general",
     label: "General Contracting",
     icon: "🏗️",
@@ -690,7 +706,8 @@ export const TRADE_LICENSE_REQUIREMENTS = {
   insulation:   { tier: 2, required: true,  label: "Business License #",             hint: "Enter your city or county business license number",  example: "BL-12345"  },
   garage_door:  { tier: 2, required: true,  label: "Business License #",             hint: "Enter your city or county business license number",  example: "BL-12345"  },
   fencing:      { tier: 2, required: true,  label: "Business License #",             hint: "Enter your city or county business license number",  example: "BL-12345"  },
-  pool_service:  { tier: 2, required: true,  label: "Business License #",             hint: "Enter your city or county business license number",  example: "BL-12345"  },
+  pool_service:      { tier: 2, required: true,  label: "Business License #",                     hint: "Enter your city or county business license number",              example: "BL-12345"  },
+  pressure_washing:  { tier: 2, required: true,  label: "Business License # or GC License #",     hint: "Enter your business license or general contractor license number", example: "BL-12345"  },
 };
 
 // Helper — get requirement for a trade

@@ -112,7 +112,8 @@ export const saveReview = async (formData) => {
         obstacles_score:     obstacles,
         tags:                Array.isArray(tags) ? tags : [],
         work_category:       formData.work_category  || null,
-        work_item:           formData.work_item       || null,
+        work_item:           Array.isArray(formData.work_items) ? (formData.work_items[0] || null) : (formData.work_item || null),
+        work_items:          Array.isArray(formData.work_items) ? formData.work_items : null,
         work_label:          formData.work_label      || null,
         property_type:       formData.property_type  || null,
         review_text:         reviewText,
@@ -138,7 +139,7 @@ export const saveReview = async (formData) => {
 // ── Update an existing review ─────────────────────────────────
 export const updateReview = async (reviewId, formData) => {
   try {
-    const { overall, ratings, tags, text: reviewText, workCategory, workItem, workLabel } = formData;
+    const { overall, ratings, tags, text: reviewText, workCategory, workItems, workLabel } = formData;
     await sb(`/reviews?id=eq.${reviewId}`, {
       method: "PATCH",
       prefer: "return=minimal",
@@ -152,7 +153,8 @@ export const updateReview = async (reviewId, formData) => {
         tags,
         review_text:         reviewText,
         work_category:       workCategory || null,
-        work_item:           workItem || null,
+        work_item:           Array.isArray(workItems) ? (workItems[0] || null) : null,
+        work_items:          Array.isArray(workItems) ? workItems : null,
         work_label:          workLabel || null,
         updated_at:          new Date().toISOString(),
       }),

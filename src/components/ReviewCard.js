@@ -51,6 +51,17 @@ export default function ReviewCard({ review, idx }) {
         <div style={{ flex: 1 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 4 }}>
             <span style={{ fontWeight: 700, fontSize: 13, color: BRAND.dark }}>{review.contractorName}</span>
+            {(() => {
+              const s = review.reviewerTrustScore;
+              if (s === null || s === undefined) return null;
+              const badge = s >= 90 ? "🛡️" : s >= 75 ? "⭐" : s >= 50 ? "🟢" : s >= 25 ? "🔵" : "⚪";
+              const color = s >= 90 ? "#7C3AED" : s >= 75 ? "#D97706" : s >= 50 ? "#16A34A" : s >= 25 ? "#2563EB" : "#94A3B8";
+              return (
+                <span style={{ fontSize: 10, fontWeight: 700, color, display: "flex", alignItems: "center", gap: 2 }}>
+                  {badge} {s}
+                </span>
+              );
+            })()}
             <span style={{ background: "#DBEAFE", color: "#1E40AF", fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 20 }}>
               ✓ VERIFIED{trade?.label ? ` · ${trade.label.toUpperCase()}` : ""}
             </span>

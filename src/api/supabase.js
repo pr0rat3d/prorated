@@ -45,7 +45,7 @@ export const fetchReviewsForAddress = async (address) => {
   try {
     const normalized = normalizeAddress(address);
     const data = await sb(
-      `/reviews?address=ilike.${encodeURIComponent("%" + normalized.split(",")[0] + "%")}&order=created_at.desc`,
+      `/reviews?address=ilike.${encodeURIComponent("%" + normalized.split(",")[0] + "%")}&order=created_at.desc&select=*,contractors!user_id(trust_score)`,
       { method: "GET" }
     );
     return data || [];
@@ -226,6 +226,7 @@ export const formatStoredReview = (row) => ({
   tags:                row.tags || [],
   text:                row.review_text,
   helpfulCount:        row.helpful_count || 0,
+  reviewerTrustScore:  row.contractors?.trust_score ?? null,
   weight:              getReviewWeight(row.created_at),
   fromDatabase:        true,
 });

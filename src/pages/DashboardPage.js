@@ -387,6 +387,19 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
             <div style={{ fontSize: 12, color: BRAND.gray }}>
               {trade?.icon} {trade?.label || "Contractor"}{user?.state ? ` · ${user.state}` : ""}
             </div>
+            {isLoggedIn && (() => {
+              const score = user?.trust_score || 0;
+              const tier = score >= 90 ? { badge: "🛡️", label: "Elite Pro",    color: "#7C3AED" }
+                         : score >= 75 ? { badge: "⭐", label: "Verified Pro", color: "#D97706" }
+                         : score >= 50 ? { badge: "🟢", label: "Trusted",      color: "#16A34A" }
+                         : score >= 25 ? { badge: "🔵", label: "Established",  color: "#2563EB" }
+                         :               { badge: "⚪", label: "New Member",   color: "#64748B" };
+              return (
+                <div style={{ fontSize: 11, fontWeight: 700, color: tier.color, marginTop: 3 }}>
+                  {tier.badge} {score}/100 · {tier.label}
+                </div>
+              );
+            })()}
           </div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
@@ -950,7 +963,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                       {nextTier ? `${nextTier.min - score} pts to ${nextTier.label}${nextTier.min >= 75 ? " · Unlocks Verified Pro directory" : ""}` : "🏆 Maximum tier achieved"}
                     </div>
                     <div style={{ paddingTop: 10, borderTop: `1px solid ${tier.color}22`, display: "flex", gap: 14, fontSize: 11, color: tier.color, opacity: 0.7, flexWrap: "wrap" }}>
-                      <span>+10 per review</span>
+                      <span>+10 first review, +5 each after</span>
                       <span>+5 per helpful vote</span>
                       <span>+2 pts/month account age</span>
                     </div>

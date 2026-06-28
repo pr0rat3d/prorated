@@ -48,10 +48,10 @@ serve(async (req) => {
 
   const body = await req.text();
 
-  // Verify webhook signature
+  // Verify webhook signature — must use async variant in Deno (no sync crypto)
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEventFromPayload(body, signature, webhookSecret) as Stripe.Event;
+    event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret) as Stripe.Event;
   } catch (err: any) {
     console.error("[ProRated Stripe] Webhook signature verification failed:", err.message);
     return new Response(`Webhook Error: ${err.message}`, { status: 400 });

@@ -259,7 +259,7 @@ The contractors who consistently run profitable businesses aren't the ones who a
     desc:     "Before you spend hours on an estimate, learn how to vet a homeowner. Here's what experienced contractors check before ever setting foot on a job site.",
     category: "Tips",
     readTime: "5 min read",
-    date:     "June 2026",
+    date:     "May 2026",
     keywords: ["how to vet a homeowner before bidding", "homeowner red flags contractors", "residential job site intelligence", "contractor bid prep"],
     content: `
 Every contractor has a story. The homeowner who kept adding scope. The one who disappeared when the invoice came. The property that turned into a six-week nightmare nobody warned you about.
@@ -311,7 +311,7 @@ The contractors winning in today's market aren't the ones bidding the most jobs.
     desc:     "Seasoned contractors share the job site and homeowner intelligence they wish they'd had before bidding. Avoid the mistakes that cost time, money, and margin.",
     category: "Tips",
     readTime: "5 min read",
-    date:     "June 2026",
+    date:     "May 2026",
     keywords: ["what contractors wish they knew before bidding", "contractor bidding mistakes", "job site preparation tips", "residential bidding advice"],
     content: `
 Ask any contractor with ten or more years in the field what they wish they'd known early in their career and the answers are remarkably consistent. They're rarely about tools, techniques, or licensing.
@@ -355,7 +355,7 @@ Platforms like ProRated are changing how this intelligence is shared. Licensed c
     desc:     "Industry data shows most contractors lose thousands every month to unbilled scope creep — and almost none are tracking it. Here's what the research says.",
     category: "Business",
     readTime: "6 min read",
-    date:     "June 2026",
+    date:     "May 2026",
     keywords: ["scope creep cost contractors", "unbilled work contractor losses", "scope creep construction", "contractor profit margin residential"],
     content: `
 Most contractors know the feeling. You agreed on a price, started the job, and somewhere between the first site visit and the final invoice the project became something else entirely. An extra coat of paint. A door that wasn't in bad shape but since you're here. A full bathroom retile that started as caulking.
@@ -393,7 +393,7 @@ The research is clear. Scope creep is one of the primary reasons residential con
     desc:     "Most contractors underestimate what slow-paying homeowners actually cost them. Here's the real math — and what you can do about it before you bid.",
     category: "Business",
     readTime: "6 min read",
-    date:     "June 2026",
+    date:     "May 2026",
     keywords: ["what slow paying homeowners cost contractors", "contractor cash flow residential", "unpaid invoices small contractor", "homeowner payment delays cost"],
     content: `
 Most contractors think about slow payment as an inconvenience. The job is done, the invoice is out, and now you're waiting. What most don't think about is what that waiting period actually costs their business in dollars.
@@ -447,7 +447,7 @@ The contractors who protect their margins aren't the ones who get lucky with goo
     desc:     "Experienced contractors know which warning signs to watch for before accepting a residential job. Here are the red flags that protect your time, margin, and sanity.",
     category: "Tips",
     readTime: "5 min read",
-    date:     "June 2026",
+    date:     "May 2026",
     keywords: ["red flags residential job site contractors", "problem homeowners contractors", "job site warning signs", "contractor due diligence"],
     content: `
 Not every job is worth taking. Every contractor learns this eventually — usually after a project that cost more in time, stress, and unpaid invoices than it ever paid in profit.

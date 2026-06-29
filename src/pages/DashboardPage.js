@@ -1,6 +1,7 @@
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../config.js";
 import { useState, useEffect, useRef } from "react";
-import { TRADES, ISSUE_TAGS, DASH_REVIEWS, BRAND, FREE_PLAN_LABEL, COMPANY_TIERS } from "../data/constants";
+import { TRADES, DASH_REVIEWS, BRAND, FREE_PLAN_LABEL, COMPANY_TIERS } from "../data/constants";
+import { getTagsForTrade } from "../data/tradeTags";
 import { Badge, Stars, Pill, Btn, Card } from "../components/UI";
 import { useAuth } from "../hooks/useAuth";
 
@@ -558,7 +559,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                   {!isExpanded && tags.length > 0 && (
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 8 }}>
                       {tags.slice(0, 4).map(tid => {
-                        const tag = ISSUE_TAGS.find(x => x.id === tid);
+                        const tag = getTagsForTrade(r.trade).find(x => x.id === tid);
                         return tag ? <Pill key={tid} label={tag.label} sev={tag.severity} small selected /> : null;
                       })}
                       {tags.length > 4 && <span style={{ fontSize: 11, color: BRAND.gray, alignSelf: "center" }}>+{tags.length - 4} more</span>}
@@ -590,7 +591,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                       {tags.length > 0 && (
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 10 }}>
                           {tags.map(tid => {
-                            const tag = ISSUE_TAGS.find(x => x.id === tid);
+                            const tag = getTagsForTrade(r.trade).find(x => x.id === tid);
                             return tag ? <Pill key={tid} label={tag.label} sev={tag.severity} small selected /> : null;
                           })}
                         </div>

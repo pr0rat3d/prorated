@@ -80,26 +80,40 @@ export const fetchReviewsForAddress = async (address) => {
 
     const fetchByStreet = (street) =>
       sb(
-        `/reviews?address=ilike.${encodeURIComponent("%" + street + "%")}&order=created_at.desc&select=*,contractors!user_id(trust_score)`,
+        `/reviews?address=ilike.${encodeURIComponent("%" + street + "%")}&order=created_at.desc&select=*`,
         { method: "GET" }
       ).then(d => d || []).catch(() => []);
 
-    // If normalization changed the street, dual-search to catch legacy stored reviews
+    let rows;
     if (normalizedStreet === rawStreet) {
-      return await fetchByStreet(normalizedStreet);
+      rows = await fetchByStreet(normalizedStreet);
+    } else {
+      const [byNormalized, byRaw] = await Promise.all([
+        fetchByStreet(normalizedStreet),
+        fetchByStreet(rawStreet),
+      ]);
+      const seen = new Set();
+      rows = [...byNormalized, ...byRaw].filter(r => {
+        if (seen.has(r.id)) return false;
+        seen.add(r.id);
+        return true;
+      });
     }
 
-    const [byNormalized, byRaw] = await Promise.all([
-      fetchByStreet(normalizedStreet),
-      fetchByStreet(rawStreet),
-    ]);
+    if (!rows.length) return rows;
 
-    const seen = new Set();
-    return [...byNormalized, ...byRaw].filter(r => {
-      if (seen.has(r.id)) return false;
-      seen.add(r.id);
-      return true;
-    });
+    // Fetch trust scores separately (reviews.user_id FK points to auth.users, not contractors)
+    const userIds = [...new Set(rows.map(r => r.user_id).filter(Boolean))];
+    const trustMap = {};
+    if (userIds.length) {
+      const scores = await sb(
+        `/contractors?id=in.(${userIds.join(",")})&select=id,trust_score`,
+        { method: "GET" }
+      ).catch(() => []);
+      (scores || []).forEach(c => { trustMap[c.id] = c.trust_score; });
+    }
+
+    return rows.map(r => ({ ...r, contractors: { trust_score: trustMap[r.user_id] ?? null } }));
   } catch (err) {
     console.warn("[ProRated] Could not fetch reviews:", err.message);
     return [];

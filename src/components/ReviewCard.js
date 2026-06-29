@@ -64,7 +64,7 @@ export default function ReviewCard({ review, idx }) {
                       :           { badge: "⚪",  label: "New Member",   color: "#64748B", bg: "#F8FAFC", border: "#E2E8F0" };
               return (
                 <span style={{ background: t.bg, border: `1px solid ${t.border}`, color: t.color, fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 20, display: "inline-flex", alignItems: "center", gap: 3, whiteSpace: "nowrap" }}>
-                  {t.badge} {s} · {t.label}
+                  {t.badge} {t.label}
                 </span>
               );
             })()}

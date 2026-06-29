@@ -375,8 +375,8 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.25rem", flexWrap: "wrap", gap: "0.75rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 52, height: 52, background: BRAND.blue, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 18, fontWeight: 800 }}>
-            {displayName.charAt(0).toUpperCase()}
+          <div style={{ width: 52, height: 52, background: BRAND.blue, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 15, fontWeight: 800, letterSpacing: "-0.5px" }}>
+            {(displayName.trim().split(/\s+/).map(w => w[0]).filter(Boolean).slice(0, 2).join("")).toUpperCase()}
           </div>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

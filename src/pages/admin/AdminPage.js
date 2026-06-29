@@ -91,7 +91,7 @@ function UserRow({ user: u, onApprove, onReject, onCompleteDelete, onAdminDelete
             <Badge color={statusColor.bg} text={statusColor.text}>
               {u.status === "approved" ? "✓ Verified" : u.status === "rejected" ? "✗ Rejected" : "⏳ Pending"}
             </Badge>
-            <Badge color="#F0F4FF" text="#3730A3">🔨 Contractor</Badge>
+            <Badge color="#F0F4FF" text="#3730A3">🔨 Trade Pro</Badge>
             {u.trade && <Badge color="#F8FAFC" text={BRAND.gray}>{u.trade}</Badge>}
             {u.deletion_requested && <Badge color="#FEE2E2" text="#991B1B">🗑️ Deletion Requested</Badge>}
 
@@ -655,7 +655,7 @@ export default function AdminPage({ go }) {
 
   const TABS = [
     { id: "overview",     label: "Overview",    icon: "📊" },
-    { id: "contractors",  label: `Contractors${pendingContractors.length > 0 ? ` (${pendingContractors.length})` : ""}`, icon: "🔨" },
+    { id: "contractors",  label: `Trade Pros${pendingContractors.length > 0 ? ` (${pendingContractors.length})` : ""}`, icon: "🔨" },
     { id: "companies",    label: `Companies (${companies.length})`, icon: "🏗️" },
     { id: "suppliers",    label: `🏪 Suppliers (${suppliers.length})`, icon: "🏪" },
     { id: "realtors",     label: `Realtors (${realtors.length})`, icon: "🏡" },
@@ -726,7 +726,7 @@ export default function AdminPage({ go }) {
           <div>
             <SectionHead title="Platform Overview" />
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: "1.5rem" }}>
-              {statBox("🔨", contractors.length, "Total Contractors", BRAND.blue)}
+              {statBox("🔨", contractors.length, "Trade Pros", BRAND.blue)}
               {statBox("✅", contractors.filter(c => c.status === "approved").length, "Verified", "#16A34A")}
               {statBox("⏳", pendingContractors.length, "Pending Review", "#D97706")}
               {statBox("💰", paidContractors.length, "Paid Accounts", "#7C3AED")}
@@ -748,7 +748,7 @@ export default function AdminPage({ go }) {
               {pendingContractors.length > 0 && (
                 <div style={{ background: "#1E3A5F", border: "1px solid #2563EB", borderRadius: 12, padding: "1rem 1.25rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "#93C5FD" }}>⏳ {pendingContractors.length} contractor{pendingContractors.length !== 1 ? "s" : ""} awaiting verification</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#93C5FD" }}>⏳ {pendingContractors.length} trade pro{pendingContractors.length !== 1 ? "s" : ""} awaiting verification</div>
                     <div style={{ fontSize: 11, color: "#64748B", marginTop: 2 }}>Review license numbers and approve or reject</div>
                   </div>
                   <Btn onClick={() => setTab("contractors")}>Review →</Btn>
@@ -776,7 +776,7 @@ export default function AdminPage({ go }) {
                 <div style={{ background: "#431407", border: "1px solid #EA580C", borderRadius: 12, padding: "1rem 1.25rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: "#FED7AA" }}>✏️ {pendingEditRequests.length} review edit request{pendingEditRequests.length !== 1 ? "s" : ""}</div>
-                    <div style={{ fontSize: 11, color: "#64748B", marginTop: 2 }}>Contractors requesting changes to their reviews</div>
+                    <div style={{ fontSize: 11, color: "#64748B", marginTop: 2 }}>Trade pros requesting changes to their reviews</div>
                   </div>
                   <Btn color="#EA580C" onClick={() => { setTab("reviews"); setReviewFilter("edits"); }}>Review →</Btn>
                 </div>
@@ -820,7 +820,7 @@ export default function AdminPage({ go }) {
         {!loading && tab === "contractors" && (
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: 8 }}>
-              <SectionHead title="Contractors" count={contractors.length} />
+              <SectionHead title="Trade Pros" count={contractors.length} />
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 {[["all","All"],["pending","⏳ Pending"],["approved","✓ Verified"],["rejected","✗ Rejected"],["deletion","🗑️ Deletion Req"],["deleted","🚫 Deleted"],["bronze","🥉 Bronze"],["silver","🥈 Silver"],["gold","🥇 Gold"],["platinum","💎 Platinum"],["no_license",`🪪 No License`],["orphaned",`🔍 Orphaned${orphanedAuthUsers.length > 0 ? ` (${orphanedAuthUsers.length})` : ""}`]].map(([val, label]) => (
                   <button key={val} onClick={() => setUserFilter(val)}
@@ -832,7 +832,7 @@ export default function AdminPage({ go }) {
             </div>
             {userFilter === "orphaned" ? (
               orphanedAuthUsers.length === 0
-                ? <Empty msg="No orphaned auth users — all auth accounts have contractor rows" />
+                ? <Empty msg="No orphaned auth users — all auth accounts have trade pro rows" />
                 : orphanedAuthUsers.map(u => (
                     <Row key={u.id}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
@@ -1186,7 +1186,7 @@ export default function AdminPage({ go }) {
           <div>
             <SectionHead title="Merch Redemptions" count={redemptions.length} />
             <div style={{ background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 12, padding: "0.75rem 1rem", marginBottom: "1rem", fontSize: 12, color: "#92400E", lineHeight: 1.6 }}>
-              Contractors earn 1 point per review ($0.25/pt). At 40 pts they can redeem for $10 merch credit. Approve → coordinate merch → mark Fulfilled.
+              Trade pros earn 1 point per review ($0.25/pt). At 40 pts they can redeem for $10 merch credit. Approve → coordinate merch → mark Fulfilled.
             </div>
             {redemptions.length === 0 ? <Empty msg="No redemptions yet" /> : redemptions.map(r => {
               const contractor = contractors.find(c => c.id === r.contractor_id);

@@ -50,7 +50,10 @@ export default function ReviewCard({ review, idx }) {
         <Avatar initials={review.contractorInitials} idx={idx} />
         <div style={{ flex: 1 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 4 }}>
-            <span style={{ fontWeight: 700, fontSize: 13, color: BRAND.dark }}>{review.contractorName}</span>
+            <span style={{ fontWeight: 700, fontSize: 13, color: BRAND.dark }}>
+              {review.contractorInitials?.split("").join(".") + (review.contractorInitials ? "." : "")}
+              {trade ? ` · ${trade.icon} ${trade.label}` : ""}
+            </span>
             {(() => {
               const s = review.reviewerTrustScore;
               if (s === null || s === undefined) return null;
@@ -66,9 +69,8 @@ export default function ReviewCard({ review, idx }) {
               );
             })()}
             <span style={{ background: "#DBEAFE", color: "#1E40AF", fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 20 }}>
-              ✓ VERIFIED{trade?.label ? ` · ${trade.label.toUpperCase()}` : ""}
+              ✓ VERIFIED
             </span>
-            <span style={{ background: "#F1F5F9", color: BRAND.gray, fontSize: 10, padding: "2px 7px", borderRadius: 20, fontWeight: 500 }}>{trade?.icon} {trade?.label}</span>
             <span style={{ marginLeft: "auto", fontSize: 11, color: BRAND.gray }}>{new Date(review.date).toLocaleDateString("en-US", { month: "short", year: "numeric" })}</span>
           </div>
           <div style={{ marginBottom: 6 }}><Stars score={review.overallScore} size={13} /></div>

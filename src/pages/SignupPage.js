@@ -141,6 +141,22 @@ export default function SignupPage({ go, goBack, initialMode }) {
           status:       isInviteSignup ? "approved" : "pending",
         });
 
+        // Notify admin of new pending signup (non-invite only)
+        if (!isInviteSignup) {
+          fetch(`${SUPABASE_URL}/functions/v1/send-approval-email`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
+            body: JSON.stringify({
+              type:        "admin_notify",
+              userName:    form.name,
+              userEmail:   form.email,
+              userTrade:   form.trade,
+              userState:   form.state,
+              userLicense: form.license,
+            }),
+          }).catch(() => {});
+        }
+
         // Check for pending invite
         const pendingInvite = localStorage.getItem("pending_invite_token");
 

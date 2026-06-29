@@ -24,13 +24,79 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { contractorId, status, rejectionReason, type, inviteEmail, companyName, invitedByName } = body;
+    const { contractorId, status, rejectionReason, type, inviteEmail, companyName, invitedByName,
+            userName, userEmail, userTrade, userState, userLicense } = body;
 
     // Init Supabase
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
+
+    // ── Handle admin signup notifications ─────────────────────
+    if (type === "admin_notify") {
+      const resendKey = Deno.env.get("RESEND_API_KEY");
+      if (!resendKey) {
+        console.log(`[ProRated] Would notify admin of new signup: ${userEmail}`);
+        return new Response(JSON.stringify({ sent: false, reason: "no-resend-key" }), {
+          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+        });
+      }
+      const adminRes = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${resendKey}` },
+        body: JSON.stringify({
+          from: "ProRated <hello@prorated.app>",
+          to: "hello@prorated.app",
+          subject: `New ProRated member pending verification — ${userName}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px; background: #F8FAFC;">
+              <div style="background: #0F172A; border-radius: 16px; padding: 32px; text-align: center; margin-bottom: 24px;">
+                <h1 style="color: #F8FAFC; font-size: 24px; font-weight: 800; margin: 0 0 8px;">ProRated</h1>
+                <p style="color: #94A3B8; margin: 0; font-size: 14px;">Admin Notification</p>
+              </div>
+              <div style="background: #fff; border-radius: 16px; padding: 32px; border: 1px solid #E2E8F0;">
+                <h2 style="color: #0F172A; font-size: 20px; margin: 0 0 20px;">🔔 New member pending verification</h2>
+                <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                  <tr style="border-bottom: 1px solid #F1F5F9;">
+                    <td style="padding: 10px 0; color: #64748B; width: 40%;">Name</td>
+                    <td style="padding: 10px 0; color: #0F172A; font-weight: 600;">${userName}</td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #F1F5F9;">
+                    <td style="padding: 10px 0; color: #64748B;">Email</td>
+                    <td style="padding: 10px 0; color: #0F172A; font-weight: 600;">${userEmail}</td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #F1F5F9;">
+                    <td style="padding: 10px 0; color: #64748B;">Trade</td>
+                    <td style="padding: 10px 0; color: #0F172A; font-weight: 600;">${userTrade || "—"}</td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #F1F5F9;">
+                    <td style="padding: 10px 0; color: #64748B;">State</td>
+                    <td style="padding: 10px 0; color: #0F172A; font-weight: 600;">${userState || "—"}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 10px 0; color: #64748B;">License #</td>
+                    <td style="padding: 10px 0; color: #0F172A; font-weight: 600;">${userLicense || "—"}</td>
+                  </tr>
+                </table>
+                <div style="text-align: center; margin-top: 28px;">
+                  <a href="https://prorated.app/admin" style="background: #2563EB; color: #fff; text-decoration: none; padding: 13px 28px; border-radius: 10px; font-size: 14px; font-weight: 700; display: inline-block;">
+                    Review in Admin Panel →
+                  </a>
+                </div>
+              </div>
+              <p style="color: #94A3B8; font-size: 11px; text-align: center; margin-top: 20px;">
+                ProRated · <a href="https://prorated.app/admin" style="color: #94A3B8;">prorated.app/admin</a>
+              </p>
+            </div>
+          `,
+        }),
+      });
+      const adminData = await adminRes.json();
+      return new Response(JSON.stringify({ ok: adminRes.ok, resend: adminData }), {
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+      });
+    }
 
     // ── Handle team invite emails ──────────────────────────────
     if (type === "invite") {

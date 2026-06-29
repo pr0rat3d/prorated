@@ -144,7 +144,8 @@ export default function ReviewPage({ go, goBack, initialAddress, editReviewId })
         return;
       }
 
-      const initials = (user?.name || "C").slice(0,1).toUpperCase() + (form.trade || "R").slice(-1).toUpperCase();
+      const nameParts = (user?.name || "").trim().split(/\s+/);
+      const initials = (nameParts[0]?.[0] || "C").toUpperCase() + (nameParts[1]?.[0] || nameParts[0]?.[1] || "R").toUpperCase();
       await saveReview({
         userId:           user?.id,
         address:          cleanAddress,

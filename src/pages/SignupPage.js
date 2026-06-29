@@ -9,6 +9,7 @@ import { useLang } from "../hooks/useLang";
 import { t } from "../i18n/translations";
 import { validateLicense, getLicensePlaceholder } from "../data/licenseValidation";
 import { getLicenseRequirement } from "../data/constants";
+import { isNativeIOS, IOS_SUBSCRIPTION_MSG } from "../utils/platform";
 
 
 
@@ -405,7 +406,13 @@ export default function SignupPage({ go, goBack, initialMode }) {
                 </div>
               </div>
 
-              {/* Paid tiers */}
+              {/* Paid tiers — hidden on iOS (Apple IAP policy) */}
+              {isNativeIOS() ? (
+                <div style={{ background: "#F8FAFC", border: `1px solid ${BRAND.border}`, borderRadius: 10, padding: "10px 14px", marginTop: 8, fontSize: 12, color: BRAND.gray, lineHeight: 1.6, textAlign: "center" }}>
+                  {IOS_SUBSCRIPTION_MSG}
+                </div>
+              ) : (
+              <>
               <div style={{ fontSize: 11, fontWeight: 700, color: BRAND.gray, textTransform: "uppercase", letterSpacing: "0.08em", margin: "12px 0 8px" }}>Paid plans — activate now</div>
               {Object.entries(COMPANY_TIERS).map(([id, tier]) => (
                 <div key={id}
@@ -455,6 +462,8 @@ export default function SignupPage({ go, goBack, initialMode }) {
                     🏷️ <strong>Have a promo code?</strong> Enter it on the next screen in Stripe checkout.
                   </div>
                 </div>
+              )}
+              </>
               )}
 
               <div style={{ display: "flex", gap: 8, marginTop: 16 }}>

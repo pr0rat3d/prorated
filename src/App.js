@@ -358,7 +358,11 @@ export default function App() {
           if (stored) {
             try {
               const dest = JSON.parse(stored);
-              if (dest.type === "stripe") { window.location.href = dest.url; return; }
+              if (dest.type === "stripe") {
+                if (!isNativeIOS()) { window.location.href = dest.url; }
+                else { go("dashboard"); }
+                return;
+              }
               if (dest.type === "invite") {
                 // Auto-accept — user signed up specifically to join this team, no need for a second click
                 const session = JSON.parse(localStorage.getItem("prorated_session") || "{}");

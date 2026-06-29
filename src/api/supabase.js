@@ -37,18 +37,69 @@ const sb = async (path, options = {}) => {
 };
 
 // ── Normalize address for consistent lookup ───────────────────
-export const normalizeAddress = (address) =>
-  address.toLowerCase().trim().replace(/\s+/g, " ");
+export const normalizeAddress = (address) => {
+  if (!address) return "";
+  const abbrevMap = {
+    " st ":" street ", " st,":" street,",
+    " ave ":" avenue ", " ave,":" avenue,",
+    " blvd ":" boulevard ", " blvd,":" boulevard,",
+    " dr ":" drive ", " dr,":" drive,",
+    " rd ":" road ", " rd,":" road,",
+    " ln ":" lane ", " ln,":" lane,",
+    " ct ":" court ", " ct,":" court,",
+    " pl ":" place ", " pl,":" place,",
+    " cir ":" circle ", " cir,":" circle,",
+    " hwy ":" highway ", " hwy,":" highway,",
+    " pkwy ":" parkway ", " pkwy,":" parkway,",
+    " sq ":" square ", " sq,":" square,",
+    " ter ":" terrace ", " ter,":" terrace,",
+    " trl ":" trail ", " trl,":" trail,",
+    " way ":" way ",
+    " n ":" north ", " s ":" south ",
+    " e ":" east ", " w ":" west ",
+    " ne ":" northeast ", " nw ":" northwest ",
+    " se ":" southeast ", " sw ":" southwest ",
+  };
+
+  let normalized = " " + address.toLowerCase().trim() + " ";
+  normalized = normalized.replace(/\s+/g, " ");
+
+  Object.entries(abbrevMap).forEach(([abbrev, full]) => {
+    normalized = normalized.split(abbrev).join(full);
+  });
+
+  return normalized.trim();
+};
 
 // ── Fetch all reviews for an address ─────────────────────────
 export const fetchReviewsForAddress = async (address) => {
   try {
     const normalized = normalizeAddress(address);
-    const data = await sb(
-      `/reviews?address=ilike.${encodeURIComponent("%" + normalized.split(",")[0] + "%")}&order=created_at.desc&select=*,contractors!user_id(trust_score)`,
-      { method: "GET" }
-    );
-    return data || [];
+    const normalizedStreet = normalized.split(",")[0];
+    const rawStreet = address.toLowerCase().trim().split(",")[0].trim();
+
+    const fetchByStreet = (street) =>
+      sb(
+        `/reviews?address=ilike.${encodeURIComponent("%" + street + "%")}&order=created_at.desc&select=*,contractors!user_id(trust_score)`,
+        { method: "GET" }
+      ).then(d => d || []).catch(() => []);
+
+    // If normalization changed the street, dual-search to catch legacy stored reviews
+    if (normalizedStreet === rawStreet) {
+      return await fetchByStreet(normalizedStreet);
+    }
+
+    const [byNormalized, byRaw] = await Promise.all([
+      fetchByStreet(normalizedStreet),
+      fetchByStreet(rawStreet),
+    ]);
+
+    const seen = new Set();
+    return [...byNormalized, ...byRaw].filter(r => {
+      if (seen.has(r.id)) return false;
+      seen.add(r.id);
+      return true;
+    });
   } catch (err) {
     console.warn("[ProRated] Could not fetch reviews:", err.message);
     return [];

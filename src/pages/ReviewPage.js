@@ -616,13 +616,13 @@ export default function ReviewPage({ go, goBack, initialAddress, editReviewId })
             <div style={{ fontSize: 11, color: BRAND.gray, marginBottom: "0.75rem" }}>Your honest take helps other contractors make better decisions</div>
             <div style={{ display: "flex", gap: 10 }}>
               {[
-                { val: true,  label: "👍  Yes, I'd return",  activeColor: BRAND.green, activeBg: "#DCFCE7", activeBorder: BRAND.green, inactiveBg: "#F0FDF4", inactiveBorder: "#86EFAC" },
-                { val: false, label: "👎  No, I wouldn't",   activeColor: "#DC2626",   activeBg: "#FECACA", activeBorder: "#DC2626",  inactiveBg: "#FEF2F2", inactiveBorder: "#FCA5A5" },
-              ].map(({ val, label, activeColor, activeBg, activeBorder, inactiveBg, inactiveBorder }) => {
+                { val: true,  label: "👍  Yes, I'd return",  activeColor: BRAND.green, activeBg: "#DCFCE7", border: BRAND.green },
+                { val: false, label: "👎  No, I wouldn't",   activeColor: "#DC2626",   activeBg: "#FECACA", border: "#DC2626"  },
+              ].map(({ val, label, activeColor, activeBg, border }) => {
                 const active = form.would_return === val;
                 return (
                   <button key={String(val)} onClick={() => setForm(f => ({ ...f, would_return: f.would_return === val ? null : val }))}
-                    style={{ flex: 1, padding: "10px 8px", borderRadius: 10, border: `1.5px solid ${active ? activeBorder : inactiveBorder}`, background: active ? activeBg : inactiveBg, fontSize: 12, fontWeight: 700, cursor: "pointer", color: active ? activeColor : BRAND.gray, fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s" }}>
+                    style={{ flex: 1, padding: "10px 8px", borderRadius: 10, border: `2px solid ${border}`, background: active ? activeBg : "#FFFFFF", fontSize: 12, fontWeight: 700, cursor: "pointer", color: active ? activeColor : BRAND.gray, fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s" }}>
                     {label}
                   </button>
                 );

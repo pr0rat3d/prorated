@@ -1,6 +1,7 @@
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../config.js";
 import { useState } from "react";
-import { TRADES, ISSUE_TAGS } from "../data/constants";
+import { TRADES } from "../data/constants";
+import { getTagsForTrade } from "../data/tradeTags";
 import { Avatar, Stars, Pill, BRAND } from "./UI";
 import { incrementHelpful } from "../api/supabase";
 
@@ -42,7 +43,8 @@ export default function ReviewCard({ review, idx }) {
     setShowReport(false);
   };
 
-  const trade = TRADES.find(t => t.id === review.trade);
+  const trade   = TRADES.find(t => t.id === review.trade);
+  const allTags = getTagsForTrade(review.trade);
 
   return (
     <div style={{ padding: "1rem 0", borderTop: idx > 0 ? `1px solid ${BRAND.border}` : "none", animation: `fadeUp 0.3s ease ${idx * 0.07}s both` }}>
@@ -77,7 +79,7 @@ export default function ReviewCard({ review, idx }) {
           <p style={{ fontSize: 13, color: "#334155", lineHeight: 1.65, margin: "0 0 8px" }}>{review.text}</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 8 }}>
             {(review.tags || []).map(tid => {
-              const t = ISSUE_TAGS.find(x => x.id === tid);
+              const t = allTags.find(x => x.id === tid);
               return t ? <Pill key={tid} label={t.label} sev={t.severity} small selected /> : null;
             })}
           </div>

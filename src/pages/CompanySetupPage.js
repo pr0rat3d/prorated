@@ -341,7 +341,6 @@ export default function CompanySetupPage({ go, goBack }) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark }}>{tierMeta.icon} {tierMeta.name || plan} Plan</div>
-              <div style={{ fontSize: 11, color: BRAND.gray, marginTop: 2 }}>${tierMeta.price || "—"}/month · renews monthly</div>
             </div>
             {!isNativeIOS() && (
               <button onClick={() => go("pricing")}
@@ -470,7 +469,7 @@ export default function CompanySetupPage({ go, goBack }) {
       {/* Current plan notice (for paid users) */}
       {alreadyPaid && tierInfo && (
         <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 12, color: "#1E40AF" }}>
-          {tierInfo.icon} Current plan: <strong>{tierInfo.name}</strong> — up to {SEAT_LIMITS[existingPlan]} seats · ${tierInfo.price}/mo
+          {tierInfo.icon} Current plan: <strong>{tierInfo.name}</strong> — up to {SEAT_LIMITS[existingPlan]} seats
         </div>
       )}
 

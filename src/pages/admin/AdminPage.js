@@ -118,9 +118,10 @@ function UserRow({ user: u, onApprove, onReject, onCompleteDelete, onAdminDelete
               <div><strong>Trade:</strong> {u.trade || "—"}</div>
               <div><strong>Phone:</strong> {u.phone || "—"}</div>
               <div><strong>Plan:</strong> {
-                u.plan === "bronze" ? "🥉 Bronze ($9.99/mo)" :
-                u.plan === "silver" ? "🥈 Silver ($19.99/mo)" :
-                u.plan === "gold"   ? "🥇 Gold ($29.99/mo)" :
+                u.plan === "bronze" ? "🥉 Bronze" :
+                u.plan === "silver" ? "🥈 Silver" :
+                u.plan === "gold"   ? "🥇 Gold" :
+                u.plan === "platinum" ? "💎 Platinum" :
                 "Free"
               }</div>
               <div><strong>Account Type:</strong> {u.account_type === "company" ? "🏗️ Company" : "👤 Solo"}</div>

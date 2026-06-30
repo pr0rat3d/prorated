@@ -965,14 +965,13 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                       <div style={{ textAlign: "right" }}>
                         <div style={{ fontSize: 22 }}>{tier.badge}</div>
                         <div style={{ fontSize: 12, fontWeight: 800, color: tier.color, marginTop: 4 }}>{tier.label}</div>
-                        {user?.verified_pro && <div style={{ fontSize: 10, color: "#16A34A", fontWeight: 700, marginTop: 2 }}>✓ Listed in Directory</div>}
                       </div>
                     </div>
                     <div style={{ height: 6, background: "rgba(0,0,0,0.08)", borderRadius: 3, overflow: "hidden", marginBottom: 8 }}>
                       <div style={{ height: "100%", width: `${pct}%`, background: tier.color, borderRadius: 3 }} />
                     </div>
                     <div style={{ fontSize: 11, color: tier.color, opacity: 0.8, marginBottom: 10 }}>
-                      {nextTier ? `${nextTier.min - score} pts to ${nextTier.label}${nextTier.min >= 75 ? " · Unlocks Verified Pro directory" : ""}` : "🏆 Maximum tier achieved"}
+                      {nextTier ? `${nextTier.min - score} pts to ${nextTier.label}` : "🏆 Maximum tier achieved"}
                     </div>
                     <div style={{ paddingTop: 10, borderTop: `1px solid ${tier.color}22`, display: "flex", gap: 14, fontSize: 11, color: tier.color, opacity: 0.7, flexWrap: "wrap" }}>
                       <span>+10 first review, +5 each after</span>

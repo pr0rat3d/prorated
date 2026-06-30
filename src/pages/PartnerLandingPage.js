@@ -271,7 +271,7 @@ export default function PartnerLandingPage({ go, partnerId }) {
             { step: "1", title: "Create your free account", desc: `Sign up with your contractor license. Use code ${p.code} for free Pro access.` },
             { step: "2", title: "Search any address", desc: "See what other licensed trade professionals say about a job site before you bid." },
             { step: "3", title: "Submit reviews", desc: `Rate job sites you've worked. Help fellow ${p.name} members bid smarter.` },
-            { step: "4", title: "Build your trust score", desc: "Active contributors earn continued Pro access and Verified Pro directory listing." },
+            { step: "4", title: "Build your trust score", desc: "Active contributors earn continued Pro access and Verified Pro status." },
           ].map(({ step, title, desc }) => (
             <div key={step} style={{ display: "flex", gap: 12, marginBottom: 14 }}>
               <div style={{ width: 28, height: 28, borderRadius: "50%", background: p.color, color: p.accent, fontSize: 13, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>

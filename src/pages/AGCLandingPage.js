@@ -125,7 +125,7 @@ export default function AGCLandingPage({ go }) {
             { step: "1", title: "Create your free account", desc: "Sign up with your contractor license. Use code AGC2026 for free Pro access." },
             { step: "2", title: "Search any address", desc: "See what other licensed trade professionals say about a job site before you bid." },
             { step: "3", title: "Submit reviews", desc: "Rate job sites you've worked. Help fellow AGC members make smarter bids." },
-            { step: "4", title: "Build your trust score", desc: "Active contributors earn continued Pro access and directory listing." },
+            { step: "4", title: "Build your trust score", desc: "Active contributors earn continued Pro access and Verified Pro status." },
           ].map(({ step, title, desc }) => (
             <div key={step} style={{ display: "flex", gap: 12, marginBottom: 14 }}>
               <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#1a3328", color: "#c8831a", fontSize: 13, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>

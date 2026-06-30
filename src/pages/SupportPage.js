@@ -112,7 +112,7 @@ const SECTIONS = [
       },
       {
         q: "What is the Trust Score?",
-        a: "Your Trust Score is a 0–100 rating that reflects your credibility on the platform. It grows through reviews submitted, helpful votes from peers, account age, and verified licensing. Reach 75+ to earn Verified Pro status and a listing in the Pro Directory.",
+        a: "Your Trust Score is a 0–100 rating that reflects your credibility on the platform. It grows through reviews submitted, helpful votes from peers, account age, and verified licensing. Reach 75+ to earn Verified Pro status.",
       },
       {
         q: "What is a Verified Pro?",

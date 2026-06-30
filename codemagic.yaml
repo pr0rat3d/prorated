@@ -87,3 +87,41 @@ workflows:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
       - /tmp/ProRated.xcarchive/Products/Applications/*.app
+
+  android-play-store:
+    name: ProRated Android Play Store
+    max_build_duration: 60
+    instance_type: linux_x2
+
+    integrations:
+      google_play: Google Play
+
+    environment:
+      android_signing:
+        - prorated_keystore
+      vars:
+        PACKAGE_NAME: "app.prorated"
+      node: 20.11.0
+
+    scripts:
+      - name: Install dependencies
+        script: npm install
+
+      - name: Build web assets
+        script: npm run build
+
+      - name: Capacitor sync
+        script: npx cap sync android
+
+      - name: Build Android release
+        script: |
+          cd android
+          ./gradlew bundleRelease
+
+    artifacts:
+      - android/app/build/outputs/bundle/release/*.aab
+
+    publishing:
+      google_play:
+        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+        track: internal

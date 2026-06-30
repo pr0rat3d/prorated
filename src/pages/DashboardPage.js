@@ -751,7 +751,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                       <div style={{ fontSize: 16, fontWeight: 800, color: BRAND.dark }}>{company.name}</div>
                     )}
                     <div style={{ fontSize: 12, color: BRAND.gray, marginTop: 2 }}>
-                      {COMPANY_TIERS[company.plan]?.icon} {COMPANY_TIERS[company.plan]?.name} Plan · ${COMPANY_TIERS[company.plan]?.price}/mo
+                      {COMPANY_TIERS[company.plan]?.icon} {COMPANY_TIERS[company.plan]?.name} Plan
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>

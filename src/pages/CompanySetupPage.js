@@ -148,7 +148,7 @@ export default function CompanySetupPage({ go, goBack }) {
         return;
       }
 
-      if (STRIPE_LINKS[selectedTier]) {
+      if (STRIPE_LINKS[selectedTier] && !isNativeIOS()) {
         const params = new URLSearchParams({ prefilled_email: user.email });
         window.location.href = `${STRIPE_LINKS[selectedTier]}?${params}`;
       } else {

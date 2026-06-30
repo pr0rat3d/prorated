@@ -993,10 +993,10 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                   ["Trade",   trade?.label       || "—"],
                   ["License", user?.license      || "—"],
                   ["Plan", (
-                    user?.plan === "bronze" ? `🥉 Bronze — $${COMPANY_TIERS.bronze.price}/mo` :
-                    user?.plan === "silver" ? `🥈 Silver — $${COMPANY_TIERS.silver.price}/mo` :
-                    user?.plan === "gold"   ? `🥇 Gold — $${COMPANY_TIERS.gold.price}/mo` :
-                    user?.plan === "platinum" ? "💎 Platinum — Custom" :
+                    user?.plan === "bronze" ? "🥉 Bronze" :
+                    user?.plan === "silver" ? "🥈 Silver" :
+                    user?.plan === "gold"   ? "🥇 Gold" :
+                    user?.plan === "platinum" ? "💎 Platinum" :
                     FREE_PLAN_LABEL
                   )],
                 ].map(([l, v]) => (

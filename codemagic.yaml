@@ -28,7 +28,6 @@ workflows:
       - name: Capacitor sync
         script: npx cap sync ios
 
-
       - name: Set build number
         script: |
           BUILD_NUMBER=$(($BUILD_NUMBER + 1))
@@ -74,15 +73,17 @@ workflows:
             -exportPath build/ios/ipa \
             -exportOptionsPlist /tmp/ExportOptions.plist
 
+      - name: Publish to TestFlight
+        script: |
+          echo "$APP_STORE_CONNECT_PUBLISHER_PRIVATE_KEY" > /tmp/asc_key.p8
+          app-store-connect publish \
+            --path build/ios/ipa/App.ipa \
+            --key-id "$APP_STORE_CONNECT_KEY_ID" \
+            --issuer-id "$APP_STORE_CONNECT_ISSUER_ID" \
+            --private-key @file:/tmp/asc_key.p8 \
+            --testflight
+
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
       - /tmp/ProRated.xcarchive/Products/Applications/*.app
-
-    publishing:
-      app_store_connect:
-        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
-        key_id: $APP_STORE_CONNECT_KEY_ID
-        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
-        submit_to_testflight: true
-        submit_to_app_store: false

@@ -99,6 +99,7 @@ workflows:
       vars:
         PACKAGE_NAME: "app.prorated"
       node: 22.13.0
+      java: 21
 
     scripts:
       - name: Install dependencies

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLang } from "../hooks/useLang";
 import { t } from "../i18n/translations";
 import { BRAND } from "../components/UI";
@@ -487,15 +487,168 @@ One bad review might be a personality conflict. Three bad reviews is a track rec
 Seeing red flags doesn't always mean walking away. Sometimes it means pricing a risk premium into your bid, requiring a larger upfront deposit, or setting explicit change order terms in the contract. The goal is to go into every job with accurate information — so you can make the decision that's right for your business.
     `,
   },
+  {
+    slug:     "how-to-research-a-job-site-before-bidding",
+    title:    "How to Research a Job Site Before Bidding",
+    desc:     "A step-by-step research process for vetting a residential address before you ever pick up the phone — county records, permit history, and peer data.",
+    category: "Education",
+    readTime: "5 min read",
+    date:     "July 2026",
+    keywords: ["how to research a job site", "research before bidding contractor", "residential address lookup contractor", "job site due diligence"],
+    content: `
+Most contractors research a job the same way: they show up, walk the property, and form an opinion on the spot. By then you've already spent the gas money and the hour — win or lose the bid.
+
+The contractors who consistently protect their time and margin do the research first, before the estimate is even scheduled. Here's the process, step by step.
+
+**1. Start with the county tax assessor's site**
+
+Every county publishes property records online — most are free and searchable by address. Pull the ownership history first. How long has the current owner held the property? Multiple sales in a short window is worth noting before you go further.
+
+**2. Check the permit history**
+
+Most municipalities have a permit portal, even if it's clunky. Look for open or expired permits, and note what kind of work has been done recently. A property with three roofing permits in five years tells a different story than one with none.
+
+**3. Search the address on a peer job site platform**
+
+This is the step most contractors skip entirely, mostly because it hasn't been easy to do. Platforms like ProRated let licensed trade professionals search any residential address and see verified reviews from other contractors who've worked there — payment history, access conditions, communication notes. If five other pros have already left data on this address, that's five walkthroughs you didn't have to do yourself.
+
+**4. Look at the property from the street, digitally**
+
+Satellite and street view imagery won't replace an in-person walkthrough, but they'll tell you about driveway width, roof pitch, lot slope, and neighboring structures before you drive out. It's a five-minute check that can rule out access problems in advance.
+
+**5. Note what you can't find**
+
+BULLETS:No permit history despite obvious recent work — a sign of unpermitted renovations you may inherit liability for|No peer reviews at all — neutral, not a red flag, but it means you're the first data point|Ownership changed in the last 12 months — reviews before that date may not reflect the current owner
+
+**Putting it together before the call**
+
+None of these steps takes more than a few minutes individually, but together they turn a blind estimate into an informed one. You'll walk in already knowing the property's history, and you'll ask sharper questions because of it.
+
+The goal isn't to disqualify jobs before you've even seen them. It's to walk in with the same information the last five contractors wish they'd had.
+    `,
+  },
+  {
+    slug:     "5-red-flags-on-a-residential-job-site",
+    title:    "5 Red Flags on a Residential Job Site",
+    desc:     "Not every red flag comes from the homeowner. Here are five physical warning signs to catch during the walkthrough — before you price the job.",
+    category: "Tips",
+    readTime: "4 min read",
+    date:     "July 2026",
+    keywords: ["red flags residential job site", "job site walkthrough warning signs", "physical site conditions contractor", "what to look for before bidding"],
+    content: `
+Homeowner behavior gets most of the attention when contractors talk about red flags — slow payment, scope creep, vague answers. But some of the most expensive surprises aren't about the person. They're sitting right in front of you during the walkthrough, if you know where to look.
+
+Here are five physical red flags worth catching before you write a number.
+
+**1. Water stains that don't match the story**
+
+A ceiling stain the homeowner says is "old and already fixed" is one of the most common ways a bid goes sideways. Water damage rarely stays contained to where it's visible. If the story doesn't match the stain pattern, assume there's more behind the wall than what you can see.
+
+**2. DIY electrical or plumbing modifications**
+
+Exposed splices, non-standard panel work, or plumbing runs that don't match code-compliant routing are signs that someone other than a licensed professional has been in the walls. Whatever you're bidding may involve undoing work you didn't know existed until you opened things up.
+
+**3. Cracks that suggest structural movement**
+
+Hairline cracks in drywall are normal settling. Stair-step cracks in brick or foundation, doors that no longer close square, or gaps around window frames point to something more serious — and potentially outside the scope you were asked to bid.
+
+**4. Additions or conversions that don't match the rest of the house**
+
+A converted garage, a bonus room with a different ceiling height, or a deck that was clearly built without a permit are common places where code compliance and your new work will collide. Ask directly whether the addition was permitted — the answer tells you how much extra scope you might be inheriting.
+
+**5. Visible tension with the neighbors or HOA**
+
+Signs posted at the property line, an unusually detailed HOA binder handed to you unprompted, or a homeowner who brings up a neighbor dispute unasked — these are signals that access, noise complaints, or approval delays could become part of your project timeline whether you priced for them or not.
+
+**Why this matters before you price**
+
+None of these five signs mean you should walk away. They mean your bid needs a contingency line, a clearer scope of exclusions, or a conversation before you commit to a number. The contractors who get burned aren't the ones who find these things — they're the ones who don't look until after they've already started.
+    `,
+  },
+  {
+    slug:     "why-contractors-need-their-own-review-platform",
+    title:    "Why Contractors Need Their Own Review Platform",
+    desc:     "Yelp, Google, and Angi all let homeowners review contractors. Nobody built the platform that lets contractors review the job site. Here's why that gap matters.",
+    category: "Business",
+    readTime: "5 min read",
+    date:     "July 2026",
+    keywords: ["contractor review platform", "review platform for contractors", "rate homeowners platform", "contractor peer review site"],
+    content: `
+Every major review platform in home services solves the same half of the problem. Yelp, Google, Angi, HomeAdvisor — they all let homeowners rate contractors. That's valuable. It's also incomplete.
+
+None of them let contractors rate the job.
+
+**The information asymmetry nobody talks about**
+
+A homeowner hiring a contractor can read years of reviews before making a decision. They know the contractor's reputation, their work quality, their reliability — all before the first phone call.
+
+A contractor bidding a job knows almost nothing about the homeowner or the property until they've already invested the time to show up. There's no reciprocal system. The information only flows one direction, and it's the direction that already had the least risk attached to it.
+
+**Contractors carry more downside than the review systems account for**
+
+Homeowners risk a bad remodel. Contractors risk unpaid invoices, scope disputes, liens, and weeks of crew time on a property that turns out to be a chronic problem. The financial exposure runs both ways, but only one side has ever had a system built around protecting it.
+
+**Why existing platforms can't just add this feature**
+
+Yelp and Google are built around businesses being reviewed by consumers — the entire trust and moderation model assumes the business is the subject, not the customer. Retrofitting a homeowner-rating feature onto a consumer review platform creates obvious problems: anyone could leave a review, there's no way to verify a genuine trade relationship existed, and the platform has no reason to prioritize contractor trust over consumer trust, since consumers are the product.
+
+A platform built specifically for licensed trade professionals solves this differently from the ground up:
+
+BULLETS:Only verified, licensed contractors can create accounts — checked against state license databases|Only contractors who've actually worked an address can leave a rating on it|Ratings cover the categories that matter to contractors specifically — payment, access, communication, timeline, scope changes|The platform's incentives are aligned with contractor trust, not homeowner traffic
+
+**The network effect works the same way, just pointed differently**
+
+The same dynamic that makes Yelp valuable — more reviews making the data more reliable — applies here. An address with reviews from five different trades over three years tells a much richer story than a single data point. Every contractor who leaves a rating after a job makes the next contractor's bid better informed.
+
+**What this means for the trades**
+
+The information contractors have always shared informally — at the supply house, over the phone, on a job site — has never had a home. It's real, valuable data that's been scattered across individual relationships instead of aggregated where the whole trade community can use it.
+
+That's the gap ProRated was built to close. Not a replacement for Yelp or Google — a platform built for the side of the transaction that's never had one.
+    `,
+  },
+  {
+    slug:     "prorated-launches-in-alabama",
+    title:    "ProRated Launches in Alabama",
+    desc:     "ProRated is officially live for licensed trade professionals across Alabama — verified job site ratings, searchable by address, before you ever write a bid.",
+    category: "Announcement",
+    readTime: "3 min read",
+    date:     "July 2026",
+    keywords: ["ProRated Alabama launch", "job site intelligence Alabama", "Alabama contractor platform", "ProRated new market"],
+    content: `
+ProRated is officially live across Alabama.
+
+Starting today, licensed trade professionals in Birmingham, Huntsville, Mobile, Montgomery, Tuscaloosa, and every city and county in between can search any residential address and see verified job site ratings from other trade professionals before they write a bid.
+
+**Why Alabama, and why now**
+
+ProRated was built on a simple idea: the trade community has always shared job site intelligence informally — at the supply house, over the phone, between crews on adjacent jobs. That knowledge has never been organized in a way that made it available before the estimate. Alabama's mix of dense urban markets, fast-growing suburbs, and a strong base of licensed independent contractors made it the right place to start.
+
+**What's live today**
+
+BULLETS:Address search covering residential properties statewide|Verified ratings across five categories — payment history, site access, communication, timeline, and scope changes|License verification against Alabama state licensing databases before any account is approved|Coverage across every major trade — general contracting, roofing, electrical, plumbing, HVAC, and more
+
+**Who can join**
+
+Any licensed trade professional operating in Alabama can create a free account. Verification is based on state license lookup, which keeps the platform limited to working professionals — not homeowners, not unlicensed operators, not competitors looking to game the system.
+
+**What's next**
+
+This is a statewide launch, not a finished product. The team is actively building out coverage for additional trades, expanding the data available on each address, and rolling out features requested directly by the contractors already using the platform.
+
+If you're a licensed Alabama trade professional, you can create a free account today and start searching addresses before your next bid.
+    `,
+  },
 ];
 
 
 function ArticleCard({ article, onClick, lang }) {
   const catColors = {
-    Business:  { bg: "#EFF6FF", color: "#1E40AF" },
-    Tips:      { bg: "#F0FDF4", color: "#166534" },
-    Education: { bg: "#FFFBEB", color: "#92400E" },
-    Licensing: { bg: "#FAF5FF", color: "#6B21A8" },
+    Business:     { bg: "#EFF6FF", color: "#1E40AF" },
+    Tips:         { bg: "#F0FDF4", color: "#166534" },
+    Education:    { bg: "#FFFBEB", color: "#92400E" },
+    Licensing:    { bg: "#FAF5FF", color: "#6B21A8" },
+    Announcement: { bg: "#ECFEFF", color: "#155E75" },
   };
   const cat = catColors[article.category] || catColors.Tips;
 
@@ -530,6 +683,15 @@ function ArticleCard({ article, onClick, lang }) {
 
 function ArticleView({ article, onBack, lang }) {
   const paragraphs = article.content.trim().split("\n\n").filter(Boolean);
+
+  useEffect(() => {
+    const title = `${article.title} | ProRated Blog`;
+    document.title = title;
+    const m = document.querySelector("meta[name='description']");
+    if (m) m.setAttribute("content", article.desc);
+    try { window.history.replaceState({}, "", `/blog/${article.slug}`); } catch {}
+    return () => { document.title = "ProRated — Built by Pros, Built for Pros"; };
+  }, [article.slug]);
 
   return (
     <div style={{ maxWidth: 680, margin: "0 auto", padding: "1.5rem 1.25rem 5rem" }}>
@@ -588,7 +750,14 @@ function ArticleView({ article, onBack, lang }) {
 
 export default function BlogPage({ go }) {
   const { lang } = useLang();
-  const [activeArticle, setArticle] = useState(null);
+  const [activeArticle, setArticle] = useState(() => {
+    try {
+      const path = window.location.pathname;
+      if (!path.startsWith("/blog/")) return null;
+      const slug = path.split("/blog/")[1]?.split("/")[0];
+      return ARTICLES.find(a => a.slug === slug) || null;
+    } catch { return null; }
+  });
 
   if (activeArticle) return <ArticleView article={activeArticle} onBack={() => setArticle(null)} lang={lang} />;
 

@@ -31,6 +31,7 @@ import BlogPage from "./pages/BlogPage";
 import MissionPage from "./pages/MissionPage";
 import LocalPage from "./pages/LocalPage";
 import TradePage from "./pages/TradePage";
+import AlabamaContractorsPage from "./pages/AlabamaContractorsPage";
 import PartnerLandingPage, { PARTNERS } from "./pages/PartnerLandingPage";
 import PartnerDashboardPage from "./pages/PartnerDashboardPage";
 import BetaLanding from "./pages/BetaLanding";
@@ -65,6 +66,31 @@ export default function App() {
         if (path === `/${pid}/dashboard` || path === `/${pid}/dashboard/`) return `partner-dash-${pid}`;
       }
       if (path === "/realtor" || path === "/realtor/") return "realtor-signup";
+      // Blog — list page and individual article permalinks (slug handled inside BlogPage)
+      if (path === "/blog" || path === "/blog/" || path.startsWith("/blog/")) return "blog";
+      // Trade-specific SEO landing pages
+      const tradeSlugPaths = {
+        "roofing-contractors":    "roofing",
+        "electrical-contractors": "electrical",
+        "plumbing-contractors":   "plumbing",
+        "hvac-contractors":       "hvac",
+        "general-contractors":    "general",
+      };
+      for (const [slugPath, trade] of Object.entries(tradeSlugPaths)) {
+        if (path === `/${slugPath}` || path === `/${slugPath}/`) return `trade-${trade}`;
+      }
+      // Legacy /trades/:trade paths already promised in sitemap.xml
+      for (const trade of Object.values(tradeSlugPaths)) {
+        if (path === `/trades/${trade}` || path === `/trades/${trade}/`) return `trade-${trade}`;
+      }
+      // Statewide SEO landing page
+      if (path === "/alabama-contractors" || path === "/alabama-contractors/") return "alabama-contractors";
+      // City-specific SEO landing pages
+      const citySlugs = ["birmingham", "huntsville", "mobile", "montgomery", "tuscaloosa"];
+      for (const city of citySlugs) {
+        if (path === `/${city}` || path === `/${city}/`) return `local-${city}`;
+        if (path === `/alabama/${city}` || path === `/alabama/${city}/`) return `local-${city}`;
+      }
       // Handle Supabase password recovery link
       const hash = window.location.hash;
       if (hash.includes("type=recovery") && hash.includes("access_token")) return "reset-password";
@@ -350,6 +376,7 @@ export default function App() {
         {page === "trade-plumbing"   && <TradePage go={go} trade="plumbing" />}
         {page === "trade-hvac"       && <TradePage go={go} trade="hvac" />}
         {page === "trade-general"    && <TradePage go={go} trade="general" />}
+        {page === "alabama-contractors" && <AlabamaContractorsPage go={go} />}
         {page === "nda" && <NDAPage go={go} user={user} onAccepted={async () => {
           localStorage.setItem("pr_nda_signed", "true");
           setNdaSigned(true);

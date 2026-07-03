@@ -283,5 +283,78 @@
   <changefreq>monthly</changefreq>
   <priority>0.7</priority>
 </url>
+<!-- Blog: How to Research a Job Site -->
+<url>
+  <loc>https://prorated.app/blog/how-to-research-a-job-site-before-bidding</loc>
+  <lastmod>2026-07-03</lastmod>
+  <changefreq>monthly</changefreq>
+  <priority>0.7</priority>
+</url>
+<!-- Blog: 5 Red Flags -->
+<url>
+  <loc>https://prorated.app/blog/5-red-flags-on-a-residential-job-site</loc>
+  <lastmod>2026-07-03</lastmod>
+  <changefreq>monthly</changefreq>
+  <priority>0.7</priority>
+</url>
+<!-- Blog: Why Contractors Need Their Own Review Platform -->
+<url>
+  <loc>https://prorated.app/blog/why-contractors-need-their-own-review-platform</loc>
+  <lastmod>2026-07-03</lastmod>
+  <changefreq>monthly</changefreq>
+  <priority>0.7</priority>
+</url>
+<!-- Blog: ProRated Launches in Alabama -->
+<url>
+  <loc>https://prorated.app/blog/prorated-launches-in-alabama</loc>
+  <lastmod>2026-07-03</lastmod>
+  <changefreq>weekly</changefreq>
+  <priority>0.8</priority>
+</url>
+
+<!-- Trade-specific SEO landing pages -->
+<url>
+  <loc>https://prorated.app/roofing-contractors</loc>
+  <lastmod>2026-07-03</lastmod>
+  <changefreq>monthly</changefreq>
+  <priority>0.8</priority>
+</url>
+<url>
+  <loc>https://prorated.app/plumbing-contractors</loc>
+  <lastmod>2026-07-03</lastmod>
+  <changefreq>monthly</changefreq>
+  <priority>0.8</priority>
+</url>
+<url>
+  <loc>https://prorated.app/hvac-contractors</loc>
+  <lastmod>2026-07-03</lastmod>
+  <changefreq>monthly</changefreq>
+  <priority>0.8</priority>
+</url>
+<url>
+  <loc>https://prorated.app/electrical-contractors</loc>
+  <lastmod>2026-07-03</lastmod>
+  <changefreq>monthly</changefreq>
+  <priority>0.8</priority>
+</url>
+<url>
+  <loc>https://prorated.app/general-contractors</loc>
+  <lastmod>2026-07-03</lastmod>
+  <changefreq>monthly</changefreq>
+  <priority>0.8</priority>
+</url>
+<url>
+  <loc>https://prorated.app/alabama-contractors</loc>
+  <lastmod>2026-07-03</lastmod>
+  <changefreq>monthly</changefreq>
+  <priority>0.9</priority>
+</url>
+<!-- Birmingham direct SEO/ad-campaign path -->
+<url>
+  <loc>https://prorated.app/birmingham</loc>
+  <lastmod>2026-07-03</lastmod>
+  <changefreq>monthly</changefreq>
+  <priority>0.9</priority>
+</url>
 
 </urlset>

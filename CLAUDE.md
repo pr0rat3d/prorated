@@ -30,7 +30,7 @@ ProRated ("Built by Pros, Built for Pros") is a verified job site intelligence P
 | Vercel project | pro-rated-s-projects1/prorated |
 | Cloudflare R2 bucket | prorated-videos |
 | App bundle ID | app.prorated |
-| Demo account | demo@prorated.io / ProRated2025! |
+| Demo account | demo@prorated.io / LittlePigs6969! |
 
 ---
 

@@ -82,11 +82,11 @@ const TIERS = [
     border:   "#F59E0B",
     tagline:  "For large companies and multi-crew operations",
     features: [
-      "Unlimited team logins",
+      "Up to 39 team logins",
       "Everything in Silver",
       "Dedicated account support",
-      "Partner data reports",
       "Custom onboarding",
+      "Early access to new features",
     ],
   },
   {
@@ -109,7 +109,6 @@ const TIERS = [
       "Dedicated account manager",
       "Onboarding + training for your team",
       "Partner data reports",
-      "Priority support SLA",
       "Early access to all new features",
     ],
   },

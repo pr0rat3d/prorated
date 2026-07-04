@@ -111,6 +111,11 @@ workflows:
       - name: Capacitor sync
         script: npx cap sync android
 
+      - name: Set version code
+        script: |
+          cd android
+          sed -i "s/versionCode [0-9]*/versionCode $BUILD_NUMBER/" app/build.gradle
+
       - name: Build Android release
         script: |
           cd android

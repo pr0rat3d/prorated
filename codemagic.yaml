@@ -114,7 +114,8 @@ workflows:
       - name: Set version code
         script: |
           cd android
-          sed -i "s/versionCode [0-9]*/versionCode $BUILD_NUMBER/" app/build.gradle
+          sed "s/versionCode [0-9]*/versionCode $BUILD_NUMBER/" app/build.gradle > app/build.gradle.tmp
+          mv app/build.gradle.tmp app/build.gradle
 
       - name: Build Android release
         script: |

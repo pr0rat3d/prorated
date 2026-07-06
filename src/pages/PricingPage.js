@@ -12,14 +12,9 @@ const STRIPE_BRONZE = "https://buy.stripe.com/4gMfZg9mL8TM9HI9szeQM00";
 const STRIPE_SILVER = "https://buy.stripe.com/eVqcN4buT0ng6vw48feQM01";
 const STRIPE_GOLD   = "https://buy.stripe.com/dRmeVc56v6LE3jk34beQM02";
 
-// ── Promo validation (mirrors Supabase function) ─────────────
-const PROMO_CODES = {
-  "PRORATED2026": { days: 60, label: "2 months free applied!" },
-};
-
-const validatePromo = (code) => {
-  return PROMO_CODES[code.toUpperCase()] || null;
-};
+// Bronze/Silver/Gold are free through Dec 31, 2026 — applied automatically
+// via the PRORATED2026 Stripe coupon at checkout, no user-facing promo entry.
+const FREE_2026_COUPON = "PRORATED2026";
 
 // ── Tier definitions ─────────────────────────────────────────
 const TIERS = [
@@ -47,7 +42,7 @@ const TIERS = [
       "Local Points of Interest",
       "Watchlist alerts",
     ],
-    lockedFeatures: ["🤖 Bid Intelligence (Gold+ Early Access)"],
+    lockedFeatures: ["Bid Intelligence (Gold+ Early Access)"],
   },
   {
     id:       "silver",
@@ -69,7 +64,7 @@ const TIERS = [
       "Priority support",
       "Early access to new features",
     ],
-    lockedFeatures: ["🤖 Bid Intelligence (Gold+ Early Access)"],
+    lockedFeatures: ["Bid Intelligence (Gold+ Early Access)"],
   },
   {
     id:       "gold",
@@ -88,10 +83,10 @@ const TIERS = [
       "Everything in Silver",
       "Dedicated account support",
       "Custom onboarding",
-      "🤖 Bid Intelligence — AI bid prep summaries",
+      "Bid Intelligence — AI bid prep summaries",
       "Early access to new features",
     ],
-    earlyAccessFeature: "🤖 Bid Intelligence — AI bid prep summaries",
+    earlyAccessFeature: "Bid Intelligence — AI bid prep summaries",
   },
   {
     id:       "platinum",
@@ -112,11 +107,10 @@ const TIERS = [
       "Custom pricing negotiated directly",
       "Dedicated account manager",
       "Onboarding + training for your team",
-      "Partner data reports",
-      "🤖 Bid Intelligence — AI bid prep summaries",
+      "Bid Intelligence — AI bid prep summaries",
       "Early access to all new features",
     ],
-    earlyAccessFeature: "🤖 Bid Intelligence — AI bid prep summaries",
+    earlyAccessFeature: "Bid Intelligence — AI bid prep summaries",
   },
 
 ];
@@ -138,24 +132,15 @@ export default function PricingPage({ go, goBack }) {
   const currentPlan = user?.plan || "free";
   const { lang }             = useLang();
   const nativeIOS            = isNativeIOS();
-  const [promoCode, setPromoCode]   = useState("");
-  const [promoResult, setPromoResult] = useState(null);
-  const [promoChecked, setPromoChecked] = useState(false);
   const [loading, setLoading]       = useState(null);
-
-  const handlePromoCheck = () => {
-    const result = validatePromo(promoCode);
-    setPromoResult(result);
-    setPromoChecked(true);
-  };
 
   const handleUpgrade = (tier) => {
     setLoading(tier.id);
     let url = tier.stripe;
     const params = new URLSearchParams();
     if (isLoggedIn && user?.email) params.set("prefilled_email", user.email);
-    if (promoResult)               params.set("promo", promoCode.toUpperCase());
-    if (params.toString())         url += "?" + params.toString();
+    params.set("prefilled_promo_code", FREE_2026_COUPON);
+    url += "?" + params.toString();
     window.location.href = url;
     setTimeout(() => setLoading(null), 2000);
   };
@@ -174,8 +159,8 @@ export default function PricingPage({ go, goBack }) {
         <p style={{ fontSize: 14, color: "#94A3B8", margin: 0 }}>One flat monthly price. No annual lock-in. Cancel anytime.</p>
 
         {!nativeIOS && (
-          <div style={{ maxWidth: 360, margin: "20px auto 0", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 10, padding: "10px 16px", textAlign: "center" }}>
-            <span style={{ fontSize: 12, color: "#94A3B8" }}>🏷️ Have a promo code? Enter it on the next screen in Stripe checkout.</span>
+          <div style={{ maxWidth: 400, margin: "20px auto 0", background: "rgba(34,197,94,0.12)", border: "1px solid rgba(134,239,172,0.4)", borderRadius: 10, padding: "10px 16px", textAlign: "center" }}>
+            <span style={{ fontSize: 12, color: "#86EFAC" }}>🎉 Bronze, Silver &amp; Gold are free through Dec 31, 2026 — card collected, no charge until Jan 2027.</span>
           </div>
         )}
       </div>
@@ -238,12 +223,13 @@ export default function PricingPage({ go, goBack }) {
                 <div style={{ fontSize: 11, color: BRAND.gray, marginTop: 2 }}>{tier.tagline}</div>
               </div>
               <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
-                <div>
-                  <span style={{ fontSize: 24, fontWeight: 800, color: BRAND.dark }}>${tier.price}</span>
-                  <span style={{ fontSize: 12, color: BRAND.gray }}>/mo</span>
-                </div>
-                {promoResult && (
-                  <div style={{ fontSize: 10, color: "#16A34A", fontWeight: 700 }}>First 2 months free</div>
+                {tier.contact ? (
+                  <span style={{ fontSize: 20, fontWeight: 800, color: BRAND.dark }}>Contact us</span>
+                ) : (
+                  <>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: "#16A34A" }}>Free through 2026</div>
+                    <div style={{ fontSize: 11, color: BRAND.gray }}>then ${tier.price}/mo · cancel anytime</div>
+                  </>
                 )}
               </div>
             </div>
@@ -291,7 +277,7 @@ export default function PricingPage({ go, goBack }) {
                 onClick={() => handleUpgrade(tier)}
                 disabled={loading === tier.id}
                 style={{ width: "100%", padding: "11px", background: tier.popular ? BRAND.blue : "#0F172A", color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: loading === tier.id ? "not-allowed" : "pointer", opacity: loading === tier.id ? 0.7 : 1, fontFamily: "'DM Sans', sans-serif", transition: "opacity 0.15s" }}>
-                {loading === tier.id ? "Opening checkout..." : "Get " + tier.name + " →"}
+                {loading === tier.id ? "Opening checkout..." : "Get Started Free →"}
               </button>
             )}
           </div>
@@ -312,7 +298,7 @@ export default function PricingPage({ go, goBack }) {
             ["Can I change plans later?",          "Yes — upgrade or downgrade anytime. Changes take effect immediately."],
             ["What happens to my team if I downgrade?", "Existing members keep access. You just can't add new members until you're under the new seat limit."],
             ["Is there a contract?",               "No. Month-to-month only. Cancel anytime from your dashboard."],
-            ["How does the promo code work?",      "Enter code ProRated2026 above before checkout. Your first 60 days are free — billing starts automatically after that."],
+            ["Why is my card charged $0 today?",   "Bronze, Silver, and Gold are free through December 31, 2026. We collect your card at checkout to make the switch to billing seamless, but nothing is charged until January 2027 — cancel anytime before then at no cost."],
             ["How does the 13th month reward work?", "On your 1-year anniversary, if your team averaged 3 or more reviews per week (156 total), we add one free month before your next charge."],
             ["Can individuals use ProRated?",      "Yes — sign up free and search addresses without a team plan. Upgrade to Bronze for unlimited access."],
           ].map(([q, a]) => (
@@ -325,7 +311,7 @@ export default function PricingPage({ go, goBack }) {
 
         {/* Bottom note */}
         <p style={{ textAlign: "center", fontSize: 11, color: BRAND.gray, marginTop: 20 }}>
-          All plans include a 60-day free trial with code ProRated2026. No credit card required during trial.
+          Bronze, Silver, and Gold are free through December 31, 2026 — your card is collected at checkout but not charged until January 2027.
           Payments processed securely by Stripe.
         </p>
       </div>

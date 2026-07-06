@@ -175,6 +175,20 @@ serve(async (req) => {
     const isPaid = contractor.plan && contractor.plan !== "free";
     const searchLimit = isPaid ? "Unlimited searches" : "10 searches/month";
 
+    // Bronze/Silver/Gold are free through Dec 31, 2026 (card collected, not charged
+    // until Jan 2027). Platinum is custom-priced and unaffected by this promo.
+    const planLabel = contractor.plan
+      ? contractor.plan.charAt(0).toUpperCase() + contractor.plan.slice(1)
+      : "";
+    const isFree2026Plan = ["bronze", "silver", "gold"].includes(contractor.plan);
+    const free2026Note = isFree2026Plan
+      ? `<div style="background: #F0FDF4; border: 1px solid #86EFAC; border-radius: 12px; padding: 16px 20px; margin-bottom: 24px;">
+           <p style="color: #166534; font-size: 13px; line-height: 1.6; margin: 0;">
+             🎉 Your <strong>${planLabel}</strong> plan is active and free through December 31, 2026. Your card will not be charged until January 2027. Search, review, and help build the ProRated community.
+           </p>
+         </div>`
+      : "";
+
     let subject: string;
     let html: string;
 
@@ -194,6 +208,7 @@ serve(async (req) => {
                 Your contractor license has been verified and your ProRated account is fully active.
               </p>
             </div>
+            ${free2026Note}
             <div style="background: #F0FDF4; border: 1px solid #86EFAC; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
               <p style="color: #166534; font-size: 13px; font-weight: 700; margin: 0 0 12px;">You can now:</p>
               <p style="color: #166534; font-size: 13px; margin: 4px 0;">✓ Search job site addresses (${searchLimit})</p>

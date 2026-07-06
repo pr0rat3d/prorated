@@ -3,7 +3,11 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../config.js";
 import { BRAND, Btn, Card } from "../components/UI";
 import Logo from "../components/Logo";
 import { useAuth } from "../hooks/useAuth";
-import { COMPANY_TIERS, PROMO_CODES } from "../data/constants";
+import { COMPANY_TIERS } from "../data/constants";
+
+// Bronze/Silver/Gold are free through Dec 31, 2026 — applied automatically
+// via the PRORATED2026 Stripe coupon, no user-facing promo entry.
+const FREE_2026_COUPON = "PRORATED2026";
 import { isNativeIOS, IOS_SUBSCRIPTION_MSG } from "../utils/platform";
 
 const STRIPE_LINKS = {
@@ -149,7 +153,10 @@ export default function CompanySetupPage({ go, goBack }) {
       }
 
       if (STRIPE_LINKS[selectedTier] && !isNativeIOS()) {
-        const params = new URLSearchParams({ prefilled_email: user.email });
+        const params = new URLSearchParams({
+          prefilled_email:      user.email,
+          prefilled_promo_code: FREE_2026_COUPON,
+        });
         window.location.href = `${STRIPE_LINKS[selectedTier]}?${params}`;
       } else {
         go("dashboard");
@@ -525,7 +532,10 @@ export default function CompanySetupPage({ go, goBack }) {
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <div style={{ fontSize: 14, fontWeight: 700, color: BRAND.dark }}>{tier.name}</div>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: BRAND.dark }}>${tier.price}<span style={{ fontSize: 10, fontWeight: 400, color: BRAND.gray }}>/mo</span></div>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: tier.price ? "#16A34A" : BRAND.dark }}>{tier.price ? "Free through 2026" : "Custom pricing"}</div>
+                      {tier.price && <div style={{ fontSize: 10, fontWeight: 400, color: BRAND.gray }}>then ${tier.price}/mo</div>}
+                    </div>
                   </div>
                   <div style={{ fontSize: 11, color: BRAND.gray }}>
                     {id === "bronze" ? "Solo or 1–5 team members" :
@@ -551,10 +561,10 @@ export default function CompanySetupPage({ go, goBack }) {
             </div>
           ))}
 
-          {!isNativeIOS() && (
-            <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 10, padding: "10px 14px", marginTop: 12 }}>
-              <div style={{ fontSize: 12, color: "#1E40AF", lineHeight: 1.6 }}>
-                🏷️ <strong>Have a promo code?</strong> Enter it on the next screen in Stripe checkout.
+          {!isNativeIOS() && selectedTier !== "platinum" && (
+            <div style={{ background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 10, padding: "10px 14px", marginTop: 12 }}>
+              <div style={{ fontSize: 12, color: "#166534", lineHeight: 1.6 }}>
+                🎉 <strong>Free through December 31, 2026.</strong> Card is collected at checkout but you won't be charged until January 2027.
               </div>
             </div>
           )}

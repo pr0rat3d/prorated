@@ -1,6 +1,6 @@
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../config.js";
 import { useState } from "react";
-import { TRADES, BRAND, COMPANY_TIERS, PROMO_CODES } from "../data/constants";
+import { TRADES, BRAND, COMPANY_TIERS } from "../data/constants";
 import { Btn, Card } from "../components/UI";
 import Logo from "../components/Logo";
 import { signUp, signIn } from "../api/auth";
@@ -22,8 +22,6 @@ export default function SignupPage({ go, goBack, initialMode }) {
   const [step, setStep]    = useState(1);
   const [loading, setLoad]   = useState(false);
   const [termsAgreed, setTerms]   = useState(false);
-  const [promoCode, setPromoCode]   = useState("");
-  const [promoValid, setPromoValid] = useState(false);
 
   const [resetMode, setReset]     = useState(false);
 
@@ -60,20 +58,10 @@ export default function SignupPage({ go, goBack, initialMode }) {
 
   const [accountType, setAccountType] = useState(isInviteSignup ? "solo" : null);
   const [selectedTier, setSelectedTier] = useState(isInviteSignup ? (inviteContext?.plan || "bronze") : null);
-  const [signupPromo, setSignupPromo]   = useState("");
-  const [promoApplied, setPromoApplied] = useState(null);
-  const [promoError, setPromoError]     = useState(null);
 
-  const checkPromo = () => {
-    const result = PROMO_CODES[signupPromo.toUpperCase()];
-    if (result) {
-      setPromoApplied(result);
-      setPromoError(null);
-    } else {
-      setPromoApplied(null);
-      setPromoError("Invalid promo code");
-    }
-  };
+  // Bronze/Silver/Gold are free through Dec 31, 2026 — the PRORATED2026 coupon
+  // is applied automatically at Stripe checkout, no user-facing promo entry.
+  const FREE_2026_COUPON = "PRORATED2026";
 
   const handleReset = async () => {
     if (!resetEmail) return;
@@ -124,7 +112,7 @@ export default function SignupPage({ go, goBack, initialMode }) {
         license:      form.license,
         accountType:  accountType || "solo",
         plan:         selectedTier || "free",
-        promoCode:    promoApplied ? signupPromo.toUpperCase() : null,
+        promoCode:    (selectedTier && selectedTier !== "platinum") ? FREE_2026_COUPON : null,
         status:       isInviteSignup ? "approved" : "pending",
       });
 
@@ -169,8 +157,10 @@ export default function SignupPage({ go, goBack, initialMode }) {
           }));
           localStorage.removeItem("pending_invite_context");
         } else if (selectedTier && STRIPE_LINKS[selectedTier]) {
-          const params = new URLSearchParams({ prefilled_email: form.email });
-          if (promoApplied) params.set("promo", signupPromo.toUpperCase());
+          const params = new URLSearchParams({
+            prefilled_email:      form.email,
+            prefilled_promo_code: FREE_2026_COUPON,
+          });
           localStorage.setItem("post_nda_destination", JSON.stringify({
             type: "stripe",
             url: `${STRIPE_LINKS[selectedTier]}?${params}`,
@@ -439,7 +429,10 @@ export default function SignupPage({ go, goBack, initialMode }) {
                     <div style={{ flex: 1 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark }}>{tier.name}</div>
-                        <div style={{ fontSize: 13, fontWeight: 800, color: BRAND.dark }}>{tier.price ? `$${tier.price}` : "Custom"}<span style={{ fontSize: 10, fontWeight: 400, color: BRAND.gray }}>{tier.price ? "/mo" : " pricing"}</span></div>
+                        <div style={{ textAlign: "right" }}>
+                          <div style={{ fontSize: 13, fontWeight: 800, color: tier.price ? "#16A34A" : BRAND.dark }}>{tier.price ? "Free through 2026" : "Custom pricing"}</div>
+                          {tier.price && <div style={{ fontSize: 10, fontWeight: 400, color: BRAND.gray }}>then ${tier.price}/mo</div>}
+                        </div>
                       </div>
                       <div style={{ fontSize: 11, color: BRAND.gray }}>
                         {id === "bronze" ? "Solo pro or team of 1–5" :
@@ -471,11 +464,11 @@ export default function SignupPage({ go, goBack, initialMode }) {
                 </div>
               ))}
 
-              {/* Promo code note */}
-              {selectedTier && (
-                <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 10, padding: "10px 14px", marginTop: 12 }}>
-                  <div style={{ fontSize: 12, color: "#1E40AF", lineHeight: 1.6 }}>
-                    🏷️ <strong>Have a promo code?</strong> Enter it on the next screen in Stripe checkout.
+              {/* Free-through-2026 note */}
+              {selectedTier && selectedTier !== "platinum" && (
+                <div style={{ background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 10, padding: "10px 14px", marginTop: 12 }}>
+                  <div style={{ fontSize: 12, color: "#166534", lineHeight: 1.6 }}>
+                    🎉 <strong>Free through December 31, 2026.</strong> Card is collected at checkout but you won't be charged until January 2027.
                   </div>
                 </div>
               )}

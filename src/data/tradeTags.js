@@ -123,6 +123,19 @@ const TRADE_SPECIFIC = {
   ],
 };
 
+// All tags across every trade, deduplicated by id — used to resolve a bare tag id
+const ALL_TAGS = (() => {
+  const seen = new Set();
+  const all = [...UNIVERSAL_TAGS, ...Object.values(TRADE_SPECIFIC).flat()];
+  return all.filter(t => {
+    if (seen.has(t.id)) return false;
+    seen.add(t.id);
+    return true;
+  });
+})();
+
+export const getTagById = (id) => ALL_TAGS.find(t => t.id === id) || null;
+
 export const getTagsForTrade = (trade) => {
   const specific = TRADE_SPECIFIC[trade] || TRADE_SPECIFIC.general;
   // Universal tags first, trade-specific appended, deduplicated by id

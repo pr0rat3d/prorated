@@ -41,6 +41,7 @@ export default async function handler(req, res) {
     "translation_cache", "saved_addresses", "address_watches",
     "featured_suppliers", "review_edit_requests",
     "companies", "company_members", "invites", "review_points",
+    "feature_flags",
   ];
   const tableMatch = pathStr.match(/^\/([a-z_]+)/);
   if (!tableMatch || !allowedTables.includes(tableMatch[1])) {

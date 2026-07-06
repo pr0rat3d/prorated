@@ -292,6 +292,13 @@ export const formatStoredReview = (row) => ({
   text:                row.review_text,
   helpfulCount:        row.helpful_count || 0,
   reviewerTrustScore:  row.contractors?.trust_score ?? null,
+  // Bid Intelligence needs the raw per-category scores + trust score on each review
+  payment_score:       row.payment_score,
+  access_score:        row.access_score,
+  timeline_score:      row.timeline_score,
+  communication_score: row.communication_score,
+  obstacles_score:     row.obstacles_score,
+  reviewer_trust_score: row.contractors?.trust_score ?? 0,
   weight:              getReviewWeight(row.created_at),
   fromDatabase:        true,
 });

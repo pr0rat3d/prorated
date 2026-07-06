@@ -47,6 +47,7 @@ const TIERS = [
       "Local Points of Interest",
       "Watchlist alerts",
     ],
+    lockedFeatures: ["🤖 Bid Intelligence (Gold+ Early Access)"],
   },
   {
     id:       "silver",
@@ -68,6 +69,7 @@ const TIERS = [
       "Priority support",
       "Early access to new features",
     ],
+    lockedFeatures: ["🤖 Bid Intelligence (Gold+ Early Access)"],
   },
   {
     id:       "gold",
@@ -86,8 +88,10 @@ const TIERS = [
       "Everything in Silver",
       "Dedicated account support",
       "Custom onboarding",
+      "🤖 Bid Intelligence — AI bid prep summaries",
       "Early access to new features",
     ],
+    earlyAccessFeature: "🤖 Bid Intelligence — AI bid prep summaries",
   },
   {
     id:       "platinum",
@@ -109,8 +113,10 @@ const TIERS = [
       "Dedicated account manager",
       "Onboarding + training for your team",
       "Partner data reports",
+      "🤖 Bid Intelligence — AI bid prep summaries",
       "Early access to all new features",
     ],
+    earlyAccessFeature: "🤖 Bid Intelligence — AI bid prep summaries",
   },
 
 ];
@@ -250,8 +256,18 @@ export default function PricingPage({ go, goBack }) {
             {/* Features */}
             <div style={{ borderTop: `1px solid ${BRAND.border}`, paddingTop: 12, marginBottom: 14 }}>
               {tier.features.map(f => (
-                <div key={f} style={{ display: "flex", alignItems: "flex-start", marginBottom: 6, fontSize: 13, color: BRAND.dark }}>
+                <div key={f} style={{ display: "flex", alignItems: "center", marginBottom: 6, fontSize: 13, color: BRAND.dark }}>
                   <Check />{f}
+                  {tier.earlyAccessFeature === f && (
+                    <span style={{ marginLeft: 8, background: "#FFFBEB", color: "#B45309", border: "1px solid #FCD34D", fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 20, whiteSpace: "nowrap" }}>
+                      ⚡ EARLY ACCESS
+                    </span>
+                  )}
+                </div>
+              ))}
+              {(tier.lockedFeatures || []).map(f => (
+                <div key={f} style={{ display: "flex", alignItems: "flex-start", marginBottom: 6, fontSize: 13, color: "#94A3B8" }}>
+                  <span style={{ color: "#CBD5E1", fontWeight: 700, marginRight: 8, flexShrink: 0 }}>✓</span>{f}
                 </div>
               ))}
             </div>

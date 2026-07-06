@@ -72,10 +72,12 @@ const Empty = ({ msg = "Nothing here yet" }) => (
 );
 
 // ── User Row (contractors) ───────────────────────────────────
-function UserRow({ user: u, onApprove, onReject, onCompleteDelete, onAdminDelete, onChangePlan, onResendWelcome, companies = [] }) {
+function UserRow({ user: u, onApprove, onReject, onCompleteDelete, onAdminDelete, onChangePlan, onResendWelcome, onSaveNotes, onForceRemoveCompany, onViewReviews, reviewCount = 0, companies = [] }) {
   const [expanded, setExpanded] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [rejecting, setRejecting] = useState(false);
+  const [notes, setNotes] = useState(u.admin_notes || "");
+  const [notesSaved, setNotesSaved] = useState(false);
   const licUrl = getLicenseUrl(u.state, u.license_number);
 
   const statusColor = u.status === "approved" ? { bg: "#DCFCE7", text: "#166534" }
@@ -147,7 +149,32 @@ function UserRow({ user: u, onApprove, onReject, onCompleteDelete, onAdminDelete
                     📧 Resend Welcome
                   </button>
                 )}
+                {onViewReviews && (
+                  <button onClick={() => onViewReviews(u.id, u.name || u.email)}
+                    style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 6, border: `1px solid ${BRAND.border}`, background: "#F8FAFC", color: BRAND.dark, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+                    ⭐ View Reviews ({reviewCount})
+                  </button>
+                )}
+                {u.company_id && onForceRemoveCompany && (
+                  <button onClick={() => onForceRemoveCompany(u.id, u.name || u.email)}
+                    style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 6, border: "1px solid #FCA5A5", background: "#FEF2F2", color: "#DC2626", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+                    🏗️ Force-remove from company
+                  </button>
+                )}
               </div>
+              {onSaveNotes && (
+                <div style={{ marginTop: 10 }}>
+                  <div style={{ fontWeight: 600, marginBottom: 4 }}>Admin notes (internal only):</div>
+                  <textarea value={notes} onChange={e => { setNotes(e.target.value); setNotesSaved(false); }}
+                    placeholder="Internal notes about this trade pro..."
+                    rows={2}
+                    style={{ width: "100%", padding: "6px 8px", border: `1px solid ${BRAND.border}`, borderRadius: 6, fontSize: 11, fontFamily: "'DM Sans', sans-serif", resize: "vertical", outline: "none", boxSizing: "border-box" }} />
+                  <button onClick={() => { onSaveNotes(u.id, notes); setNotesSaved(true); }}
+                    style={{ marginTop: 4, fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 6, border: "none", background: notesSaved ? "#DCFCE7" : BRAND.blue, color: notesSaved ? "#166534" : "#fff", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+                    {notesSaved ? "✓ Saved" : "Save note"}
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -212,14 +239,14 @@ function RealtorRow({ realtor: r, onUpgrade, onDowngrade }) {
 }
 
 // ── Review Row ───────────────────────────────────────────────
-function ReviewRow({ review: r, onDelete, editRequests = [], onResolveEditRequest }) {
+function ReviewRow({ review: r, onDelete, onToggleDisputed, editRequests = [], onResolveEditRequest }) {
   const [expanded, setExpanded] = useState(false);
   const score = r.overall_score;
   const scoreColor = score >= 4 ? "#166534" : score >= 3 ? "#854D0E" : "#991B1B";
   const myEditReqs = editRequests.filter(e => e.review_id === r.id);
 
   return (
-    <Row>
+    <Row faded={r.disputed}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, flexWrap: "wrap" }}>
         <div style={{ flex: 1 }}>
           <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 4, flexWrap: "wrap" }}>
@@ -228,6 +255,7 @@ function ReviewRow({ review: r, onDelete, editRequests = [], onResolveEditReques
               text={scoreColor}>★ {score?.toFixed(1) || "—"}</Badge>
             {r.work_label && <Badge color="#F0F4FF" text="#3730A3">{r.work_label}</Badge>}
             {myEditReqs.length > 0 && <Badge color="#FEF3C7" text="#92400E">✏️ {myEditReqs.length} edit request{myEditReqs.length > 1 ? "s" : ""}</Badge>}
+            {r.disputed && <Badge color="#FEE2E2" text="#991B1B">🚩 Disputed</Badge>}
           </div>
           <div style={{ fontSize: 11, color: BRAND.gray, display: "flex", gap: 12, flexWrap: "wrap" }}>
             <span>👤 {r.user_id?.slice(0, 8) || "Anonymous"}</span>
@@ -265,6 +293,11 @@ function ReviewRow({ review: r, onDelete, editRequests = [], onResolveEditReques
         </div>
         <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
           <Btn small color="#64748B" onClick={() => setExpanded(e => !e)}>{expanded ? "Less" : "Details"}</Btn>
+          {onToggleDisputed && (
+            <Btn small color={r.disputed ? "#64748B" : "#D97706"} onClick={() => onToggleDisputed(r.id, r.disputed)}>
+              {r.disputed ? "Clear Dispute" : "🚩 Flag Disputed"}
+            </Btn>
+          )}
           <Btn small color="#DC2626" onClick={() => onDelete(r.id)}>Delete</Btn>
         </div>
       </div>
@@ -398,9 +431,11 @@ export default function AdminPage({ go }) {
   const [suppliers, setSuppliers]       = useState([]);
   const [ownershipFlags, setOwnershipFlags] = useState([]);
   const [allInvites, setAllInvites]     = useState([]);
+  const [featureFlags, setFeatureFlags] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [userFilter, setUserFilter] = useState("all");
   const [reviewFilter, setReviewFilter] = useState("all");
+  const [reviewUserFilter, setReviewUserFilter] = useState(null); // { id, name } — set from a contractor row
   const [actionMsg, setActionMsg] = useState(null); // { ok, text }
 
   useEffect(() => { loadData(); }, []);
@@ -426,11 +461,11 @@ export default function AdminPage({ go }) {
   const loadData = async () => {
     setLoading(true);
     const safe = async (path) => { try { const r = await sb(path); return Array.isArray(r) ? r : []; } catch { return []; } };
-    const [[co, re, rv, er, ss, fb, rp, nd, rl, cm, cmem, rd, sup, of_, inv], authUsers] = await Promise.all([
+    const [[co, re, rv, er, ss, fb, rp, nd, rl, cm, cmem, rd, sup, of_, inv, ff], authUsers] = await Promise.all([
       Promise.all([
         safe("/contractors?select=*&order=created_at.desc&limit=500"),
         safe("/realtor_subscriptions?select=*&order=created_at.desc&limit=200"),
-        safe("/reviews?select=*&order=created_at.desc&limit=200"),
+        safe("/reviews?select=*&order=created_at.desc&limit=5000"),
         safe("/review_edit_requests?select=*&order=created_at.desc&limit=100"),
         safe("/push_subscriptions?select=*&order=created_at.desc&limit=200"),
         safe("/beta_feedback?select=*&order=created_at.desc&limit=200"),
@@ -443,6 +478,7 @@ export default function AdminPage({ go }) {
         safe("/featured_suppliers?select=*&order=name.asc"),
         safe("/ownership_flags?select=*&order=created_at.desc&limit=100"),
         safe("/invites?select=*&order=created_at.desc&limit=200"),
+        safe("/feature_flags?select=*&order=name.asc"),
       ]),
       fetchAuthUsers(),
     ]);
@@ -451,6 +487,7 @@ export default function AdminPage({ go }) {
     setReported(rp); setNdaSigs(nd);
     setCompanies(cm); setCompanyMembers(cmem);
     setRedemptions(rd); setSuppliers(sup); setOwnershipFlags(of_); setAllInvites(inv);
+    setFeatureFlags(ff);
     // Enrich realtor rows with lookup counts
     const lookupCounts = rl.reduce((acc, l) => { acc[l.user_id] = (acc[l.user_id] || 0) + 1; return acc; }, {});
     setRealtors(re.map(r => ({ ...r, lookup_count: lookupCounts[r.user_id] || 0 })));
@@ -619,6 +656,49 @@ export default function AdminPage({ go }) {
     flash(true, "Supplier deleted");
   };
 
+  // ── Feature Flags ────────────────────────────────────────────
+  const enableEarlyAccess = async (flag) => {
+    if (!window.confirm(`Enable EARLY ACCESS for "${flag.name}" (Gold + Platinum only)?`)) return;
+    const payload = { enabled: false, early_access_plans: ["gold", "platinum"] };
+    await adminPatch("/feature_flags", payload, { id: `eq.${flag.id}` });
+    setFeatureFlags(fs => fs.map(f => f.id === flag.id ? { ...f, ...payload } : f));
+    flash(true, `${flag.name} — Early Access enabled for Gold & Platinum`);
+  };
+  const fullLaunchFlag = async (flag) => {
+    if (!window.confirm(`FULL LAUNCH "${flag.name}" for ALL paid users? This cannot be undone from this button — you'd need to Disable to roll back.`)) return;
+    const payload = { enabled: true, early_access_plans: null };
+    await adminPatch("/feature_flags", payload, { id: `eq.${flag.id}` });
+    setFeatureFlags(fs => fs.map(f => f.id === flag.id ? { ...f, ...payload } : f));
+    flash(true, `${flag.name} — Full launch enabled for all paid users`);
+  };
+  const disableFlag = async (flag) => {
+    if (!window.confirm(`Disable "${flag.name}" completely? No one will see this feature.`)) return;
+    const payload = { enabled: false, early_access_plans: null };
+    await adminPatch("/feature_flags", payload, { id: `eq.${flag.id}` });
+    setFeatureFlags(fs => fs.map(f => f.id === flag.id ? { ...f, ...payload } : f));
+    flash(true, `${flag.name} — Disabled`);
+  };
+
+  // ── Contractor admin notes / force-remove from company ───────
+  const saveAdminNotes = async (id, notes) => {
+    await adminPatch("/contractors", { admin_notes: notes }, { id: `eq.${id}` });
+    setContractors(cs => cs.map(c => c.id === id ? { ...c, admin_notes: notes } : c));
+    flash(true, "Admin note saved");
+  };
+  const forceRemoveFromCompany = async (id, name) => {
+    if (!window.confirm(`Force-remove ${name || "this user"} from their company?`)) return;
+    await adminPatch("/contractors", { company_id: null, company_role: null }, { id: `eq.${id}` });
+    setContractors(cs => cs.map(c => c.id === id ? { ...c, company_id: null, company_role: null } : c));
+    setCompanyMembers(prev => prev.filter(m => m.id !== id));
+    flash(true, `${name || "User"} removed from company`);
+  };
+
+  // ── Reviews: dispute flag ─────────────────────────────────────
+  const toggleDisputed = async (id, current) => {
+    await adminPatch("/reviews", { disputed: !current }, { id: `eq.${id}` });
+    setReviews(rv => rv.map(r => r.id === id ? { ...r, disputed: !current } : r));
+  };
+
   // ── Derived counts ──────────────────────────────────────────
   const pendingContractors  = contractors.filter(c => !c.status || c.status === "pending");
   const deletionRequests    = contractors.filter(c => c.deletion_requested && !c.deleted);
@@ -631,6 +711,19 @@ export default function AdminPage({ go }) {
   const goldContractors     = contractors.filter(c => c.plan === "gold");
   const paidContractors     = contractors.filter(c => ["bronze","silver","gold"].includes(c.plan));
   const avgScore            = reviews.length ? (reviews.reduce((s, r) => s + (r.overall_score || 0), 0) / reviews.length).toFixed(1) : "—";
+
+  // ── Bid Intelligence readiness metrics ────────────────────────
+  const bidIntelFlag   = featureFlags.find(f => f.name === "bid_intelligence");
+  const now             = Date.now();
+  const oneWeekMs        = 7 * 24 * 60 * 60 * 1000;
+  const oneMonthMs       = 30 * 24 * 60 * 60 * 1000;
+  const newReviewsWeek  = reviews.filter(r => r.created_at && (now - new Date(r.created_at).getTime()) <= oneWeekMs).length;
+  const newReviewsMonth = reviews.filter(r => r.created_at && (now - new Date(r.created_at).getTime()) <= oneMonthMs).length;
+  const activeCompanies = companies.filter(c => c.status === "active" || !c.status).length;
+  const addressCounts = reviews.reduce((acc, r) => { const key = r.address || "Unknown"; acc[key] = (acc[key] || 0) + 1; return acc; }, {});
+  const uniqueAddressCount = Object.keys(addressCounts).length;
+  const avgReviewsPerAddress = uniqueAddressCount ? (reviews.length / uniqueAddressCount).toFixed(1) : "0";
+  const topAddresses = Object.entries(addressCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
   // ── Filtered views ──────────────────────────────────────────
   const filteredContractors = userFilter === "all"        ? contractors.filter(c => !c.deleted)
@@ -649,6 +742,8 @@ export default function AdminPage({ go }) {
   const filteredReviews = reviewFilter === "all"     ? reviews
     : reviewFilter === "edits" ? reviews.filter(r => editRequests.some(e => e.review_id === r.id))
     : reviewFilter === "low"   ? reviews.filter(r => r.overall_score < 3)
+    : reviewFilter === "disputed" ? reviews.filter(r => r.disputed)
+    : reviewFilter === "user" && reviewUserFilter ? reviews.filter(r => r.user_id === reviewUserFilter.id)
     : reviews;
 
   const pendingRedemptions  = redemptions.filter(r => r.status === "pending");
@@ -666,7 +761,20 @@ export default function AdminPage({ go }) {
     { id: "reported",     label: `Reports${(openReports.length + openOwnershipFlags.length) > 0 ? ` (${openReports.length + openOwnershipFlags.length})` : ""}`, icon: "🚩" },
     { id: "nda",          label: `NDA (${ndaSigs.length})`, icon: "📄" },
     { id: "push",         label: `Push (${subs.length})`, icon: "🔔" },
+    { id: "flags",        label: "🚩 Feature Flags", icon: "🚩" },
   ];
+
+  const ProgressBar = ({ current, target, color }) => {
+    const pct = Math.min(100, (current / target) * 100);
+    return (
+      <div>
+        <div style={{ background: "#334155", borderRadius: 6, height: 10, overflow: "hidden" }}>
+          <div style={{ width: `${pct}%`, height: "100%", background: color, borderRadius: 6, transition: "width 0.3s" }} />
+        </div>
+        <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 4 }}>{current} / {target} reviews</div>
+      </div>
+    );
+  };
 
   const statBox = (icon, val, label, color = BRAND.blue) => (
     <div style={{ background: "#fff", border: `1px solid ${BRAND.border}`, borderRadius: 14, padding: "1rem", textAlign: "center", flex: "1 1 120px" }}>
@@ -726,6 +834,43 @@ export default function AdminPage({ go }) {
         {!loading && tab === "overview" && (
           <div>
             <SectionHead title="Platform Overview" />
+
+            {/* Bid Intelligence launch readiness — the only metrics that matter for the launch decision */}
+            <div style={{ background: "#1E293B", border: "1px solid #334155", borderRadius: 16, padding: "1.25rem 1.5rem", marginBottom: "1.5rem" }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>🤖 Bid Intelligence Launch Readiness</div>
+              <div style={{ fontSize: 40, fontWeight: 900, color: "#F8FAFC", lineHeight: 1, marginBottom: 16 }}>{reviews.length} <span style={{ fontSize: 14, fontWeight: 600, color: "#94A3B8" }}>total reviews</span></div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 16 }}>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#FBBF24", marginBottom: 6 }}>⚡ Early Access Threshold</div>
+                  <ProgressBar current={reviews.length} target={50} color="#F59E0B" />
+                  <div style={{ fontSize: 10, color: "#64748B", marginTop: 4 }}>Flip early access when this hits 50</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#60A5FA", marginBottom: 6 }}>🚀 Full Launch Threshold</div>
+                  <ProgressBar current={reviews.length} target={200} color="#2563EB" />
+                  <div style={{ fontSize: 10, color: "#64748B", marginTop: 4 }}>Flip full launch when this hits 200</div>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 20, flexWrap: "wrap", paddingTop: 12, borderTop: "1px solid #334155" }}>
+                {[
+                  ["New this week", newReviewsWeek],
+                  ["New this month", newReviewsMonth],
+                  ["Registered trade pros", contractors.length],
+                  ["Pending approvals", pendingContractors.length],
+                  ["Active companies", activeCompanies],
+                  ["Avg reviews / address", avgReviewsPerAddress],
+                ].map(([label, val]) => (
+                  <div key={label}>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: "#F8FAFC" }}>{val}</div>
+                    <div style={{ fontSize: 10, color: "#94A3B8" }}>{label}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: 14 }}>
+                <Btn small color="#F59E0B" onClick={() => setTab("flags")}>Manage in Feature Flags →</Btn>
+              </div>
+            </div>
+
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: "1.5rem" }}>
               {statBox("🔨", contractors.length, "Trade Pros", BRAND.blue)}
               {statBox("✅", contractors.filter(c => c.status === "approved").length, "Verified", "#16A34A")}
@@ -855,7 +1000,11 @@ export default function AdminPage({ go }) {
             ) : (
               filteredContractors.length === 0 ? <Empty msg="No contractors match this filter" /> :
                 filteredContractors.map(c => (
-                  <UserRow key={c.id} user={c} onApprove={approveContractor} onReject={rejectContractor} onCompleteDelete={completeDelete} onAdminDelete={deleteUser} onChangePlan={changePlan} onResendWelcome={resendWelcome} companies={companies} />
+                  <UserRow key={c.id} user={c} onApprove={approveContractor} onReject={rejectContractor} onCompleteDelete={completeDelete} onAdminDelete={deleteUser} onChangePlan={changePlan} onResendWelcome={resendWelcome}
+                    onSaveNotes={saveAdminNotes} onForceRemoveCompany={forceRemoveFromCompany}
+                    onViewReviews={(id, name) => { setReviewUserFilter({ id, name }); setReviewFilter("user"); setTab("reviews"); }}
+                    reviewCount={reviews.filter(r => r.user_id === c.id).length}
+                    companies={companies} />
                 ))
             )}
           </div>
@@ -1080,17 +1229,41 @@ export default function AdminPage({ go }) {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: 8 }}>
               <SectionHead title="Reviews" count={reviews.length} />
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {[["all","All"],["edits","✏️ Edit Requests"],["low","⚠️ Low Rated"]].map(([val, label]) => (
-                  <button key={val} onClick={() => setReviewFilter(val)}
+                {[["all","All"],["edits","✏️ Edit Requests"],["low","⚠️ Low Rated"],["disputed","🚩 Disputed"]].map(([val, label]) => (
+                  <button key={val} onClick={() => { setReviewFilter(val); if (val !== "user") setReviewUserFilter(null); }}
                     style={{ padding: "4px 10px", borderRadius: 8, border: `1px solid ${reviewFilter === val ? BRAND.blue : BRAND.border}`, background: reviewFilter === val ? BRAND.blue : "#fff", color: reviewFilter === val ? "#fff" : BRAND.gray, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
                     {label}
                   </button>
                 ))}
               </div>
             </div>
+
+            {reviewFilter === "user" && reviewUserFilter && (
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 10, padding: "8px 12px", marginBottom: 12 }}>
+                <span style={{ fontSize: 12, color: "#1E40AF", fontWeight: 600 }}>Showing reviews by {reviewUserFilter.name}</span>
+                <button onClick={() => { setReviewFilter("all"); setReviewUserFilter(null); }}
+                  style={{ background: "none", border: "none", color: "#1E40AF", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+                  Clear ×
+                </button>
+              </div>
+            )}
+
+            {topAddresses.length > 0 && (
+              <div style={{ background: "#F8FAFC", border: `1px solid ${BRAND.border}`, borderRadius: 12, padding: "10px 14px", marginBottom: "1rem" }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: BRAND.dark, marginBottom: 6 }}>📍 Addresses with most reviews</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {topAddresses.map(([addr, count]) => (
+                    <span key={addr} style={{ fontSize: 11, color: BRAND.gray, background: "#fff", border: `1px solid ${BRAND.border}`, borderRadius: 8, padding: "3px 9px" }}>
+                      {addr} <strong style={{ color: BRAND.dark }}>({count})</strong>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {filteredReviews.length === 0 ? <Empty msg="No reviews match this filter" /> :
               filteredReviews.map(r => (
-                <ReviewRow key={r.id} review={r} onDelete={deleteReview} editRequests={editRequests} onResolveEditRequest={resolveEditRequest} />
+                <ReviewRow key={r.id} review={r} onDelete={deleteReview} onToggleDisputed={toggleDisputed} editRequests={editRequests} onResolveEditRequest={resolveEditRequest} />
               ))
             }
           </div>
@@ -1272,6 +1445,67 @@ export default function AdminPage({ go }) {
                 </Row>
               ))
             }
+          </div>
+        )}
+
+        {/* ── FEATURE FLAGS ── */}
+        {!loading && tab === "flags" && (
+          <div>
+            <SectionHead title="Feature Flags" count={featureFlags.length} />
+            <div style={{ background: "#1E3A5F", border: "1px solid #2563EB", borderRadius: 12, padding: "0.75rem 1rem", margin: "1rem 0", fontSize: 12, color: "#93C5FD", lineHeight: 1.6 }}>
+              This is how you control feature releases — no SQL needed ever. Every flag change requires a confirmation dialog.
+            </div>
+            {featureFlags.length === 0 ? <Empty msg="No feature flags yet" /> : featureFlags.map(flag => {
+              const flagStatus = flag.enabled ? { bg: "#DCFCE7", text: "#166534", label: "✅ Full Launch" }
+                : flag.early_access_plans?.length ? { bg: "#FFFBEB", text: "#92400E", label: "⚡ Early Access" }
+                : { bg: "#F1F5F9", text: "#64748B", label: "⏸️ Disabled" };
+              const isBidIntel = flag.name === "bid_intelligence";
+              return (
+                <div key={flag.id} style={{ background: "#fff", border: `1px solid ${BRAND.border}`, borderRadius: 14, padding: "16px 18px", marginBottom: 12 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                        <span style={{ fontSize: 15, fontWeight: 800, color: BRAND.dark }}>{flag.name}</span>
+                        <Badge color={flagStatus.bg} text={flagStatus.text}>{flagStatus.label}</Badge>
+                      </div>
+                      {flag.early_access_plans?.length > 0 && (
+                        <div style={{ fontSize: 11, color: BRAND.gray }}>Early access plans: {flag.early_access_plans.join(", ")}</div>
+                      )}
+                      {flag.threshold_description && (
+                        <div style={{ fontSize: 11, color: BRAND.gray, marginTop: 4, whiteSpace: "pre-line" }}>{flag.threshold_description}</div>
+                      )}
+                    </div>
+                  </div>
+
+                  {isBidIntel && (
+                    <div style={{ background: "#F8FAFC", border: `1px solid ${BRAND.border}`, borderRadius: 10, padding: "12px 14px", marginBottom: 12 }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                        <div>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: "#B45309", marginBottom: 4 }}>Early Access — Recommended at 50+ total reviews</div>
+                          <div style={{ background: "#E2E8F0", borderRadius: 6, height: 8, overflow: "hidden" }}>
+                            <div style={{ width: `${Math.min(100, (reviews.length / 50) * 100)}%`, height: "100%", background: "#F59E0B", borderRadius: 6 }} />
+                          </div>
+                          <div style={{ fontSize: 10, color: BRAND.gray, marginTop: 3 }}>Current: {reviews.length} / 50 reviews</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: "#1E40AF", marginBottom: 4 }}>Full Launch — Recommended at 200+ total reviews</div>
+                          <div style={{ background: "#E2E8F0", borderRadius: 6, height: 8, overflow: "hidden" }}>
+                            <div style={{ width: `${Math.min(100, (reviews.length / 200) * 100)}%`, height: "100%", background: "#2563EB", borderRadius: 6 }} />
+                          </div>
+                          <div style={{ fontSize: 10, color: BRAND.gray, marginTop: 3 }}>Current: {reviews.length} / 200 reviews</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <Btn small color="#F59E0B" onClick={() => enableEarlyAccess(flag)}>⚡ Enable Early Access</Btn>
+                    <Btn small color="#16A34A" onClick={() => fullLaunchFlag(flag)}>🚀 Full Launch</Btn>
+                    <Btn small color="#64748B" onClick={() => disableFlag(flag)}>⏸️ Disable</Btn>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
 

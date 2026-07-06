@@ -11,6 +11,8 @@ import NearbyPlaces from "./NearbyPlaces";
 import { t } from "../i18n/translations";
 import ReviewCard from "./ReviewCard";
 import BidPrepSummary from "./BidPrepSummary";
+import BidIntelligence from "./BidIntelligence";
+import { calculateBidScore } from "../utils/bidScoring";
 
 const toTitleCase = (str) => {
   if (!str) return "";
@@ -291,6 +293,17 @@ export default function AddressCard({ address, go, goLogin, goReview }) {
             </>
         }
       </div>
+      {/* Bid Intelligence */}
+      {translatedReviews.length > 0 && isLoggedIn && (
+        <div style={{ padding: "0 1.35rem" }}>
+          <BidIntelligence
+            address={fullAddr}
+            reviews={translatedReviews}
+            bidScore={calculateBidScore(translatedReviews)}
+            user={user}
+          />
+        </div>
+      )}
       {/* Local Points of Interest */}
       <NearbyPlaces
         address={`${toTitleCase(address.street)}, ${toTitleCase(address.city)}${address.state ? ", " + address.state : ""}`}

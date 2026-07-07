@@ -5,7 +5,7 @@ import Logo from "../components/Logo";
 const PRIVACY = {
   en: {
     title:   "Privacy Policy",
-    updated: "Last updated: January 2025",
+    updated: "Last updated: May 2026",
     promise: "Our Core Promise",
     promiseBody: "We will NEVER sell, share, rent, or distribute your personal information, contractor data, or license numbers to any third party — advertisers, data brokers, or anyone else.",
     sections: [
@@ -22,7 +22,7 @@ const PRIVACY = {
   },
   es: {
     title:   "Política de Privacidad",
-    updated: "Última actualización: enero 2025",
+    updated: "Última actualización: mayo 2026",
     promise: "Nuestra Promesa Principal",
     promiseBody: "NUNCA venderemos, compartiremos, alquilaremos ni distribuiremos tu información personal, datos de contratista o números de licencia a ningún tercero — anunciantes, corredores de datos ni nadie más.",
     sections: [

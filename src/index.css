@@ -6,3 +6,7 @@ body { margin: 0; padding: 0; background: #0F172A; overflow-x: hidden; overscrol
 @keyframes spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
 @media all and (display-mode: standalone) { html, body { overflow: hidden !important; position: fixed !important; width: 100% !important; height: 100% !important; } #root { position: fixed !important; top: 0; left: 0; right: 0; bottom: 0; overflow-y: scroll !important; -webkit-overflow-scrolling: touch; overscroll-behavior: none !important; padding-bottom: calc(80px + env(safe-area-inset-bottom)); } }
 @media not all and (display-mode: standalone) { html { overflow-y: scroll; } body { overscroll-behavior-y: none; min-height: 100vh; } #root { padding-bottom: calc(80px + env(safe-area-inset-bottom)); } }
+
+/* App Store / Google Play badge row — side by side on desktop, stacked on narrow viewports */
+.pr-store-badges { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
+@media (max-width: 480px) { .pr-store-badges { flex-direction: column; } }

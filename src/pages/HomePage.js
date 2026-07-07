@@ -6,6 +6,7 @@ import { Btn, Spinner } from "../components/UI";
 import Logo from "../components/Logo";
 import AddressCard from "../components/AddressCard";
 import AddressInput from "../components/AddressInput";
+import StoreBadges from "../components/StoreBadges";
 import { saveAddress, unsaveAddress } from "../api/auth";
 import { useLang } from "../hooks/useLang";
 import { useAuth } from "../hooks/useAuth";
@@ -177,6 +178,13 @@ export default function HomePage({ go, goLogin, goReview, initialQuery, onQueryU
               ))}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* App download badges — unauthenticated visitors only */}
+      {!isLoggedIn && !results && !loading && !error && (
+        <div style={{ padding: "1.5rem 1.5rem 0" }}>
+          <StoreBadges />
         </div>
       )}
 

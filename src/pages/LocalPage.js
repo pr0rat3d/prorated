@@ -2,6 +2,7 @@ import { useLang } from "../hooks/useLang";
 import { t } from "../i18n/translations";
 import { BRAND } from "../components/UI";
 import Logo from "../components/Logo";
+import StoreBadges from "../components/StoreBadges";
 import { useEffect } from "react";
 
 const CITIES = {
@@ -115,6 +116,10 @@ export default function LocalPage({ go, city }) {
             style={{ background: "#2563EB", color: "#fff", border: "none", padding: "12px 28px", borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
             Create Free Account →
           </button>
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <StoreBadges />
         </div>
 
         <div style={{ background: "#fff", border: `1px solid ${BRAND.border}`, borderRadius: 14, padding: "1rem 1.25rem" }}>

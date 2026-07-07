@@ -3,6 +3,7 @@ import { isNativeIOS } from "./utils/platform";
 import Nav from "./components/Nav";
 import BottomNav from "./components/BottomNav";
 import { OfflineBanner, InstallBanner, IOSInstallBanner } from "./components/Banners";
+import StoreBadges from "./components/StoreBadges";
 import HomePage from "./pages/HomePage";
 import ReviewPage from "./pages/ReviewPage";
 import DashboardPage from "./pages/DashboardPage";
@@ -465,6 +466,9 @@ export default function App() {
               {label}
             </button>
           ))}
+        </div>
+        <div style={{ marginBottom: 8 }}>
+          <StoreBadges />
         </div>
         <p style={{ fontSize: 10, color: "#94A3B8", margin: "4px 0 0" }}>
           © 2026 ProRated · Built by Pros, Built for Pros · 🔒 We never sell your personal data

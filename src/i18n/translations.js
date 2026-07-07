@@ -268,21 +268,6 @@ export const translations = {
       miAway:       "mi away",
     },
 
-
-    // ── Terms & Privacy ────────────────────────────────────────
-    terms: {
-      title:        "Terms of Service",
-      updated:      "Last updated: January 2025",
-      summary:      "Plain English Summary",
-      contact:      "Contact hello@prorated.app →",
-    },
-    privacy: {
-      title:        "Privacy Policy",
-      updated:      "Last updated: January 2025",
-      promise:      "Our Core Promise",
-      contact:      "Contact hello@prorated.app →",
-    },
-
     // ── Review gate screens ────────────────────────────────────
     reviewGate: {
       loginTitle:   "Sign in to leave a review",
@@ -681,21 +666,6 @@ export const translations = {
       open:         "ABIERTO",
       closed:       "CERRADO",
       miAway:       "mi de distancia",
-    },
-
-
-    // ── Terms & Privacy ────────────────────────────────────────
-    terms: {
-      title:        "Términos de Servicio",
-      updated:      "Última actualización: enero 2025",
-      summary:      "Resumen en lenguaje claro",
-      contact:      "Contactar hello@prorated.app →",
-    },
-    privacy: {
-      title:        "Política de Privacidad",
-      updated:      "Última actualización: enero 2025",
-      promise:      "Nuestra Promesa Principal",
-      contact:      "Contactar hello@prorated.app →",
     },
 
     // ── Review gate screens ────────────────────────────────────

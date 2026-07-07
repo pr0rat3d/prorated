@@ -261,7 +261,7 @@ export const translations = {
       findingSuppliers: "Finding nearby suppliers within {radius} miles...",
       findingFood:  "Finding nearby food spots within {radius} miles...",
       seeAll:       "See all",
-      upgradeFor:   "Upgrade to Pro · $9.99/mo",
+      upgradeFor:   "Upgrade — free through 2026",
       upgrade:      "Upgrade →",
       open:         "OPEN",
       closed:       "CLOSED",
@@ -305,7 +305,7 @@ export const translations = {
     // ── Dashboard upgrade card ─────────────────────────────────
     upgrade: {
       title:     "🚀 Upgrade to Pro",
-      body:      "Unlimited lookups · $9.99/mo or $99.99/yr",
+      body:      "Unlimited lookups · Bronze, Silver & Gold free through 2026",
       btn:       "View plans →",
     },
 
@@ -317,7 +317,7 @@ export const translations = {
       billedAnnually:   "Billed annually",
       savesPerYear:     "saves you",
       orSaveWith:       "Or save {savings}% with annual billing",
-      upgradeMonthly:   "Upgrade — $9.99/month →",
+      upgradeMonthly:   "Upgrade — Free through 2026 →",
       upgradeAnnual:    "Upgrade — $99.99/year →",
       yourPlan:         "Your current plan:",
       proUnlimited:     "Unlimited lookups · All features unlocked",
@@ -676,7 +676,7 @@ export const translations = {
       findingSuppliers: "Buscando proveedores a {radius} millas...",
       findingFood:  "Buscando restaurantes a {radius} millas...",
       seeAll:       "Ver todos",
-      upgradeFor:   "Mejora a Pro · $9.99/mes",
+      upgradeFor:   "Mejora — gratis hasta 2026",
       upgrade:      "Mejorar →",
       open:         "ABIERTO",
       closed:       "CERRADO",
@@ -720,7 +720,7 @@ export const translations = {
     // ── Dashboard upgrade card ─────────────────────────────────
     upgrade: {
       title:     "🚀 Mejora a Pro",
-      body:      "Búsquedas ilimitadas · $9.99/mes o $99.99/año",
+      body:      "Búsquedas ilimitadas · Bronze, Silver y Gold gratis hasta 2026",
       btn:       "Ver planes →",
     },
 
@@ -732,7 +732,7 @@ export const translations = {
       billedAnnually:   "Facturado anualmente",
       savesPerYear:     "te ahorra",
       orSaveWith:       "O ahorra {savings}% con facturación anual",
-      upgradeMonthly:   "Mejorar — $9.99/mes →",
+      upgradeMonthly:   "Mejorar — Gratis hasta 2026 →",
       upgradeAnnual:    "Mejorar — $99.99/año →",
       yourPlan:         "Tu plan actual:",
       proUnlimited:     "Búsquedas ilimitadas · Todas las funciones",

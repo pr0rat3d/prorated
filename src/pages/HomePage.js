@@ -213,13 +213,13 @@ export default function HomePage({ go, goLogin, goReview, initialQuery, onQueryU
               <div style={{ fontSize: 40, marginBottom: 10 }}>🔒</div>
               <h2 style={{ fontSize: 18, fontWeight: 800, color: "#FEF2F2", marginBottom: 8 }}>Monthly lookup limit reached</h2>
               <p style={{ fontSize: 13, color: "#FECACA", lineHeight: 1.65 }}>
-                You've used all {FREE_MONTHLY_LOOKUPS} free lookups this month. Upgrade to Pro for unlimited access.
+                You've used all {FREE_MONTHLY_LOOKUPS} free lookups this month. Upgrade to a paid plan for unlimited access.
               </p>
             </div>
             <div style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: 10, alignItems: "center" }}>
               <button onClick={() => go("pricing")}
                 style={{ width: "100%", maxWidth: 320, background: "#2563EB", color: "#fff", border: "none", padding: "13px", borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
-                🚀 Upgrade to Pro — $9.99/mo
+                🚀 Upgrade — Free through 2026
               </button>
               <p style={{ fontSize: 11, color: "#94A3B8", textAlign: "center" }}>
                 Resets on the 1st of next month · You can still leave reviews for free

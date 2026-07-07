@@ -1146,7 +1146,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                 <div onClick={() => go("pricing")} style={{ background: "linear-gradient(135deg, #0F172A, #1E3A5F)", borderRadius: 14, padding: "1rem 1.25rem", marginBottom: "0.75rem", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 800, color: "#F8FAFC", marginBottom: 2 }}>{t(lang, "upgrade.title")}</div>
-                    <div style={{ fontSize: 11, color: "#94A3B8" }}>Bronze from $9.99/mo · Silver $19.99/mo · Gold $29.99/mo</div>
+                    <div style={{ fontSize: 11, color: "#94A3B8" }}>Bronze, Silver &amp; Gold — free through 2026</div>
                   </div>
                   <button onClick={(e) => { e.stopPropagation(); go("pricing"); }}
                     style={{ background: BRAND.blue, color: "#fff", border: "none", padding: "8px 16px", borderRadius: 9, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", flexShrink: 0 }}>

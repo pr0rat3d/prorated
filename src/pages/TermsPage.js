@@ -5,7 +5,7 @@ import Logo from "../components/Logo";
 const TERMS = {
   en: {
     title:   "Terms of Service",
-    updated: "Last updated: January 2025",
+    updated: "Last updated: May 2026",
     summary: "Plain English Summary",
     summaryItems: [
       "ProRated is for licensed trade professionals only — not homeowners or the general public",
@@ -32,7 +32,7 @@ const TERMS = {
   },
   es: {
     title:   "Términos de Servicio",
-    updated: "Última actualización: enero 2025",
+    updated: "Última actualización: mayo 2026",
     summary: "Resumen en lenguaje claro",
     summaryItems: [
       "ProRated es solo para contratistas con licencia — no para propietarios ni el público general",

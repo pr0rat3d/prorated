@@ -47,12 +47,6 @@ export default function HomePage({ go, goLogin, goReview, initialQuery, onQueryU
     const trimmed = q.trim();
     if (!trimmed || trimmed.length < 5) return;
 
-    // 0. Gate — must be logged in and verified
-    if (!isLoggedIn) {
-      setError("gate_login");
-      setLoading(false);
-      return;
-    }
     const isApproved = user?.status === "approved" || user?.plan === "pro";
 
     if (!isApproved && user?.status === "pending") {
@@ -165,7 +159,7 @@ export default function HomePage({ go, goLogin, goReview, initialQuery, onQueryU
             <div style={{ display: "flex", justifyContent: "center", marginBottom: 10, animation: "fadeUp 0.5s ease 0.35s both" }}>
               <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 20, padding: "4px 12px" }}>
                 <span style={{ fontSize: 11 }}>📍</span>
-                <span style={{ fontSize: 11, color: "#94A3B8" }}>Beta focused on <strong style={{ color: "#F8FAFC" }}>Alabama</strong> — expanding soon</span>
+                <span style={{ fontSize: 11, color: "#94A3B8" }}>Now live in <strong style={{ color: "#F8FAFC" }}>Alabama</strong> — expanding soon</span>
               </div>
             </div>
             <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap", animation: "fadeUp 0.5s ease 0.4s both" }}>
@@ -260,29 +254,6 @@ export default function HomePage({ go, goLogin, goReview, initialQuery, onQueryU
 
         {error && !loading && (
           <>
-            {/* Gate: not logged in */}
-            {error === "gate_login" && (
-              <div style={{ background: "#fff", border: `1px solid ${BRAND.border}`, borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 16px rgba(0,0,0,0.06)", animation: "fadeUp 0.4s ease both" }}>
-                <div style={{ background: "linear-gradient(135deg, #0F172A, #1E3A5F)", padding: "2rem", textAlign: "center" }}>
-                  <div style={{ fontSize: 48, marginBottom: 12 }}>🔐</div>
-                  <h2 style={{ fontSize: 20, fontWeight: 800, color: "#F8FAFC", marginBottom: 8 }}>Sign in to search addresses</h2>
-                  <p style={{ fontSize: 14, color: "#94A3B8", lineHeight: 1.65, maxWidth: 340, margin: "0 auto" }}>
-                    ProRated is a verified trade professional platform. Create a free account to access job site ratings.
-                  </p>
-                </div>
-                <div style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: 10, alignItems: "center" }}>
-                  <button onClick={() => go("signup")}
-                    style={{ width: "100%", maxWidth: 320, background: BRAND.blue, color: "#fff", border: "none", padding: "13px", borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
-                    Create free account →
-                  </button>
-                  <button onClick={() => go("signup")}
-                    style={{ background: "none", border: "none", color: BRAND.blue, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
-                    Already have an account? Sign in
-                  </button>
-                </div>
-              </div>
-            )}
-
             {/* Gate: pending verification */}
             {error === "gate_pending" && (
               <div style={{ background: "#fff", border: `1px solid #FDE047`, borderRadius: 20, overflow: "hidden", animation: "fadeUp 0.4s ease both" }}>
@@ -323,7 +294,7 @@ export default function HomePage({ go, goLogin, goReview, initialQuery, onQueryU
             )}
 
             {/* Normal: no reviews found */}
-            {error !== "gate_login" && error !== "gate_pending" && error !== "gate_rejected" && (
+            {error !== "gate_pending" && error !== "gate_rejected" && (
               <div style={{ background: "#fff", border: `1px solid ${BRAND.border}`, borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 16px rgba(0,0,0,0.06)", animation: "fadeUp 0.4s ease both" }}>
                 <div style={{ background: "linear-gradient(135deg, #0F172A, #1E3A5F)", padding: "2rem", textAlign: "center" }}>
                   <div style={{ fontSize: 48, marginBottom: 12 }}>📍</div>

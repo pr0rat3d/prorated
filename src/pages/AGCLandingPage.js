@@ -11,7 +11,7 @@ export default function AGCLandingPage({ go }) {
   useEffect(() => {
     document.title = "ProRated × AGC Alabama — Free Pro Access for Members";
     const d = document.querySelector("meta[name='description']");
-    if (d) d.setAttribute("content", "AGC Alabama members get free ProRated Pro access during our beta. Search job site ratings, payment history, and access conditions before you bid. Use code AGC2026.");
+    if (d) d.setAttribute("content", "AGC Alabama members get free ProRated Pro access. Search job site ratings, payment history, and access conditions before you bid. Use code AGC2026.");
     return () => { document.title = "ProRated — Built by Pros, Built for Pros"; };
   }, []);
   const [started, setStarted] = useState(false);
@@ -64,7 +64,7 @@ export default function AGCLandingPage({ go }) {
               🎁 AGC Members get Pro free
             </div>
             <div style={{ fontSize: 12, color: "#166534" }}>
-              Full access during beta — no credit card required
+              Full access — no credit card required
             </div>
           </div>
           <button onClick={() => { setStarted(true); go("signup"); }}

@@ -46,10 +46,10 @@ export default function BetaWelcome({ onDone }) {
           <Logo size={72} />
         </div>
 
-        {/* Beta badge */}
+        {/* Welcome badge */}
         {step === 0 && (
           <div style={{ display: "inline-block", background: "rgba(232,160,32,0.15)", color: "#FCD34D", fontSize: 10, fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", padding: "5px 14px", borderRadius: 20, border: "1px solid rgba(232,160,32,0.3)", marginBottom: 20 }}>
-            🎉 Welcome to the ProRated Beta
+            🎉 Welcome to ProRated
           </div>
         )}
 
@@ -91,10 +91,9 @@ export default function BetaWelcome({ onDone }) {
           </button>
         )}
 
-        {/* Beta note on last step */}
+        {/* Note on last step */}
         {isLast && (
           <p style={{ fontSize: 11, color: "#475569", marginTop: 12, lineHeight: 1.6 }}>
-            You're one of our first beta users 🙌<br />
             Use the <strong style={{ color: "#94A3B8" }}>💬 Feedback</strong> button anytime to tell us what you think.
           </p>
         )}

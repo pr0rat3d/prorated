@@ -253,7 +253,7 @@ export default function AddressCard({ address, go, goLogin, goReview }) {
       )}
 
       <div style={{ padding: "1rem 1.35rem", borderBottom: `1px solid #F1F5F9` }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: "8px 24px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: "8px 24px", filter: isLoggedIn ? "none" : "blur(4px)", userSelect: isLoggedIn ? "auto" : "none", pointerEvents: isLoggedIn ? "auto" : "none" }}>
           {RATING_CATEGORIES.map(cat => (
             <div key={cat.id}>
               <div style={{ fontSize: 11, color: BRAND.gray, fontWeight: 600, marginBottom: 3 }}>{t(lang, `categories.${cat.id}`)}</div>
@@ -263,36 +263,64 @@ export default function AddressCard({ address, go, goLogin, goReview }) {
         </div>
       </div>
       {/* Tags */}
-      <div style={{ padding: "0.75rem 1.35rem", borderBottom: `1px solid #F1F5F9`, display: "flex", flexWrap: "wrap", gap: 5, alignItems: "center" }}>
-        <span style={{ fontSize: 10, fontWeight: 700, color: BRAND.gray, textTransform: "uppercase", letterSpacing: "0.5px", marginRight: 4 }}>Flagged</span>
-        {(address.tags || []).map(tid => { const tagObj = ISSUE_TAGS.find(x => x.id === tid); return tagObj ? <Pill key={tid} label={tagObj.label} sev={tagObj.severity} selected /> : null; })}
-      </div>
-      {/* Trade filter */}
-      <div style={{ padding: "0.6rem 1.35rem", borderBottom: `1px solid #F1F5F9`, display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 11, color: BRAND.gray, marginRight: 3 }}>Filter by trade:</span>
-        {["all", ...tradesPresent].map(tid => {
-          const tr = TRADES.find(t => t.id === tid);
-          return <button key={tid} onClick={() => setTradeFilter(tid)}
-            style={{ padding: "3px 10px", borderRadius: 20, border: "1.5px solid", borderColor: tradeFilter === tid ? BRAND.blue : "#CBD5E1", background: tradeFilter === tid ? BRAND.blue : "transparent", color: tradeFilter === tid ? "#fff" : BRAND.gray, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s" }}>
-            {tid === "all" ? t(lang, "addressCard.allTrades") : `${tr?.icon} ${tr?.label}`}
-          </button>;
-        })}
-      </div>
-      {/* Reviews */}
-      {translating && (
-        <div style={{ padding: "0.5rem 1.35rem", fontSize: 11, color: BRAND.gray, display: "flex", alignItems: "center", gap: 6 }}>
-          <div style={{ width: 10, height: 10, borderRadius: "50%", border: `2px solid ${BRAND.border}`, borderTop: `2px solid ${BRAND.blue}`, animation: "spin 0.7s linear infinite", flexShrink: 0 }} />
-          Translating reviews...
+      {isLoggedIn && (
+        <div style={{ padding: "0.75rem 1.35rem", borderBottom: `1px solid #F1F5F9`, display: "flex", flexWrap: "wrap", gap: 5, alignItems: "center" }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: BRAND.gray, textTransform: "uppercase", letterSpacing: "0.5px", marginRight: 4 }}>Flagged</span>
+          {(address.tags || []).map(tid => { const tagObj = ISSUE_TAGS.find(x => x.id === tid); return tagObj ? <Pill key={tid} label={tagObj.label} sev={tagObj.severity} selected /> : null; })}
         </div>
       )}
-      <div style={{ padding: "0.25rem 1.35rem 1rem" }}>
-        {filtered.length === 0
-          ? <div style={{ textAlign: "center", padding: "1.5rem", color: BRAND.gray, fontSize: 13 }}>No reviews for this trade yet.</div>
-          : <>{shown.map((r, i) => <ReviewCard key={r.id} review={r} idx={i} />)}
-              {filtered.length > 2 && <button onClick={() => setExpanded(!expanded)} style={{ background: "none", border: "none", color: BRAND.blue, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: "6px 0", fontFamily: "'DM Sans', sans-serif" }}>{expanded ? "↑ Show fewer" : `↓ ${filtered.length - 2} more`}</button>}
-            </>
-        }
-      </div>
+      {/* Trade filter */}
+      {isLoggedIn && (
+        <div style={{ padding: "0.6rem 1.35rem", borderBottom: `1px solid #F1F5F9`, display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 11, color: BRAND.gray, marginRight: 3 }}>Filter by trade:</span>
+          {["all", ...tradesPresent].map(tid => {
+            const tr = TRADES.find(t => t.id === tid);
+            return <button key={tid} onClick={() => setTradeFilter(tid)}
+              style={{ padding: "3px 10px", borderRadius: 20, border: "1.5px solid", borderColor: tradeFilter === tid ? BRAND.blue : "#CBD5E1", background: tradeFilter === tid ? BRAND.blue : "transparent", color: tradeFilter === tid ? "#fff" : BRAND.gray, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s" }}>
+              {tid === "all" ? t(lang, "addressCard.allTrades") : `${tr?.icon} ${tr?.label}`}
+            </button>;
+          })}
+        </div>
+      )}
+      {/* Reviews */}
+      {!isLoggedIn ? (
+        <div style={{ padding: "1.25rem 1.35rem" }}>
+          <div style={{ background: "#fff", border: `1px solid ${BRAND.border}`, borderRadius: 14, padding: "1.5rem", textAlign: "center" }}>
+            <div style={{ fontSize: 28, marginBottom: 10, color: BRAND.blue }}>🔒</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: BRAND.dark, marginBottom: 6 }}>Full reviews visible to verified trade professionals only</div>
+            <p style={{ fontSize: 12.5, color: BRAND.gray, lineHeight: 1.6, marginBottom: 16, maxWidth: 340, marginLeft: "auto", marginRight: "auto" }}>
+              ProRated is built exclusively for licensed trade professionals. Create your free account to access complete job site intelligence.
+            </p>
+            <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+              <button onClick={() => go("signup")}
+                style={{ background: BRAND.blue, color: "#fff", border: "none", padding: "11px 20px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+                Sign up free →
+              </button>
+              <button onClick={() => { if (goLogin) goLogin(); else go("signup"); }}
+                style={{ background: "#F1F5F9", color: BRAND.dark, border: "none", padding: "11px 20px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+                Sign in
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          {translating && (
+            <div style={{ padding: "0.5rem 1.35rem", fontSize: 11, color: BRAND.gray, display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ width: 10, height: 10, borderRadius: "50%", border: `2px solid ${BRAND.border}`, borderTop: `2px solid ${BRAND.blue}`, animation: "spin 0.7s linear infinite", flexShrink: 0 }} />
+              Translating reviews...
+            </div>
+          )}
+          <div style={{ padding: "0.25rem 1.35rem 1rem" }}>
+            {filtered.length === 0
+              ? <div style={{ textAlign: "center", padding: "1.5rem", color: BRAND.gray, fontSize: 13 }}>No reviews for this trade yet.</div>
+              : <>{shown.map((r, i) => <ReviewCard key={r.id} review={r} idx={i} />)}
+                  {filtered.length > 2 && <button onClick={() => setExpanded(!expanded)} style={{ background: "none", border: "none", color: BRAND.blue, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: "6px 0", fontFamily: "'DM Sans', sans-serif" }}>{expanded ? "↑ Show fewer" : `↓ ${filtered.length - 2} more`}</button>}
+                </>
+            }
+          </div>
+        </>
+      )}
       {/* Bid Intelligence */}
       {translatedReviews.length > 0 && isLoggedIn && (
         <div style={{ padding: "0 1.35rem" }}>
@@ -315,7 +343,7 @@ export default function AddressCard({ address, go, goLogin, goReview }) {
       <div style={{ padding: "0.75rem 1.35rem", background: "#F8FAFC", borderTop: `1px solid ${BRAND.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span style={{ fontSize: 11, color: BRAND.gray }}>Worked here? Share your experience.</span>
         <div style={{ display: "flex", gap: 6 }}>
-          <button onClick={() => setShowBidPrep(true)}
+          <button onClick={() => { if (!isLoggedIn) { if (goLogin) goLogin(); else go("signup"); return; } setShowBidPrep(true); }}
             style={{ background: "#1E3A5F", color: "#93C5FD", border: "1px solid #2563EB", padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", display: "flex", alignItems: "center", gap: 4 }}>
             📋 Bid Prep
           </button>

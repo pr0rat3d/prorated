@@ -147,7 +147,7 @@ function PlaceRow({ place, isLocked }) {
 }
 
 export default function NearbyPlaces({ address, trade, go }) {
-  const { user }    = useAuth();
+  const { user, isLoggedIn } = useAuth();
   const { lang }    = useLang();
   const [expanded, setExpanded]   = useState(false);
   const [tab, setTab]             = useState("suppliers");
@@ -168,6 +168,8 @@ export default function NearbyPlaces({ address, trade, go }) {
       .then(result => { setData(result); setLoading(false); })
       .catch(() => { setError(true); setLoading(false); });
   }, [expanded, address, trade, radius]);
+
+  if (!isLoggedIn) return null;
 
   return (
     <div style={{ borderTop: `1px solid ${BRAND.border}`, marginTop: 4 }}>

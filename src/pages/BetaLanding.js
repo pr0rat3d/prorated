@@ -89,7 +89,7 @@ export default function BetaLanding({ go }) {
           <div className="fade1" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(37,99,235,0.15)", border: "1px solid rgba(37,99,235,0.3)", borderRadius: 20, padding: "5px 16px", marginBottom: 24 }}>
             <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#4ADE80", animation: "pulse 2s infinite" }} />
             <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "#93C5FD" }}>
-              Beta · Alabama Contractors
+              Now Live · Alabama Contractors
             </span>
           </div>
 
@@ -104,7 +104,7 @@ export default function BetaLanding({ go }) {
           <div className="fade4" style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
             <button onClick={() => go("signup")}
               style={{ background: BRAND.blue, color: "#fff", border: "none", padding: "14px 28px", borderRadius: 12, fontSize: 16, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
-              Join the beta — it's free →
+              Join ProRated — it's free →
             </button>
             <button onClick={() => go("home")}
               style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.2)", color: "#F8FAFC", padding: "14px 28px", borderRadius: 12, fontSize: 16, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
@@ -126,7 +126,7 @@ export default function BetaLanding({ go }) {
 
         {/* Social proof */}
         <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", color: "#475569", marginBottom: 16 }}>What beta contractors are saying</div>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", color: "#475569", marginBottom: 16 }}>What contractors are saying</div>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem", marginBottom: "5rem" }}>
           <TestimonialCard
@@ -143,7 +143,7 @@ export default function BetaLanding({ go }) {
         {/* Signup form */}
         {!submitted ? (
           <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 20, padding: "2.5rem", maxWidth: 540, margin: "0 auto", textAlign: "center" }}>
-            <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 8 }}>Join the Alabama beta</h2>
+            <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 8 }}>Join ProRated in Alabama</h2>
             <p style={{ fontSize: 14, color: "#94A3B8", marginBottom: 24, lineHeight: 1.65 }}>
               Free for licensed trade professionals. {FREE_MONTHLY_LOOKUPS} lookups/month included. No credit card required.
             </p>
@@ -159,7 +159,7 @@ export default function BetaLanding({ go }) {
             </select>
             <button onClick={handleJoin} disabled={!email.trim() || !trade || loading}
               style={{ width: "100%", background: !email.trim() || !trade ? "#1E293B" : BRAND.blue, color: !email.trim() || !trade ? "#475569" : "#fff", border: "none", padding: "14px", borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: !email.trim() || !trade ? "not-allowed" : "pointer", fontFamily: "'DM Sans', sans-serif", marginBottom: 12 }}>
-              {loading ? "Joining..." : "Request beta access →"}
+              {loading ? "Joining..." : "Request early access →"}
             </button>
             <p style={{ fontSize: 11, color: "#475569" }}>
               Or <button onClick={() => go("signup")} style={{ background: "none", border: "none", color: BRAND.blue, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>create your account now</button> — instant access after license verification

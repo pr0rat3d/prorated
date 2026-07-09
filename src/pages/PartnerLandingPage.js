@@ -170,7 +170,7 @@ export default function PartnerLandingPage({ go, partnerId }) {
 
   useEffect(() => {
     const title = `ProRated × ${p.name} — Free Pro Access for Members`;
-    const desc = `${p.name} members get free ProRated Pro access during our Alabama beta. Search job site ratings, payment history, and access conditions before you bid. Use code ${p.code}.`;
+    const desc = `${p.name} members get free ProRated Pro access. Search job site ratings, payment history, and access conditions before you bid. Use code ${p.code}.`;
     document.title = title;
     const metaDesc = document.querySelector("meta[name='description']");
     if (metaDesc) metaDesc.setAttribute("content", desc);
@@ -230,7 +230,7 @@ export default function PartnerLandingPage({ go, partnerId }) {
             <div style={{ fontSize: 15, fontWeight: 800, color: "#166534", marginBottom: 4 }}>
               🎁 {p.name} Members get Pro free
             </div>
-            <div style={{ fontSize: 12, color: "#166534" }}>Full access during beta · No credit card required</div>
+            <div style={{ fontSize: 12, color: "#166534" }}>Full access · No credit card required</div>
           </div>
           <button onClick={() => go(p.isRealtor ? "realtor-signup" : "signup")}
             style={{ width: "100%", background: p.color, color: p.accent, border: "none", padding: "14px", borderRadius: 12, fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>

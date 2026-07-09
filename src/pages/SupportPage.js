@@ -30,7 +30,7 @@ const SECTIONS = [
       },
       {
         q: "What states does ProRated cover?",
-        a: "ProRated is currently in active beta in Alabama. We're expanding to Tennessee, Georgia, Mississippi, and Florida in 2026, followed by a full Southeast rollout. Sign up now to be first when we reach your state.",
+        a: "ProRated is currently live in Alabama. We're expanding to Tennessee, Georgia, Mississippi, and Florida in 2026, followed by a full Southeast rollout. Sign up now to be first when we reach your state.",
       },
     ],
   },
@@ -51,8 +51,8 @@ const SECTIONS = [
         a: "If no one has reviewed that address yet, you'll see an empty result with an option to leave the first review. Addresses with no reviews are common for new listings or less-trafficked neighborhoods. Be the first — it helps everyone.",
       },
       {
-        q: "Why do I need to be logged in to search?",
-        a: "Search is gated to verified trade professionals only. This keeps the data trustworthy and ensures homeowners cannot look up their own addresses or game the system. Create a free account to get access.",
+        q: "Do I need an account to search?",
+        a: "Anyone can search an address and see the overall rating and review count for free. To view full review text, category scores, and local supplier info, create a free account. This keeps the detailed data trustworthy and reserved for verified trade professionals.",
       },
       {
         q: "How is the overall rating calculated?",

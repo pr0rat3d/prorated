@@ -1272,7 +1272,7 @@ export default function AdminPage({ go }) {
         {/* ── FEEDBACK ── */}
         {!loading && tab === "feedback" && (
           <div>
-            <SectionHead title="Beta Feedback" count={feedback.length} />
+            <SectionHead title="Feedback" count={feedback.length} />
             {feedback.length === 0 ? <Empty msg="No feedback yet" /> :
               feedback.map(f => (
                 <Row key={f.id} faded={f.resolved}>

@@ -61,6 +61,7 @@ export default function AddressCard({ address, go, goLogin, goReview }) {
 
   // Fetch community property type votes for this address
   useEffect(() => {
+    if (!isLoggedIn) return;
     const streetName = (address.street || "").toLowerCase().trim().split(",")[0];
     if (!streetName || streetName.length < 5) return;
     fetch(
@@ -116,29 +117,69 @@ export default function AddressCard({ address, go, goLogin, goReview }) {
     ? `https://maps.googleapis.com/maps/api/streetview?size=600x220&location=${encodeURIComponent(fullAddr)}&key=${GOOGLE_MAPS_KEY}&return_error_code=true&fov=90&pitch=5`
     : null;
 
+  const streetViewBanner = svUrl && !svError ? (
+    <div style={{ width: "100%", height: 180, position: "relative", background: "#E2E8F0", overflow: "hidden" }}>
+      <img
+        src={svUrl}
+        alt="Street view"
+        onError={() => setSvError(true)}
+        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+      />
+      <div style={{ position: "absolute", bottom: 6, right: 8, background: "rgba(0,0,0,0.45)", color: "#fff", fontSize: 9, padding: "2px 6px", borderRadius: 4, fontFamily: "'DM Sans', sans-serif" }}>
+        Google Street View
+      </div>
+    </div>
+  ) : svError ? (
+    <div style={{ width: "100%", height: 80, background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+      <span style={{ fontSize: 20 }}>🏠</span>
+      <span style={{ fontSize: 12, color: BRAND.gray }}>No street view available for this address</span>
+    </div>
+  ) : null;
+
+  // Unauthenticated users only ever see the confirmed address + a lock card —
+  // no rating, count, timing, or any other review-derived signal.
+  if (!isLoggedIn) {
+    return (
+      <div style={{ background: "#FFF", border: `1px solid ${BRAND.border}`, borderRadius: 20, overflow: "hidden", marginBottom: "1.5rem", boxShadow: "0 2px 16px rgba(0,0,0,0.06)", animation: "fadeUp 0.4s ease both" }}>
+        {streetViewBanner}
+
+        <div style={{ padding: "1.1rem 1.35rem 0" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 2 }}>
+            <span style={{ fontSize: 16 }}>📍</span>
+            <h2 style={{ fontSize: 16, fontWeight: 800, color: BRAND.dark, margin: 0 }}>{toTitleCase(address.street)}</h2>
+          </div>
+          <div style={{ fontSize: 12, color: BRAND.gray, marginLeft: 23 }}>{toTitleCase(address.city)}, {address.state} {address.zip}</div>
+        </div>
+
+        <div style={{ padding: "1.25rem 1.35rem 1.5rem" }}>
+          <div style={{ background: "#F8FAFC", border: `1px solid ${BRAND.border}`, borderRadius: 14, padding: "1.5rem", textAlign: "center" }}>
+            <div style={{ fontSize: 28, marginBottom: 10, color: BRAND.blue }}>🔒</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: BRAND.dark, marginBottom: 6 }}>Job site intelligence available</div>
+            <p style={{ fontSize: 12.5, color: BRAND.gray, lineHeight: 1.6, marginBottom: 16, maxWidth: 340, marginLeft: "auto", marginRight: "auto" }}>
+              This address has been reviewed by verified licensed trade professionals. Create your free account to access full job site data.
+            </p>
+            <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+              <button onClick={() => go("signup")}
+                style={{ background: BRAND.blue, color: "#fff", border: "none", padding: "11px 20px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+                Sign up free →
+              </button>
+              <button onClick={() => { if (goLogin) goLogin(); else go("signup"); }}
+                style={{ background: "#F1F5F9", color: BRAND.dark, border: "none", padding: "11px 20px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+                Sign in
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
     <div style={{ background: "#FFF", border: `1px solid ${BRAND.border}`, borderRadius: 20, overflow: "hidden", marginBottom: "1.5rem", boxShadow: "0 2px 16px rgba(0,0,0,0.06)", animation: "fadeUp 0.4s ease both" }}>
 
       {/* Street View Banner */}
-      {svUrl && !svError ? (
-        <div style={{ width: "100%", height: 180, position: "relative", background: "#E2E8F0", overflow: "hidden" }}>
-          <img
-            src={svUrl}
-            alt="Street view"
-            onError={() => setSvError(true)}
-            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-          />
-          <div style={{ position: "absolute", bottom: 6, right: 8, background: "rgba(0,0,0,0.45)", color: "#fff", fontSize: 9, padding: "2px 6px", borderRadius: 4, fontFamily: "'DM Sans', sans-serif" }}>
-            Google Street View
-          </div>
-        </div>
-      ) : svError ? (
-        <div style={{ width: "100%", height: 80, background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-          <span style={{ fontSize: 20 }}>🏠</span>
-          <span style={{ fontSize: 12, color: BRAND.gray }}>No street view available for this address</span>
-        </div>
-      ) : null}
+      {streetViewBanner}
 
       {/* Header */}
       <div style={{ padding: "1.1rem 1.35rem", background: hdrBg, borderBottom: `1px solid ${hdrBorder}` }}>
@@ -253,7 +294,7 @@ export default function AddressCard({ address, go, goLogin, goReview }) {
       )}
 
       <div style={{ padding: "1rem 1.35rem", borderBottom: `1px solid #F1F5F9` }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: "8px 24px", filter: isLoggedIn ? "none" : "blur(4px)", userSelect: isLoggedIn ? "auto" : "none", pointerEvents: isLoggedIn ? "auto" : "none" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: "8px 24px" }}>
           {RATING_CATEGORIES.map(cat => (
             <div key={cat.id}>
               <div style={{ fontSize: 11, color: BRAND.gray, fontWeight: 600, marginBottom: 3 }}>{t(lang, `categories.${cat.id}`)}</div>
@@ -263,66 +304,38 @@ export default function AddressCard({ address, go, goLogin, goReview }) {
         </div>
       </div>
       {/* Tags */}
-      {isLoggedIn && (
-        <div style={{ padding: "0.75rem 1.35rem", borderBottom: `1px solid #F1F5F9`, display: "flex", flexWrap: "wrap", gap: 5, alignItems: "center" }}>
-          <span style={{ fontSize: 10, fontWeight: 700, color: BRAND.gray, textTransform: "uppercase", letterSpacing: "0.5px", marginRight: 4 }}>Flagged</span>
-          {(address.tags || []).map(tid => { const tagObj = ISSUE_TAGS.find(x => x.id === tid); return tagObj ? <Pill key={tid} label={tagObj.label} sev={tagObj.severity} selected /> : null; })}
-        </div>
-      )}
+      <div style={{ padding: "0.75rem 1.35rem", borderBottom: `1px solid #F1F5F9`, display: "flex", flexWrap: "wrap", gap: 5, alignItems: "center" }}>
+        <span style={{ fontSize: 10, fontWeight: 700, color: BRAND.gray, textTransform: "uppercase", letterSpacing: "0.5px", marginRight: 4 }}>Flagged</span>
+        {(address.tags || []).map(tid => { const tagObj = ISSUE_TAGS.find(x => x.id === tid); return tagObj ? <Pill key={tid} label={tagObj.label} sev={tagObj.severity} selected /> : null; })}
+      </div>
       {/* Trade filter */}
-      {isLoggedIn && (
-        <div style={{ padding: "0.6rem 1.35rem", borderBottom: `1px solid #F1F5F9`, display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 11, color: BRAND.gray, marginRight: 3 }}>Filter by trade:</span>
-          {["all", ...tradesPresent].map(tid => {
-            const tr = TRADES.find(t => t.id === tid);
-            return <button key={tid} onClick={() => setTradeFilter(tid)}
-              style={{ padding: "3px 10px", borderRadius: 20, border: "1.5px solid", borderColor: tradeFilter === tid ? BRAND.blue : "#CBD5E1", background: tradeFilter === tid ? BRAND.blue : "transparent", color: tradeFilter === tid ? "#fff" : BRAND.gray, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s" }}>
-              {tid === "all" ? t(lang, "addressCard.allTrades") : `${tr?.icon} ${tr?.label}`}
-            </button>;
-          })}
-        </div>
-      )}
+      <div style={{ padding: "0.6rem 1.35rem", borderBottom: `1px solid #F1F5F9`, display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 11, color: BRAND.gray, marginRight: 3 }}>Filter by trade:</span>
+        {["all", ...tradesPresent].map(tid => {
+          const tr = TRADES.find(t => t.id === tid);
+          return <button key={tid} onClick={() => setTradeFilter(tid)}
+            style={{ padding: "3px 10px", borderRadius: 20, border: "1.5px solid", borderColor: tradeFilter === tid ? BRAND.blue : "#CBD5E1", background: tradeFilter === tid ? BRAND.blue : "transparent", color: tradeFilter === tid ? "#fff" : BRAND.gray, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s" }}>
+            {tid === "all" ? t(lang, "addressCard.allTrades") : `${tr?.icon} ${tr?.label}`}
+          </button>;
+        })}
+      </div>
       {/* Reviews */}
-      {!isLoggedIn ? (
-        <div style={{ padding: "1.25rem 1.35rem" }}>
-          <div style={{ background: "#fff", border: `1px solid ${BRAND.border}`, borderRadius: 14, padding: "1.5rem", textAlign: "center" }}>
-            <div style={{ fontSize: 28, marginBottom: 10, color: BRAND.blue }}>🔒</div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: BRAND.dark, marginBottom: 6 }}>Full reviews visible to verified trade professionals only</div>
-            <p style={{ fontSize: 12.5, color: BRAND.gray, lineHeight: 1.6, marginBottom: 16, maxWidth: 340, marginLeft: "auto", marginRight: "auto" }}>
-              ProRated is built exclusively for licensed trade professionals. Create your free account to access complete job site intelligence.
-            </p>
-            <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-              <button onClick={() => go("signup")}
-                style={{ background: BRAND.blue, color: "#fff", border: "none", padding: "11px 20px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
-                Sign up free →
-              </button>
-              <button onClick={() => { if (goLogin) goLogin(); else go("signup"); }}
-                style={{ background: "#F1F5F9", color: BRAND.dark, border: "none", padding: "11px 20px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
-                Sign in
-              </button>
-            </div>
-          </div>
+      {translating && (
+        <div style={{ padding: "0.5rem 1.35rem", fontSize: 11, color: BRAND.gray, display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={{ width: 10, height: 10, borderRadius: "50%", border: `2px solid ${BRAND.border}`, borderTop: `2px solid ${BRAND.blue}`, animation: "spin 0.7s linear infinite", flexShrink: 0 }} />
+          Translating reviews...
         </div>
-      ) : (
-        <>
-          {translating && (
-            <div style={{ padding: "0.5rem 1.35rem", fontSize: 11, color: BRAND.gray, display: "flex", alignItems: "center", gap: 6 }}>
-              <div style={{ width: 10, height: 10, borderRadius: "50%", border: `2px solid ${BRAND.border}`, borderTop: `2px solid ${BRAND.blue}`, animation: "spin 0.7s linear infinite", flexShrink: 0 }} />
-              Translating reviews...
-            </div>
-          )}
-          <div style={{ padding: "0.25rem 1.35rem 1rem" }}>
-            {filtered.length === 0
-              ? <div style={{ textAlign: "center", padding: "1.5rem", color: BRAND.gray, fontSize: 13 }}>No reviews for this trade yet.</div>
-              : <>{shown.map((r, i) => <ReviewCard key={r.id} review={r} idx={i} />)}
-                  {filtered.length > 2 && <button onClick={() => setExpanded(!expanded)} style={{ background: "none", border: "none", color: BRAND.blue, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: "6px 0", fontFamily: "'DM Sans', sans-serif" }}>{expanded ? "↑ Show fewer" : `↓ ${filtered.length - 2} more`}</button>}
-                </>
-            }
-          </div>
-        </>
       )}
+      <div style={{ padding: "0.25rem 1.35rem 1rem" }}>
+        {filtered.length === 0
+          ? <div style={{ textAlign: "center", padding: "1.5rem", color: BRAND.gray, fontSize: 13 }}>No reviews for this trade yet.</div>
+          : <>{shown.map((r, i) => <ReviewCard key={r.id} review={r} idx={i} />)}
+              {filtered.length > 2 && <button onClick={() => setExpanded(!expanded)} style={{ background: "none", border: "none", color: BRAND.blue, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: "6px 0", fontFamily: "'DM Sans', sans-serif" }}>{expanded ? "↑ Show fewer" : `↓ ${filtered.length - 2} more`}</button>}
+            </>
+        }
+      </div>
       {/* Bid Intelligence */}
-      {translatedReviews.length > 0 && isLoggedIn && (
+      {translatedReviews.length > 0 && (
         <div style={{ padding: "0 1.35rem" }}>
           <BidIntelligence
             address={fullAddr}
@@ -343,7 +356,7 @@ export default function AddressCard({ address, go, goLogin, goReview }) {
       <div style={{ padding: "0.75rem 1.35rem", background: "#F8FAFC", borderTop: `1px solid ${BRAND.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span style={{ fontSize: 11, color: BRAND.gray }}>Worked here? Share your experience.</span>
         <div style={{ display: "flex", gap: 6 }}>
-          <button onClick={() => { if (!isLoggedIn) { if (goLogin) goLogin(); else go("signup"); return; } setShowBidPrep(true); }}
+          <button onClick={() => setShowBidPrep(true)}
             style={{ background: "#1E3A5F", color: "#93C5FD", border: "1px solid #2563EB", padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", display: "flex", alignItems: "center", gap: 4 }}>
             📋 Bid Prep
           </button>

@@ -1,26 +1,8 @@
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../config.js";
-import { dbGet } from "../api/db";
+import { adminGet } from "../api/db";
 import { useState, useEffect } from "react";
 import { BRAND } from "../components/UI";
 import Logo from "../components/Logo";
 import { PARTNERS } from "./PartnerLandingPage";
-
-
-// Partner dashboard passwords — change these before sharing
-const PARTNER_PASSWORDS = {
-  agc:  "AGCdash2026",
-  acca: "ACCAdash2026",
-  phcc: "PHCCdash2026",
-  iec:  "IECdash2026",
-  nrca: "NRCAdash2026",
-  pca:  "PCAdash2026",
-  nalp: "NALPdash2026",
-  aar:  "AARdash2026",
-  abc:  "ABCdash2026",
-  hba:  "HBAdash2026",
-  neca: "NECAdash2026",
-  bar:  "BARdash2026",
-};
 
 function StatCard({ icon, value, label, sub, color = BRAND.blue }) {
   return (
@@ -35,9 +17,8 @@ function StatCard({ icon, value, label, sub, color = BRAND.blue }) {
 
 export default function PartnerDashboardPage({ partnerId }) {
   const p           = PARTNERS[partnerId] || PARTNERS.agc;
-  const password    = PARTNER_PASSWORDS[partnerId] || "ProRated2026";
   const [authed, setAuthed]     = useState(() => {
-    try { return sessionStorage.getItem(`pr_partner_${partnerId}`) === "true"; } catch { return false; }
+    try { return !!sessionStorage.getItem("pr_admin_auth"); } catch { return false; }
   });
   const [pw, setPw]             = useState("");
   const [error, setError]       = useState(false);
@@ -52,25 +33,23 @@ export default function PartnerDashboardPage({ partnerId }) {
 
   const loadData = async () => {
     try {
-      const promoCode = p.code;
-
       // Members who signed up with this promo code
-      const membersRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/contractors?pro_source=eq.${partnerId}&select=id,name,trade,state,status,created_at,review_count,trust_score&order=created_at.desc`,
-        { headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` } }
-      );
-      const members = await membersRes.json();
+      const members = await adminGet("/contractors", {
+        pro_source: `eq.${partnerId}`,
+        select: "id,name,trade,state,status,created_at,review_count,trust_score",
+        order: "created_at.desc",
+      });
       const memberList = Array.isArray(members) ? members : [];
 
       // Reviews submitted by those members
       const memberIds = memberList.map(m => m.id).filter(Boolean);
       let reviews = [];
       if (memberIds.length > 0) {
-        const reviewsRes = await fetch(
-          `${SUPABASE_URL}/rest/v1/reviews?user_id=in.(${memberIds.join(",")})&select=id,trade,work_label,overall_score,payment_score,access_score,created_at&order=created_at.desc`,
-          { headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` } }
-        );
-        reviews = await reviewsRes.json();
+        reviews = await adminGet("/reviews", {
+          user_id: `in.(${memberIds.join(",")})`,
+          select: "id,trade,work_label,overall_score,payment_score,access_score,created_at",
+          order: "created_at.desc",
+        });
         reviews = Array.isArray(reviews) ? reviews : [];
       }
 
@@ -107,14 +86,27 @@ export default function PartnerDashboardPage({ partnerId }) {
     setLoading(false);
   };
 
-  const handleLogin = () => {
-    if (pw === password) {
-      try { sessionStorage.setItem(`pr_partner_${partnerId}`, "true"); } catch {}
-      setAuthed(true);
-    } else {
+  const handleLogin = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin-auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: pw }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        try { sessionStorage.setItem("pr_admin_auth", data.token); } catch {}
+        setAuthed(true);
+      } else {
+        setError(true);
+        setTimeout(() => setError(false), 2000);
+      }
+    } catch {
       setError(true);
       setTimeout(() => setError(false), 2000);
     }
+    setLoading(false);
   };
 
   // Login screen
@@ -127,19 +119,16 @@ export default function PartnerDashboardPage({ partnerId }) {
           <span style={{ fontSize: 28 }}>{p.icon}</span>
         </div>
         <h2 style={{ fontSize: 18, fontWeight: 800, color: BRAND.dark, marginBottom: 4, marginTop: 0 }}>{p.name}</h2>
-        <p style={{ fontSize: 13, color: BRAND.gray, marginBottom: 20 }}>Partner Dashboard</p>
+        <p style={{ fontSize: 13, color: BRAND.gray, marginBottom: 20 }}>Partner Dashboard · Internal access only</p>
         <input type="password" value={pw} onChange={e => setPw(e.target.value)}
           onKeyDown={e => e.key === "Enter" && handleLogin()}
-          placeholder="Partner access code" autoFocus
+          placeholder="Admin password" autoFocus
           style={{ width: "100%", padding: "12px", border: `1.5px solid ${error ? "#EF4444" : BRAND.border}`, borderRadius: 10, fontSize: 14, outline: "none", fontFamily: "'DM Sans', sans-serif", boxSizing: "border-box", marginBottom: 8, textAlign: "center" }} />
-        {error && <div style={{ fontSize: 12, color: "#DC2626", marginBottom: 8 }}>Incorrect code</div>}
-        <button onClick={handleLogin}
-          style={{ width: "100%", background: p.color, color: p.accent, border: "none", padding: "12px", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
-          View Dashboard →
+        {error && <div style={{ fontSize: 12, color: "#DC2626", marginBottom: 8 }}>Incorrect password</div>}
+        <button onClick={handleLogin} disabled={loading}
+          style={{ width: "100%", background: p.color, color: p.accent, border: "none", padding: "12px", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: loading ? "not-allowed" : "pointer", fontFamily: "'DM Sans', sans-serif", opacity: loading ? 0.7 : 1 }}>
+          {loading ? "Checking..." : "View Dashboard →"}
         </button>
-        <p style={{ fontSize: 11, color: BRAND.gray, marginTop: 12, marginBottom: 0 }}>
-          Access code provided by ProRated · <a href="mailto:hello@prorated.app" style={{ color: BRAND.blue }}>hello@prorated.app</a>
-        </p>
       </div>
     </div>
   );

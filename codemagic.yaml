@@ -30,7 +30,7 @@ workflows:
 
       - name: Set build number
         script: |
-          agvtool new-version -all 24
+          agvtool new-version -all 25
         working_directory: ios/App
 
       - name: Build iOS

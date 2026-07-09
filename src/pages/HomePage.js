@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { DEMO_ADDRESSES, DEMO_DATA, BRAND, FREE_MONTHLY_LOOKUPS } from "../data/constants";
 import { generateAddressData } from "../api/claude";
-import { fetchReviewsForAddress, buildAddressFromReviews } from "../api/supabase";
+import { fetchReviewsForAddress, buildAddressFromReviews, checkAddressHasReviews, buildAddressPreview } from "../api/supabase";
 import { Btn, Spinner } from "../components/UI";
 import Logo from "../components/Logo";
 import AddressCard from "../components/AddressCard";
@@ -80,15 +80,29 @@ export default function HomePage({ go, goLogin, goReview, initialQuery, onQueryU
 
     // 1. Check Supabase for real submitted reviews
     setLoading(true); setError(null); setResults(null);
-    try {
-      const storedRows = await fetchReviewsForAddress(trimmed);
-      if (storedRows.length > 0) {
-        setResults([buildAddressFromReviews(trimmed, storedRows)]);
-        setLoading(false);
-        return;
+    if (!isLoggedIn) {
+      // Guests only ever learn whether reviews exist — never row content.
+      try {
+        const hasReviews = await checkAddressHasReviews(trimmed);
+        if (hasReviews) {
+          setResults([buildAddressPreview(trimmed)]);
+          setLoading(false);
+          return;
+        }
+      } catch (err) {
+        console.warn("[ProRated] Search fallback triggered");
       }
-    } catch (err) {
-      console.warn("[ProRated] Search fallback triggered");
+    } else {
+      try {
+        const storedRows = await fetchReviewsForAddress(trimmed);
+        if (storedRows.length > 0) {
+          setResults([buildAddressFromReviews(trimmed, storedRows)]);
+          setLoading(false);
+          return;
+        }
+      } catch (err) {
+        console.warn("[ProRated] Search fallback triggered");
+      }
     }
 
     // 2. Check pre-loaded demo data

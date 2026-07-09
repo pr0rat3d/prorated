@@ -360,6 +360,31 @@ export const buildAddressFromReviews = (address, storedRows) => {
   };
 };
 
+// ── Existence-only check for unauthenticated search ────────────
+// Calls a SECURITY DEFINER RPC that returns just a boolean — never
+// row content — so the anon key can't be used to pull review text,
+// tags, or reviewer identity for an address.
+export const checkAddressHasReviews = async (address) => {
+  try {
+    return await sb("/rpc/address_has_reviews", {
+      method: "POST",
+      body: JSON.stringify({ p_address: address }),
+    });
+  } catch {
+    return false;
+  }
+};
+
+// ── Minimal address shell for unauthenticated search results ──
+// No scores, tags, or review content — just enough for the guest
+// AddressCard view (address confirmation + Street View + lock card).
+export const buildAddressPreview = (address) => ({
+  street: address.split(",")[0]?.trim(),
+  city:   address.split(",")[1]?.trim(),
+  state:  address.split(",")[2]?.trim()?.split(" ")[0] || "AL",
+  zip:    address.split(",")[2]?.trim()?.split(" ")[1] || "",
+});
+
 // ── Delete review ─────────────────────────────────────────────
 export const deleteReview = async (reviewId) => {
   try {

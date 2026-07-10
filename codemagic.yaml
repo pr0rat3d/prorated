@@ -30,7 +30,7 @@ workflows:
 
       - name: Set build number
         script: |
-          agvtool new-version -all 29
+          agvtool new-version -all 30
         working_directory: ios/App
 
       - name: Set up code signing

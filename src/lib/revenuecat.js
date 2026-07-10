@@ -25,13 +25,23 @@ export async function configureRevenueCat(contractorId) {
   }
 }
 
-// Returns the 3 purchasable packages (bronze/silver/gold) from the current
-// RevenueCat Offering, or [] if unavailable (e.g. StoreKit down in sandbox).
+// Returns the purchasable packages from RevenueCat. Prefers the "current"
+// Offering, but falls back to scanning every configured Offering — if the
+// current one was never set in the RevenueCat dashboard (an easy step to
+// miss), we'd otherwise see zero packages for every tier even though the
+// products exist and are correctly attached to *an* offering.
 export async function getOfferings() {
   if (!isNativeIOS()) return [];
   try {
-    const { current } = await Purchases.getOfferings();
-    return current?.availablePackages || [];
+    const { current, all } = await Purchases.getOfferings();
+    const currentPackages = current?.availablePackages || [];
+    if (currentPackages.length > 0) return currentPackages;
+
+    const allPackages = Object.values(all || {}).flatMap(o => o.availablePackages || []);
+    console.warn(
+      `[ProRated] RevenueCat has no "current" offering set — falling back to ${allPackages.length} package(s) found across ${Object.keys(all || {}).length} offering(s). Set a Current offering in the RevenueCat dashboard to fix this properly.`
+    );
+    return allPackages;
   } catch (err) {
     console.warn("[ProRated] RevenueCat getOfferings failed:", err);
     return [];
@@ -45,7 +55,14 @@ export async function purchaseTier(productId) {
   try {
     const packages = await getOfferings();
     const pkg = packages.find(p => p.product?.identifier === productId);
-    if (!pkg) return { success: false, cancelled: false, error: "Plan not available for purchase right now" };
+    if (!pkg) {
+      const foundIds = packages.map(p => p.product?.identifier).filter(Boolean);
+      console.warn(
+        `[ProRated] No RevenueCat package matches "${productId}". ` +
+        (foundIds.length ? `Packages found instead: ${foundIds.join(", ")}` : "No packages returned at all — check the products' status in App Store Connect and that they're attached to an Offering in RevenueCat.")
+      );
+      return { success: false, cancelled: false, error: "Plan not available for purchase right now" };
+    }
 
     const result = await Purchases.purchasePackage({ aPackage: pkg });
     return { success: true, cancelled: false, customerInfo: result.customerInfo };

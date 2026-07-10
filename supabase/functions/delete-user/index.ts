@@ -26,13 +26,6 @@ serve(async (req) => {
   try {
     const { userId, adminPass } = await req.json();
 
-    if (adminPass !== adminPassword) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     if (!userId) {
       return new Response(JSON.stringify({ error: "userId required" }), {
         status: 400,
@@ -43,6 +36,27 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, serviceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+
+    // Two ways to authorize a deletion:
+    //  1. Admin password (existing flow — admin panel moderation/TOS deletions)
+    //  2. A valid user session whose own id matches userId (self-delete — the
+    //     Profile page's "Delete Account" button, required for Apple 5.1.1(v):
+    //     self-service deletion must actually complete, not just file a request)
+    let authorized = adminPass === adminPassword;
+    if (!authorized) {
+      const token = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+      if (token) {
+        const { data, error } = await supabase.auth.getUser(token);
+        if (!error && data?.user?.id === userId) authorized = true;
+      }
+    }
+
+    if (!authorized) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Step 1 — anonymize contractor row (graceful if row doesn't exist)
     // email has NOT NULL constraint — replace with untraceable placeholder

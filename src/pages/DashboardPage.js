@@ -96,20 +96,24 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
     setPwLoading(false);
   };
   const handleDeleteAccount = async () => {
-    if (!window.confirm("Request account deletion? Your data will be permanently removed and cannot be recovered.")) return;
+    if (!window.confirm("Delete your account? This cannot be undone — your account will be permanently deleted and your reviews anonymized. You'll be logged out immediately.")) return;
     setDeleteAccountLoading(true);
     try {
       const session = JSON.parse(localStorage.getItem("prorated_session") || "{}");
       const token = session.access_token;
-      await fetch(`${SUPABASE_URL}/rest/v1/contractors?id=eq.${user.id}`, {
-        method: "PATCH",
+      // Self-delete — the delete-user edge function authorizes this because the
+      // bearer token's own user id matches userId. Immediate and complete, not
+      // just a request flag (Apple 5.1.1(v) requires in-app deletion to actually
+      // delete the account, not file a ticket for an admin to act on later).
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/delete-user`, {
+        method: "POST",
         headers: {
-          "apikey": SUPABASE_ANON_KEY,
-          "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
         },
-        body: JSON.stringify({ deletion_requested: true }),
+        body: JSON.stringify({ userId: user.id }),
       });
+      if (!res.ok) throw new Error(`Delete failed (${res.status})`);
       await logout();
       go("home");
     } catch (err) {

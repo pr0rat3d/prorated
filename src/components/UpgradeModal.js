@@ -5,25 +5,18 @@
 // text — no External Purchase Link Entitlement needed since there's no tap-out.
 import { useState, useEffect } from "react";
 import { BRAND } from "./UI";
-import { purchaseTier, getOfferings } from "../lib/revenuecat";
-import { IOS_SUBSCRIPTION_MSG } from "../utils/platform";
+import { purchaseTier } from "../lib/revenuecat";
 import { useAuth } from "../hooks/useAuth";
 
 export default function UpgradeModal({ tier, isOpen, onClose }) {
   const { refreshUser } = useAuth();
-  const [status, setStatus]           = useState("idle"); // idle | loading | success | error | unavailable
-  const [errorMsg, setErrorMsg]       = useState("");
+  const [status, setStatus]     = useState("idle"); // idle | loading | success | error
+  const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
     if (!isOpen) return;
     setStatus("idle");
     setErrorMsg("");
-    // Confirm the product is actually loadable before letting the user tap purchase —
-    // avoids a dead-end tap if StoreKit/sandbox is unavailable.
-    getOfferings().then(packages => {
-      const found = packages.some(p => p.product?.identifier === tier?.iapProductId);
-      if (!found) setStatus("unavailable");
-    });
   }, [isOpen, tier]);
 
   if (!isOpen || !tier) return null;
@@ -60,12 +53,6 @@ export default function UpgradeModal({ tier, isOpen, onClose }) {
           ))}
         </div>
 
-        {status === "unavailable" && (
-          <div style={{ background: "#F8FAFC", border: `1px solid ${BRAND.border}`, borderRadius: 10, padding: "12px 14px", marginBottom: 14, fontSize: 12, color: BRAND.gray, textAlign: "center", lineHeight: 1.6 }}>
-            {IOS_SUBSCRIPTION_MSG}
-          </div>
-        )}
-
         {status === "error" && (
           <div style={{ background: "#FEF2F2", border: "1px solid #FCA5A5", borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 12, color: "#991B1B" }}>
             {errorMsg}
@@ -79,13 +66,13 @@ export default function UpgradeModal({ tier, isOpen, onClose }) {
         )}
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
-          <div style={{ padding: "10px 12px", background: "#F8FAFC", border: `1px solid ${BRAND.border}`, borderRadius: 9, fontSize: 12, color: BRAND.gray, textAlign: "center", lineHeight: 1.4 }}>
-            You can also manage your plan at prorated.app
+          <div style={{ padding: "10px 12px", background: "#F8FAFC", border: `1px solid ${BRAND.border}`, borderRadius: 9, fontSize: 12, color: BRAND.gray, textAlign: "center", lineHeight: 1.4, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            Purchase/manage your subscription at prorated.app in Safari
           </div>
 
           <button
             onClick={handlePurchase}
-            disabled={status === "loading" || status === "unavailable" || status === "success"}
+            disabled={status === "loading" || status === "success"}
             style={{
               padding: "10px 12px",
               background: BRAND.green,
@@ -94,8 +81,8 @@ export default function UpgradeModal({ tier, isOpen, onClose }) {
               borderRadius: 9,
               fontWeight: 700,
               fontSize: 13,
-              cursor: (status === "loading" || status === "unavailable" || status === "success") ? "not-allowed" : "pointer",
-              opacity: (status === "unavailable") ? 0.5 : 1,
+              cursor: (status === "loading" || status === "success") ? "not-allowed" : "pointer",
+              opacity: status === "loading" ? 0.7 : 1,
               fontFamily: "'DM Sans', sans-serif",
             }}>
             {status === "loading" ? "Purchasing..." : "Purchase via Apple"}

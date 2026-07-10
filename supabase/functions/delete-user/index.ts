@@ -72,7 +72,15 @@ serve(async (req) => {
       .update({ user_id: null })
       .eq("user_id", userId);
 
-    // Step 3 — delete from Supabase Auth
+    // Step 3 — clear notification_log — this FK is NO ACTION (not cascade/set-null),
+    // so any user who ever received an approval/rejection email (which inserts a row
+    // here) would otherwise block auth.admin.deleteUser below with a FK violation.
+    await supabase
+      .from("notification_log")
+      .update({ user_id: null })
+      .eq("user_id", userId);
+
+    // Step 4 — delete from Supabase Auth
     const { error: authErr } = await supabase.auth.admin.deleteUser(userId);
 
     if (authErr) {

@@ -15,8 +15,8 @@ const STRIPE_GOLD   = "https://buy.stripe.com/dRmeVc56v6LE3jk34beQM02";
 
 // Bronze/Silver/Gold are free for the first 6 months — applied automatically
 // via the PRORATED2026 Stripe coupon at checkout, no user-facing promo entry.
-// Same 6-month window as the iOS RevenueCat introductory offer, so pricing
-// reads identically on both platforms regardless of signup date.
+// Same 6-month duration as the iOS RevenueCat introductory offer (available
+// now through Dec 31, 2026), so pricing reads identically on both platforms.
 const FREE_2026_COUPON = "PRORATED2026";
 
 // ── Tier definitions ─────────────────────────────────────────

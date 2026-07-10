@@ -16,8 +16,8 @@ export const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJh
 // Places Autocomplete widget fails every request with no visible error.
 export const GOOGLE_MAPS_KEY  = import.meta.env.VITE_GOOGLE_MAPS_KEY  || "AIzaSyDGyKCCzTn6_sCLL1oIPP81uJ8uJM8g7BE";
 // RevenueCat public iOS SDK key (client-side, safe to ship — same class of key as
-// the two above). No hardcoded fallback yet because the RevenueCat project/app
-// hasn't been created — TODO: once it exists, paste the public iOS key here as the
-// fallback, same pattern as SUPABASE_ANON_KEY/GOOGLE_MAPS_KEY, so Codemagic builds
-// (which don't reliably pass VITE_* env vars) don't silently ship an empty key.
-export const REVENUECAT_IOS_KEY = import.meta.env.VITE_REVENUECAT_IOS_KEY || "";
+// the two above, and RevenueCat's own docs confirm public API keys are meant to be
+// embedded in app binaries). Fallback follows the same pattern as
+// SUPABASE_ANON_KEY/GOOGLE_MAPS_KEY, so Codemagic builds (which don't reliably pass
+// VITE_* env vars) don't silently ship an empty key and break IAP configure().
+export const REVENUECAT_IOS_KEY = import.meta.env.VITE_REVENUECAT_IOS_KEY || "appl_AtTgtpoEMHQliHOdkbemBVheIOQ";

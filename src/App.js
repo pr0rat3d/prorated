@@ -391,6 +391,12 @@ export default function App() {
                 else { go("dashboard"); }
                 return;
               }
+              if (dest.type === "iap") {
+                // pending_iap_tier was set at signup — PricingPage opens the
+                // UpgradeModal (real Apple IAP purchase) for it on mount.
+                go("pricing");
+                return;
+              }
               if (dest.type === "invite") {
                 // Auto-accept — user signed up specifically to join this team, no need for a second click
                 const session = JSON.parse(localStorage.getItem("prorated_session") || "{}");

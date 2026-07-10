@@ -261,7 +261,7 @@ export const translations = {
       findingSuppliers: "Finding nearby suppliers within {radius} miles...",
       findingFood:  "Finding nearby food spots within {radius} miles...",
       seeAll:       "See all",
-      upgradeFor:   "Upgrade — free through 2026",
+      upgradeFor:   "Upgrade — first 6 months free",
       upgrade:      "Upgrade →",
       open:         "OPEN",
       closed:       "CLOSED",
@@ -290,7 +290,7 @@ export const translations = {
     // ── Dashboard upgrade card ─────────────────────────────────
     upgrade: {
       title:     "🚀 Upgrade to Pro",
-      body:      "Unlimited lookups · Bronze, Silver & Gold free through 2026",
+      body:      "Unlimited lookups · Bronze, Silver & Gold — first 6 months free",
       btn:       "View plans →",
     },
 
@@ -302,7 +302,7 @@ export const translations = {
       billedAnnually:   "Billed annually",
       savesPerYear:     "saves you",
       orSaveWith:       "Or save {savings}% with annual billing",
-      upgradeMonthly:   "Upgrade — Free through 2026 →",
+      upgradeMonthly:   "Upgrade — First 6 Months Free →",
       upgradeAnnual:    "Upgrade — $99.99/year →",
       yourPlan:         "Your current plan:",
       proUnlimited:     "Unlimited lookups · All features unlocked",

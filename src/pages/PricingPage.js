@@ -1,19 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BRAND } from "../components/UI";
 import Logo from "../components/Logo";
 import { useAuth } from "../hooks/useAuth";
 import { useLang } from "../hooks/useLang";
 import { t } from "../i18n/translations";
 import { FREE_MONTHLY_LOOKUPS } from "../data/constants";
-import { isNativeIOS, IOS_SUBSCRIPTION_MSG } from "../utils/platform";
+import { isNativeIOS } from "../utils/platform";
+import UpgradeModal from "../components/UpgradeModal";
 
 // ── Stripe live links (replace test_ links before launch) ────
 const STRIPE_BRONZE = "https://buy.stripe.com/4gMfZg9mL8TM9HI9szeQM00";
 const STRIPE_SILVER = "https://buy.stripe.com/eVqcN4buT0ng6vw48feQM01";
 const STRIPE_GOLD   = "https://buy.stripe.com/dRmeVc56v6LE3jk34beQM02";
 
-// Bronze/Silver/Gold are free through Dec 31, 2026 — applied automatically
+// Bronze/Silver/Gold are free for the first 6 months — applied automatically
 // via the PRORATED2026 Stripe coupon at checkout, no user-facing promo entry.
+// Same 6-month window as the iOS RevenueCat introductory offer, so pricing
+// reads identically on both platforms regardless of signup date.
 const FREE_2026_COUPON = "PRORATED2026";
 
 // ── Tier definitions ─────────────────────────────────────────
@@ -26,6 +29,7 @@ const TIERS = [
     seatMax:  5,
     icon:     "🥉",
     stripe:   STRIPE_BRONZE,
+    iapProductId: "com.prorated.bronze",
     color:    "#B45309",
     bg:       "#FFFBEB",
     border:   "#D97706",
@@ -52,6 +56,7 @@ const TIERS = [
     seatMax:  15,
     icon:     "🥈",
     stripe:   STRIPE_SILVER,
+    iapProductId: "com.prorated.silver",
     color:    "#475569",
     bg:       "#F8FAFC",
     border:   "#94A3B8",
@@ -74,6 +79,7 @@ const TIERS = [
     seatMax:  39,
     icon:     "🥇",
     stripe:   STRIPE_GOLD,
+    iapProductId: "com.prorated.gold",
     color:    "#92400E",
     bg:       "#FFFBEB",
     border:   "#F59E0B",
@@ -133,6 +139,19 @@ export default function PricingPage({ go, goBack }) {
   const { lang }             = useLang();
   const nativeIOS            = isNativeIOS();
   const [loading, setLoading]       = useState(null);
+  const [upgradeTier, setUpgradeTier] = useState(null);
+
+  // Handoff from Signup/CompanySetupPage on iOS — auto-open the purchase
+  // modal for the tier the user picked before the account/company existed.
+  useEffect(() => {
+    if (!nativeIOS) return;
+    const pendingId = localStorage.getItem("pending_iap_tier");
+    if (!pendingId) return;
+    localStorage.removeItem("pending_iap_tier");
+    const match = TIERS.find(t => t.id === pendingId);
+    if (match) setUpgradeTier(match);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleUpgrade = (tier) => {
     setLoading(tier.id);
@@ -160,7 +179,7 @@ export default function PricingPage({ go, goBack }) {
 
         {!nativeIOS && (
           <div style={{ maxWidth: 400, margin: "20px auto 0", background: "rgba(34,197,94,0.12)", border: "1px solid rgba(134,239,172,0.4)", borderRadius: 10, padding: "10px 16px", textAlign: "center" }}>
-            <span style={{ fontSize: 12, color: "#86EFAC" }}>🎉 Bronze, Silver &amp; Gold are free through Dec 31, 2026 — card collected, no charge until Jan 2027.</span>
+            <span style={{ fontSize: 12, color: "#86EFAC" }}>🎉 Bronze, Silver &amp; Gold are free for your first 6 months — card collected, no charge until then.</span>
           </div>
         )}
       </div>
@@ -227,7 +246,7 @@ export default function PricingPage({ go, goBack }) {
                   <span style={{ fontSize: 20, fontWeight: 800, color: BRAND.dark }}>Contact us</span>
                 ) : (
                   <>
-                    <div style={{ fontSize: 18, fontWeight: 800, color: "#16A34A" }}>Free through 2026</div>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: "#16A34A" }}>First 6 months free</div>
                     <div style={{ fontSize: 11, color: BRAND.gray }}>then ${tier.price}/mo · cancel anytime</div>
                   </>
                 )}
@@ -264,9 +283,11 @@ export default function PricingPage({ go, goBack }) {
                 ✓ Your current plan
               </div>
             ) : nativeIOS ? (
-              <div style={{ width: "100%", padding: "11px", background: "#F8FAFC", border: `1.5px solid ${BRAND.border}`, borderRadius: 10, fontSize: 12, color: BRAND.gray, textAlign: "center", lineHeight: 1.5 }}>
-                {IOS_SUBSCRIPTION_MSG}
-              </div>
+              <button
+                onClick={() => setUpgradeTier(tier)}
+                style={{ width: "100%", padding: "11px", background: tier.popular ? BRAND.blue : "#0F172A", color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+                Get Started →
+              </button>
             ) : tier.contact ? (
               <a href={"mailto:hello@prorated.app?subject=Platinum%20Plan%20Inquiry%20-%20" + encodeURIComponent(tier.name)}
                 style={{ display: "block", width: "100%", padding: "11px", background: "#1E3A8A", color: "#fff", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
@@ -298,7 +319,7 @@ export default function PricingPage({ go, goBack }) {
             ["Can I change plans later?",          "Yes — upgrade or downgrade anytime. Changes take effect immediately."],
             ["What happens to my team if I downgrade?", "Existing members keep access. You just can't add new members until you're under the new seat limit."],
             ["Is there a contract?",               "No. Month-to-month only. Cancel anytime from your dashboard."],
-            ["Why is my card charged $0 today?",   "Bronze, Silver, and Gold are free through December 31, 2026. We collect your card at checkout to make the switch to billing seamless, but nothing is charged until January 2027 — cancel anytime before then at no cost."],
+            ["Why is my card charged $0 today?",   "Bronze, Silver, and Gold are free for your first 6 months. We collect your card at checkout to make the switch to billing seamless, but nothing is charged until your 7th month — cancel anytime before then at no cost."],
             ["How does the 13th month reward work?", "On your 1-year anniversary, if your team averaged 3 or more reviews per week (156 total), we add one free month before your next charge."],
             ["Can individuals use ProRated?",      "Yes — sign up free and search addresses without a team plan. Upgrade to Bronze for unlimited access."],
           ].map(([q, a]) => (
@@ -311,10 +332,12 @@ export default function PricingPage({ go, goBack }) {
 
         {/* Bottom note */}
         <p style={{ textAlign: "center", fontSize: 11, color: BRAND.gray, marginTop: 20 }}>
-          Bronze, Silver, and Gold are free through December 31, 2026 — your card is collected at checkout but not charged until January 2027.
+          Bronze, Silver, and Gold are free for your first 6 months — your card is collected at checkout but not charged until then.
           Payments processed securely by Stripe.
         </p>
       </div>
+
+      <UpgradeModal tier={upgradeTier} isOpen={!!upgradeTier} onClose={() => setUpgradeTier(null)} />
     </div>
   );
 }

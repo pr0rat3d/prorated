@@ -26,7 +26,7 @@ const SECTIONS = [
       },
       {
         q: "Is ProRated free?",
-        a: "Yes — ProRated has a free tier. Paid plans (Bronze, Silver, Gold) are free through December 31, 2026 for contractors who want unlimited access and team features — your card is collected at signup but you won't be charged until January 2027.",
+        a: "Yes — ProRated has a free tier. Paid plans (Bronze, Silver, Gold) are free for your first 6 months if you want unlimited access and team features — your card is collected at signup but you won't be charged until then.",
       },
       {
         q: "What states does ProRated cover?",
@@ -138,11 +138,11 @@ const SECTIONS = [
     articles: [
       {
         q: "What's included in the free plan?",
-        a: "Free accounts get 10 address lookups per month. During account verification (before admin approval) you get 3 lookups, unlimited review submissions, and a single login. Upgrade to a paid plan for unlimited lookups, team logins, Bid Prep Summary, Would-Return rates, and full access to all features — Bronze, Silver, and Gold are free through December 31, 2026.",
+        a: "Free accounts get 10 address lookups per month. During account verification (before admin approval) you get 3 lookups, unlimited review submissions, and a single login. Upgrade to a paid plan for unlimited lookups, team logins, Bid Prep Summary, Would-Return rates, and full access to all features — Bronze, Silver, and Gold are free for your first 6 months.",
       },
       {
         q: "What do the paid plans include?",
-        a: "All paid plans include unlimited address searches, full 5-category rating breakdowns, Bid Prep Summary, Would-Return rate, work history, payment score history, and team logins for your crew.\n\n🥉 Bronze — Free through 2026, then $9.99/mo · 1–5 team logins\n🥈 Silver — Free through 2026, then $19.99/mo · 6–15 team logins\n🥇 Gold — Free through 2026, then $29.99/mo · 16–39 team logins\n💎 Platinum — Custom pricing · 40+ team logins",
+        a: "All paid plans include unlimited address searches, full 5-category rating breakdowns, Bid Prep Summary, Would-Return rate, work history, payment score history, and team logins for your crew.\n\n🥉 Bronze — First 6 months free, then $9.99/mo · 1–5 team logins\n🥈 Silver — First 6 months free, then $19.99/mo · 6–15 team logins\n🥇 Gold — First 6 months free, then $29.99/mo · 16–39 team logins\n💎 Platinum — Custom pricing · 40+ team logins",
       },
       {
         q: "Is there a loyalty reward for active teams?",

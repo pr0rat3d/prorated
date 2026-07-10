@@ -9,7 +9,6 @@ import { useAuth } from "../hooks/useAuth";
 
 import { fetchMyReviews, updateReview, deleteReview } from "../api/supabase";
 import { getSavedAddresses, unsaveAddress, signIn, updatePassword } from "../api/auth";
-import { isNativeIOS, IOS_SUBSCRIPTION_MSG } from "../utils/platform";
 import usePush from "../hooks/usePush";
 import { useLang } from "../hooks/useLang";
 import { t } from "../i18n/translations";
@@ -798,13 +797,11 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                         style={{ display: "flex", alignItems: "center", gap: 8, background: "#F8FAFC", border: `1px solid ${BRAND.border}`, borderRadius: 9, padding: "9px 12px", fontSize: 12, fontWeight: 600, color: BRAND.dark, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", textAlign: "left" }}>
                         ✏️ Rename company
                       </button>
-                      {!isNativeIOS() && (
-                        <button
-                          onClick={() => go("pricing")}
-                          style={{ display: "flex", alignItems: "center", gap: 8, background: "#F8FAFC", border: `1px solid ${BRAND.border}`, borderRadius: 9, padding: "9px 12px", fontSize: 12, fontWeight: 600, color: BRAND.dark, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", textAlign: "left" }}>
-                          ⬆️ Upgrade / change plan
-                        </button>
-                      )}
+                      <button
+                        onClick={() => go("pricing")}
+                        style={{ display: "flex", alignItems: "center", gap: 8, background: "#F8FAFC", border: `1px solid ${BRAND.border}`, borderRadius: 9, padding: "9px 12px", fontSize: 12, fontWeight: 600, color: BRAND.dark, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", textAlign: "left" }}>
+                        ⬆️ Upgrade / change plan
+                      </button>
                       <button
                         onClick={handleDeleteTeam}
                         style={{ display: "flex", alignItems: "center", gap: 8, background: "#FEF2F2", border: "1px solid #FCA5A5", borderRadius: 9, padding: "9px 12px", fontSize: 12, fontWeight: 600, color: "#DC2626", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", textAlign: "left" }}>
@@ -823,7 +820,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                 {seatError && (
                   <div style={{ background: "#FEF2F2", border: "1px solid #FCA5A5", borderRadius: 8, padding: "8px 12px", fontSize: 12, color: "#991B1B", marginBottom: 10 }}>
                     {seatError}
-                    {!isNativeIOS() && <button onClick={() => go("pricing")} style={{ background: "none", border: "none", color: BRAND.blue, fontSize: 12, fontWeight: 700, cursor: "pointer", marginLeft: 8, fontFamily: "'DM Sans', sans-serif" }}>Upgrade →</button>}
+                    <button onClick={() => go("pricing")} style={{ background: "none", border: "none", color: BRAND.blue, fontSize: 12, fontWeight: 700, cursor: "pointer", marginLeft: 8, fontFamily: "'DM Sans', sans-serif" }}>Upgrade →</button>
                   </div>
                 )}
 
@@ -890,24 +887,18 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
 
               {/* Upgrade plan — owners only */}
               {currentUserIsOwner && company.plan !== "gold" && (
-                isNativeIOS() ? (
-                  <div style={{ background: "#F8FAFC", border: `1px solid ${BRAND.border}`, borderRadius: 14, padding: "1rem 1.25rem", marginBottom: "0.85rem", fontSize: 12, color: BRAND.gray, textAlign: "center", lineHeight: 1.6 }}>
-                    {IOS_SUBSCRIPTION_MSG}
-                  </div>
-                ) : (
-                  <div onClick={() => go("pricing")}
-                    style={{ background: "linear-gradient(135deg, #0F172A, #1E3A5F)", borderRadius: 14, padding: "1rem 1.25rem", marginBottom: "0.85rem", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: "#F8FAFC", marginBottom: 2 }}>Need more seats?</div>
-                      <div style={{ fontSize: 11, color: "#94A3B8" }}>
-                        {company.plan === "bronze" ? "Upgrade to Silver for up to 15 team members" : "Upgrade to Gold for unlimited team members"}
-                      </div>
+                <div onClick={() => go("pricing")}
+                  style={{ background: "linear-gradient(135deg, #0F172A, #1E3A5F)", borderRadius: 14, padding: "1rem 1.25rem", marginBottom: "0.85rem", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: "#F8FAFC", marginBottom: 2 }}>Need more seats?</div>
+                    <div style={{ fontSize: 11, color: "#94A3B8" }}>
+                      {company.plan === "bronze" ? "Upgrade to Silver for up to 15 team members" : "Upgrade to Gold for unlimited team members"}
                     </div>
-                    <button style={{ background: BRAND.blue, color: "#fff", border: "none", padding: "8px 14px", borderRadius: 9, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", flexShrink: 0 }}>
-                      Upgrade →
-                    </button>
                   </div>
-                )
+                  <button style={{ background: BRAND.blue, color: "#fff", border: "none", padding: "8px 14px", borderRadius: 9, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", flexShrink: 0 }}>
+                    Upgrade →
+                  </button>
+                </div>
               )}
             </>
           )
@@ -1138,22 +1129,16 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
 
               {/* Upgrade to Pro */}
               {(!user?.plan || user?.plan === "free") && !user?.stripe_customer_id && (
-                isNativeIOS() ? (
-                  <div style={{ background: "#F8FAFC", border: `1px solid ${BRAND.border}`, borderRadius: 14, padding: "1rem 1.25rem", marginBottom: "0.75rem", fontSize: 12, color: BRAND.gray, textAlign: "center", lineHeight: 1.6 }}>
-                    {IOS_SUBSCRIPTION_MSG}
-                  </div>
-                ) : (
                 <div onClick={() => go("pricing")} style={{ background: "linear-gradient(135deg, #0F172A, #1E3A5F)", borderRadius: 14, padding: "1rem 1.25rem", marginBottom: "0.75rem", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 800, color: "#F8FAFC", marginBottom: 2 }}>{t(lang, "upgrade.title")}</div>
-                    <div style={{ fontSize: 11, color: "#94A3B8" }}>Bronze, Silver &amp; Gold — free through 2026</div>
+                    <div style={{ fontSize: 11, color: "#94A3B8" }}>Bronze, Silver &amp; Gold — first 6 months free</div>
                   </div>
                   <button onClick={(e) => { e.stopPropagation(); go("pricing"); }}
                     style={{ background: BRAND.blue, color: "#fff", border: "none", padding: "8px 16px", borderRadius: 9, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", flexShrink: 0 }}>
                     View plans →
                   </button>
                 </div>
-                )
               )}
 
               {/* Push notifications */}

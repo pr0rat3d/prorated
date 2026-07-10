@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../config";
 import { useFeatureFlag } from "../hooks/useFeatureFlag";
-import { isNativeIOS } from "../utils/platform";
 import { BRAND } from "./UI";
 
 const SIGNAL_META = {
@@ -120,12 +119,10 @@ export default function BidIntelligence({ address, reviews, bidScore, user }) {
               <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: 10 }}>
                 Upgrade to Gold to unlock AI-powered bid preparation intelligence
               </div>
-              {!isNativeIOS() && (
-                <a href="#pricing" onClick={(e) => { e.preventDefault(); window.location.hash = "pricing"; }}
-                  style={{ display: "inline-block", background: BRAND.blue, color: "#fff", padding: "8px 18px", borderRadius: 10, fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
-                  Upgrade to Gold →
-                </a>
-              )}
+              <a href="#pricing" onClick={(e) => { e.preventDefault(); window.location.hash = "pricing"; }}
+                style={{ display: "inline-block", background: BRAND.blue, color: "#fff", padding: "8px 18px", borderRadius: 10, fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
+                Upgrade to Gold →
+              </a>
             </div>
           </div>
         </div>

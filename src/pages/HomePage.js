@@ -235,7 +235,7 @@ export default function HomePage({ go, goLogin, goReview, initialQuery, onQueryU
             <div style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: 10, alignItems: "center" }}>
               <button onClick={() => go("pricing")}
                 style={{ width: "100%", maxWidth: 320, background: "#2563EB", color: "#fff", border: "none", padding: "13px", borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
-                🚀 Upgrade — Free through 2026
+                🚀 Upgrade — First 6 Months Free
               </button>
               <p style={{ fontSize: 11, color: "#94A3B8", textAlign: "center" }}>
                 Resets on the 1st of next month · You can still leave reviews for free

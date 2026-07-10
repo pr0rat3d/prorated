@@ -1,6 +1,7 @@
 import { useState, useEffect, createContext, useContext } from "react";
 import { loadSession, signOut, getCurrentUser } from "../api/auth";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../config.js";
+import { configureRevenueCat } from "../lib/revenuecat";
 
 // ── Auth Context ──────────────────────────────────────────────
 export const AuthContext = createContext(null);
@@ -17,6 +18,7 @@ export function AuthProvider({ children }) {
 
     // Background refresh after short delay — gives DB writes time to settle
     if (session?.user?.id && session?.access_token) {
+      configureRevenueCat(session.user.id);
       const token = session.access_token;
       setTimeout(() => {
         fetch(
@@ -46,7 +48,10 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const login = (userData) => setUser(userData);
+  const login = (userData) => {
+    setUser(userData);
+    if (userData?.id) configureRevenueCat(userData.id);
+  };
 
   const logout = async () => {
     await signOut();

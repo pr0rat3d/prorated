@@ -175,8 +175,9 @@ serve(async (req) => {
     const isPaid = contractor.plan && contractor.plan !== "free";
     const searchLimit = isPaid ? "Unlimited searches" : "10 searches/month";
 
-    // Bronze/Silver/Gold are free through Dec 31, 2026 (card collected, not charged
-    // until Jan 2027). Platinum is custom-priced and unaffected by this promo.
+    // Bronze/Silver/Gold are free for the first 6 months (card collected, not
+    // charged until then) — same window as the iOS RevenueCat introductory offer.
+    // Platinum is custom-priced and unaffected by this promo.
     const planLabel = contractor.plan
       ? contractor.plan.charAt(0).toUpperCase() + contractor.plan.slice(1)
       : "";
@@ -184,7 +185,7 @@ serve(async (req) => {
     const free2026Note = isFree2026Plan
       ? `<div style="background: #F0FDF4; border: 1px solid #86EFAC; border-radius: 12px; padding: 16px 20px; margin-bottom: 24px;">
            <p style="color: #166534; font-size: 13px; line-height: 1.6; margin: 0;">
-             🎉 Your <strong>${planLabel}</strong> plan is active and free through December 31, 2026. Your card will not be charged until January 2027. Search, review, and help build the ProRated community.
+             🎉 Your <strong>${planLabel}</strong> plan is active and free for your first 6 months. Your card will not be charged until then. Search, review, and help build the ProRated community.
            </p>
          </div>`
       : "";

@@ -5,10 +5,11 @@ import Logo from "../components/Logo";
 import { useAuth } from "../hooks/useAuth";
 import { COMPANY_TIERS } from "../data/constants";
 
-// Bronze/Silver/Gold are free through Dec 31, 2026 — applied automatically
-// via the PRORATED2026 Stripe coupon, no user-facing promo entry.
+// Bronze/Silver/Gold are free for the first 6 months — applied automatically
+// via the PRORATED2026 Stripe coupon, no user-facing promo entry. Same window
+// as the iOS RevenueCat introductory offer.
 const FREE_2026_COUPON = "PRORATED2026";
-import { isNativeIOS, IOS_SUBSCRIPTION_MSG } from "../utils/platform";
+import { isNativeIOS } from "../utils/platform";
 
 const STRIPE_LINKS = {
   bronze: "https://buy.stripe.com/4gMfZg9mL8TM9HI9szeQM00",
@@ -130,20 +131,27 @@ export default function CompanySetupPage({ go, goBack }) {
       const company   = companies?.[0];
       if (!company) throw new Error("Failed to create company");
 
+      // On iOS, don't grant the contractor a paid plan until an actual Apple
+      // purchase completes — the company record itself always needs a plan
+      // (companies.plan is constrained to bronze/silver/gold), but the
+      // contractor's own plan — which is what actually gates features — stays
+      // as-is until the RevenueCat webhook confirms a real purchase.
+      const contractorPlan = isNativeIOS() ? (existingPlan || "free") : (selectedTier || existingPlan);
+
       await fetch(`${SUPABASE_URL}/rest/v1/contractors?id=eq.${user.id}`, {
         method: "PATCH",
         headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ company_id: company.id, company_role: "owner", plan: selectedTier || existingPlan, account_type: "company" }),
+        body: JSON.stringify({ company_id: company.id, company_role: "owner", plan: contractorPlan, account_type: "company" }),
       });
 
       // Update localStorage session so next mount picks up company_id immediately
-      const updatedUser = { ...session.user, company_id: company.id, company_role: "owner", plan: selectedTier || existingPlan };
+      const updatedUser = { ...session.user, company_id: company.id, company_role: "owner", plan: contractorPlan };
       localStorage.setItem("prorated_session", JSON.stringify({ ...session, user: updatedUser }));
       sessionStorage.setItem("pr_team_created", company.id);
 
       setLoading(false);
 
-      // If already paid, skip Stripe — go straight to team view
+      // If already paid, skip checkout — go straight to team view
       if (alreadyPaid || selectedTier === "platinum") {
         // Set existingCompany directly so we don't need a re-fetch
         setExistingCompany({ ...company, plan: selectedTier || existingPlan });
@@ -152,7 +160,12 @@ export default function CompanySetupPage({ go, goBack }) {
         return;
       }
 
-      if (STRIPE_LINKS[selectedTier] && !isNativeIOS()) {
+      if (isNativeIOS() && selectedTier) {
+        // Hand off to PricingPage, which opens the UpgradeModal (real Apple IAP
+        // purchase) for this tier on mount — see the pending_iap_tier handoff.
+        localStorage.setItem("pending_iap_tier", selectedTier);
+        go("pricing");
+      } else if (STRIPE_LINKS[selectedTier]) {
         const params = new URLSearchParams({
           prefilled_email:      user.email,
           prefilled_promo_code: FREE_2026_COUPON,
@@ -349,12 +362,10 @@ export default function CompanySetupPage({ go, goBack }) {
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark }}>{tierMeta.icon} {tierMeta.name || plan} Plan</div>
             </div>
-            {!isNativeIOS() && (
-              <button onClick={() => go("pricing")}
-                style={{ fontSize: 11, fontWeight: 700, color: BRAND.blue, background: "#EFF6FF", border: "none", padding: "6px 12px", borderRadius: 8, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
-                Upgrade →
-              </button>
-            )}
+            <button onClick={() => go("pricing")}
+              style={{ fontSize: 11, fontWeight: 700, color: BRAND.blue, background: "#EFF6FF", border: "none", padding: "6px 12px", borderRadius: 8, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+              Upgrade →
+            </button>
           </div>
 
           {/* Seat usage */}
@@ -429,10 +440,7 @@ export default function CompanySetupPage({ go, goBack }) {
           <Card style={{ background: "#FEF3C7", border: "1px solid #FDE68A", marginBottom: 14 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "#92400E", marginBottom: 4 }}>⚠️ All seats filled</div>
             <div style={{ fontSize: 12, color: "#92400E" }}>Upgrade your plan to add more team members.</div>
-            {isNativeIOS()
-              ? <div style={{ marginTop: 10, fontSize: 12, color: BRAND.gray, lineHeight: 1.6 }}>{IOS_SUBSCRIPTION_MSG}</div>
-              : <Btn onClick={() => go("pricing")} style={{ marginTop: 10 }}>Upgrade plan →</Btn>
-            }
+            <Btn onClick={() => go("pricing")} style={{ marginTop: 10 }}>Upgrade plan →</Btn>
           </Card>
         )}
 
@@ -533,7 +541,7 @@ export default function CompanySetupPage({ go, goBack }) {
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <div style={{ fontSize: 14, fontWeight: 700, color: BRAND.dark }}>{tier.name}</div>
                     <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: tier.price ? "#16A34A" : BRAND.dark }}>{tier.price ? "Free through 2026" : "Custom pricing"}</div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: tier.price ? "#16A34A" : BRAND.dark }}>{tier.price ? "First 6 months free" : "Custom pricing"}</div>
                       {tier.price && <div style={{ fontSize: 10, fontWeight: 400, color: BRAND.gray }}>then ${tier.price}/mo</div>}
                     </div>
                   </div>
@@ -561,16 +569,11 @@ export default function CompanySetupPage({ go, goBack }) {
             </div>
           ))}
 
-          {!isNativeIOS() && selectedTier !== "platinum" && (
+          {selectedTier !== "platinum" && (
             <div style={{ background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 10, padding: "10px 14px", marginTop: 12 }}>
               <div style={{ fontSize: 12, color: "#166534", lineHeight: 1.6 }}>
-                🎉 <strong>Free through December 31, 2026.</strong> Card is collected at checkout but you won't be charged until January 2027.
+                🎉 <strong>Free for your first 6 months.</strong> Card is collected at checkout but you won't be charged until then.
               </div>
-            </div>
-          )}
-          {isNativeIOS() && (
-            <div style={{ background: "#F8FAFC", border: `1px solid ${BRAND.border}`, borderRadius: 10, padding: "10px 14px", marginTop: 12, fontSize: 12, color: BRAND.gray, lineHeight: 1.6, textAlign: "center" }}>
-              {IOS_SUBSCRIPTION_MSG}
             </div>
           )}
 
@@ -578,7 +581,7 @@ export default function CompanySetupPage({ go, goBack }) {
             <Btn variant="secondary" onClick={() => setStep(1)}>← Back</Btn>
             <Btn fullWidth
               onClick={handleCreate}
-              disabled={!selectedTier || (selectedTier === "bronze" && !accountType) || loading || isNativeIOS()}>
+              disabled={!selectedTier || (selectedTier === "bronze" && !accountType) || loading}>
               {loading ? "Setting up..." : "Create company →"}
             </Btn>
           </div>

@@ -9,7 +9,7 @@ import { useLang } from "../hooks/useLang";
 import { t } from "../i18n/translations";
 import { validateLicense, getLicensePlaceholder } from "../data/licenseValidation";
 import { getLicenseRequirement } from "../data/constants";
-import { isNativeIOS, IOS_SUBSCRIPTION_MSG } from "../utils/platform";
+import { isNativeIOS } from "../utils/platform";
 
 
 
@@ -59,8 +59,9 @@ export default function SignupPage({ go, goBack, initialMode }) {
   const [accountType, setAccountType] = useState(isInviteSignup ? "solo" : null);
   const [selectedTier, setSelectedTier] = useState(isInviteSignup ? (inviteContext?.plan || "bronze") : null);
 
-  // Bronze/Silver/Gold are free through Dec 31, 2026 — the PRORATED2026 coupon
-  // is applied automatically at Stripe checkout, no user-facing promo entry.
+  // Bronze/Silver/Gold are free for the first 6 months — the PRORATED2026 coupon
+  // is applied automatically at Stripe checkout, no user-facing promo entry. Same
+  // window as the iOS RevenueCat introductory offer.
   const FREE_2026_COUPON = "PRORATED2026";
 
   const handleReset = async () => {
@@ -102,6 +103,11 @@ export default function SignupPage({ go, goBack, initialMode }) {
         }
       }
 
+      // On iOS, don't grant a paid plan at signup — Apple requires the actual
+      // purchase confirmation (via RevenueCat, post-NDA below) to gate it, not
+      // account creation. Web keeps its existing pre-grant → Stripe-checkout flow.
+      const signupPlan = isNativeIOS() ? "free" : (selectedTier || "free");
+
       const data = await signUp({
         email:        form.email,
         password:     form.password,
@@ -111,7 +117,7 @@ export default function SignupPage({ go, goBack, initialMode }) {
         state:        form.state,
         license:      form.license,
         accountType:  accountType || "solo",
-        plan:         selectedTier || "free",
+        plan:         signupPlan,
         promoCode:    (selectedTier && selectedTier !== "platinum") ? FREE_2026_COUPON : null,
         status:       isInviteSignup ? "approved" : "pending",
       });
@@ -124,7 +130,7 @@ export default function SignupPage({ go, goBack, initialMode }) {
           trade:        form.trade,
           state:        form.state,
           license:      form.license,
-          plan:         selectedTier || "free",
+          plan:         signupPlan,
           account_type: accountType || "solo",
           status:       isInviteSignup ? "approved" : "pending",
         });
@@ -156,6 +162,14 @@ export default function SignupPage({ go, goBack, initialMode }) {
             token: pendingInvite,
           }));
           localStorage.removeItem("pending_invite_context");
+        } else if (isNativeIOS() && selectedTier && selectedTier !== "platinum") {
+          // Hand off to PricingPage, which opens the UpgradeModal (real Apple
+          // IAP purchase) for this tier on mount — see pending_iap_tier handoff.
+          localStorage.setItem("pending_iap_tier", selectedTier);
+          localStorage.setItem("post_nda_destination", JSON.stringify({
+            type: "iap",
+            pendingInvite: pendingInvite || null,
+          }));
         } else if (selectedTier && STRIPE_LINKS[selectedTier]) {
           const params = new URLSearchParams({
             prefilled_email:      form.email,
@@ -412,13 +426,7 @@ export default function SignupPage({ go, goBack, initialMode }) {
                 </div>
               </div>
 
-              {/* Paid tiers — hidden on iOS (Apple IAP policy) */}
-              {isNativeIOS() ? (
-                <div style={{ background: "#F8FAFC", border: `1px solid ${BRAND.border}`, borderRadius: 10, padding: "10px 14px", marginTop: 8, fontSize: 12, color: BRAND.gray, lineHeight: 1.6, textAlign: "center" }}>
-                  {IOS_SUBSCRIPTION_MSG}
-                </div>
-              ) : (
-              <>
+              {/* Paid tiers — on iOS, purchase runs through Apple IAP after signup */}
               <div style={{ fontSize: 11, fontWeight: 700, color: BRAND.gray, textTransform: "uppercase", letterSpacing: "0.08em", margin: "12px 0 8px" }}>Paid plans — activate now</div>
               {Object.entries(COMPANY_TIERS).map(([id, tier]) => (
                 <div key={id}
@@ -430,7 +438,7 @@ export default function SignupPage({ go, goBack, initialMode }) {
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark }}>{tier.name}</div>
                         <div style={{ textAlign: "right" }}>
-                          <div style={{ fontSize: 13, fontWeight: 800, color: tier.price ? "#16A34A" : BRAND.dark }}>{tier.price ? "Free through 2026" : "Custom pricing"}</div>
+                          <div style={{ fontSize: 13, fontWeight: 800, color: tier.price ? "#16A34A" : BRAND.dark }}>{tier.price ? "First 6 months free" : "Custom pricing"}</div>
                           {tier.price && <div style={{ fontSize: 10, fontWeight: 400, color: BRAND.gray }}>then ${tier.price}/mo</div>}
                         </div>
                       </div>
@@ -468,11 +476,9 @@ export default function SignupPage({ go, goBack, initialMode }) {
               {selectedTier && selectedTier !== "platinum" && (
                 <div style={{ background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 10, padding: "10px 14px", marginTop: 12 }}>
                   <div style={{ fontSize: 12, color: "#166534", lineHeight: 1.6 }}>
-                    🎉 <strong>Free through December 31, 2026.</strong> Card is collected at checkout but you won't be charged until January 2027.
+                    🎉 <strong>Free for your first 6 months.</strong> Card is collected at checkout but you won't be charged until then.
                   </div>
                 </div>
-              )}
-              </>
               )}
 
               <div style={{ display: "flex", gap: 8, marginTop: 16 }}>

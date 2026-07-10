@@ -33,6 +33,10 @@ workflows:
           agvtool new-version -all 27
         working_directory: ios/App
 
+      - name: Set up code signing
+        script: |
+          xcode-project use-profiles
+
       - name: Build iOS
         script: |
           cat > /tmp/ExportOptions.plist << 'PLIST'
@@ -60,11 +64,7 @@ workflows:
             -scheme "$XCODE_SCHEME" \
             -configuration Release \
             -archivePath /tmp/ProRated.xcarchive \
-            archive \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
-            DEVELOPMENT_TEAM=5ZD8684X8H \
-            PROVISIONING_PROFILE_SPECIFIER="ProRated App Store"
+            archive
 
           xcodebuild \
             -exportArchive \

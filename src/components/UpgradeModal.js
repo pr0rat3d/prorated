@@ -3,23 +3,49 @@
 // in-app (Apple Guideline 3.1.1). Equal-prominence buttons: a real "Purchase
 // via Apple" IAP flow next to informational (non-clickable) web-management
 // text — no External Purchase Link Entitlement needed since there's no tap-out.
+//
+// Apple Guideline 3.1.2(c) also requires, shown in-app at the point of
+// purchase: subscription title, length, price, and functional links to the
+// Privacy Policy and Terms of Use — all rendered below, pulled live from the
+// RevenueCat/StoreKit product where possible so the price always matches what
+// the user is actually charged.
 import { useState, useEffect } from "react";
 import { BRAND } from "./UI";
-import { purchaseTier } from "../lib/revenuecat";
+import { purchaseTier, getOfferings } from "../lib/revenuecat";
 import { useAuth } from "../hooks/useAuth";
+
+function formatSubscriptionLength(isoPeriod) {
+  const match = /^P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)W)?(?:(\d+)D)?$/.exec(isoPeriod || "");
+  if (!match) return "Monthly";
+  const [, y, m, w, d] = match;
+  if (y) return y === "1" ? "Yearly" : `Every ${y} years`;
+  if (m) return m === "1" ? "Monthly" : `Every ${m} months`;
+  if (w) return w === "1" ? "Weekly" : `Every ${w} weeks`;
+  if (d) return d === "1" ? "Daily" : `Every ${d} days`;
+  return "Monthly";
+}
 
 export default function UpgradeModal({ tier, isOpen, onClose }) {
   const { refreshUser } = useAuth();
   const [status, setStatus]     = useState("idle"); // idle | loading | success | error
   const [errorMsg, setErrorMsg] = useState("");
+  const [product, setProduct]   = useState(null); // live StoreKit product info
 
   useEffect(() => {
     if (!isOpen) return;
     setStatus("idle");
     setErrorMsg("");
+    setProduct(null);
+    getOfferings().then(packages => {
+      const pkg = packages.find(p => p.product?.identifier === tier?.iapProductId);
+      if (pkg?.product) setProduct(pkg.product);
+    });
   }, [isOpen, tier]);
 
   if (!isOpen || !tier) return null;
+
+  const priceLabel  = product?.priceString || (tier.price ? `$${tier.price.toFixed(2)}` : "");
+  const lengthLabel = formatSubscriptionLength(product?.subscriptionPeriod);
 
   const handlePurchase = async () => {
     setStatus("loading");
@@ -43,7 +69,16 @@ export default function UpgradeModal({ tier, isOpen, onClose }) {
         <div style={{ fontSize: 20, fontWeight: 800, color: BRAND.dark, marginBottom: 4 }}>
           {tier.icon} {tier.name}
         </div>
-        <div style={{ fontSize: 12, color: BRAND.gray, marginBottom: 18 }}>{tier.tagline}</div>
+        <div style={{ fontSize: 12, color: BRAND.gray, marginBottom: 12 }}>{tier.tagline}</div>
+
+        {/* Title / length / price — required in-app for auto-renewable subscriptions (Apple 3.1.2(c)) */}
+        <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 10, padding: "12px 14px", marginBottom: 14 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: BRAND.dark, marginBottom: 4 }}>
+            <span style={{ fontWeight: 700 }}>{tier.name} Plan</span>
+            <span style={{ fontWeight: 800 }}>{priceLabel}</span>
+          </div>
+          <div style={{ fontSize: 12, color: BRAND.gray }}>{lengthLabel} subscription · auto-renews until cancelled</div>
+        </div>
 
         <div style={{ background: "#F8FAFC", border: `1px solid ${BRAND.border}`, borderRadius: 10, padding: "12px 14px", marginBottom: 18 }}>
           {tier.features.slice(0, 4).map(f => (
@@ -90,9 +125,19 @@ export default function UpgradeModal({ tier, isOpen, onClose }) {
         </div>
 
         <button onClick={onClose}
-          style={{ width: "100%", padding: "10px", border: `1px solid ${BRAND.border}`, borderRadius: 9, background: "#fff", color: BRAND.dark, fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+          style={{ width: "100%", padding: "10px", border: `1px solid ${BRAND.border}`, borderRadius: 9, background: "#fff", color: BRAND.dark, fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", marginBottom: 12 }}>
           Close
         </button>
+
+        <div style={{ textAlign: "center", fontSize: 11, color: BRAND.gray }}>
+          <span onClick={() => window.open("/terms", "_blank")} style={{ color: BRAND.blue, fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}>
+            Terms of Use
+          </span>
+          {" · "}
+          <span onClick={() => window.open("/privacy", "_blank")} style={{ color: BRAND.blue, fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}>
+            Privacy Policy
+          </span>
+        </div>
       </div>
     </div>
   );

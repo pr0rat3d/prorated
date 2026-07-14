@@ -5,7 +5,7 @@ import Logo from "../components/Logo";
 const TERMS = {
   en: {
     title:   "Terms of Service",
-    updated: "Last updated: May 2026",
+    updated: "Last updated: July 2026",
     summary: "Plain English Summary",
     summaryItems: [
       "ProRated is for licensed trade professionals only — not homeowners or the general public",
@@ -20,7 +20,7 @@ const TERMS = {
       { title: "3. Reviews Must Be", body: "• Based on your actual, firsthand experience at the job site\n• Truthful and accurate to the best of your knowledge\n• Free of personally identifying homeowner information" },
       { title: "4. Reviews Must NOT", body: "• Contain false or defamatory statements\n• Be submitted in retaliation for a negative review\n• Include homeowner names, contact details, or addresses beyond the job site\n• Contain hate speech, threats, or discriminatory language" },
       { title: "5. Prohibited Uses", body: "• Using the platform to harass or intimidate homeowners or contractors\n• Attempting to manipulate ratings with false reviews\n• Scraping or redistributing ProRated data without written permission\n• Impersonating another contractor or creating fake accounts" },
-      { title: "6. Subscriptions", body: "• Subscriptions are billed monthly through Stripe\n• You may cancel at any time — cancellation takes effect at end of billing period\n• No refunds for partial periods\n• We reserve the right to change pricing with 30 days notice" },
+      { title: "6. Subscriptions", body: "• Subscriptions purchased on the web are billed monthly through Stripe\n• Subscriptions purchased through the iOS app are billed monthly through Apple's App Store and are managed via your Apple ID (Settings → Subscriptions on your device) — refunds and cancellations for App Store purchases are handled by Apple, not ProRated directly\n• You may cancel at any time — cancellation takes effect at end of billing period\n• No refunds for partial periods\n• We reserve the right to change pricing with 30 days notice" },
       { title: "7. Disclaimer", body: "Reviews are contractor opinions only. ProRated does not independently verify the accuracy of individual reviews. Use your own judgment when making bidding decisions." },
       { title: "8. Our Data Promise",
         body: "ProRated commits to the following regarding your data:\n\n• Your personally identifiable information (PII) — including your name, email, license number, phone, and company — will never be sold, rented, or licensed to any third party\n• Aggregate, anonymized data that cannot identify any individual may be used, licensed, or sold for market research, industry reporting, and business partnerships\n• Our primary revenue comes from platform subscriptions\n• If we ever change our PII policy, we will provide 30 days advance written notice via email\n• Upon such notice, users may delete their account and all PII at no cost\n\nThis distinction between personal data and aggregate data is standard industry practice and is legally binding as part of these Terms." },
@@ -32,7 +32,7 @@ const TERMS = {
   },
   es: {
     title:   "Términos de Servicio",
-    updated: "Última actualización: mayo 2026",
+    updated: "Última actualización: julio 2026",
     summary: "Resumen en lenguaje claro",
     summaryItems: [
       "ProRated es solo para contratistas con licencia — no para propietarios ni el público general",
@@ -47,7 +47,7 @@ const TERMS = {
       { title: "3. Las Reseñas Deben", body: "• Basarse en tu experiencia real y directa en el sitio de trabajo\n• Ser verídicas y precisas según tu conocimiento\n• No contener información de identificación personal del propietario" },
       { title: "4. Las Reseñas No Deben", body: "• Contener declaraciones falsas o difamatorias\n• Enviarse como represalia por una reseña negativa\n• Incluir nombres, datos de contacto o direcciones del propietario más allá del sitio\n• Contener discurso de odio, amenazas o lenguaje discriminatorio" },
       { title: "5. Usos Prohibidos", body: "• Usar la plataforma para acosar o intimidar a propietarios o contratistas\n• Intentar manipular calificaciones con reseñas falsas\n• Extraer o redistribuir datos de ProRated sin permiso escrito\n• Hacerse pasar por otro contratista o crear cuentas falsas" },
-      { title: "6. Suscripciones", body: "• Las suscripciones Pro se facturan mensual o anualmente a través de Stripe\n• Puedes cancelar en cualquier momento — la cancelación surte efecto al final del período\n• Sin reembolsos por períodos parciales\n• Nos reservamos el derecho de cambiar precios con 30 días de aviso" },
+      { title: "6. Suscripciones", body: "• Las suscripciones compradas en la web se facturan mensualmente a través de Stripe\n• Las suscripciones compradas a través de la aplicación de iOS se facturan mensualmente a través de la App Store de Apple y se gestionan mediante tu Apple ID (Ajustes → Suscripciones en tu dispositivo) — los reembolsos y cancelaciones de compras en la App Store son gestionados por Apple, no directamente por ProRated\n• Puedes cancelar en cualquier momento — la cancelación surte efecto al final del período\n• Sin reembolsos por períodos parciales\n• Nos reservamos el derecho de cambiar precios con 30 días de aviso" },
       { title: "7. Descargo de Responsabilidad", body: "Las reseñas son solo opiniones de contratistas. ProRated no verifica de forma independiente la exactitud de las reseñas individuales. Usa tu propio criterio al tomar decisiones de oferta." },
       { title: "8. Nuestro Compromiso con tus Datos",
         body: "ProRated se compromete con respecto a tus datos:\n\n• Tu información de identificación personal (PII) — nombre, correo, licencia, teléfono y empresa — nunca será vendida, alquilada ni licenciada a terceros\n• Los datos agregados y anonimizados que no pueden identificar a ningún individuo pueden usarse, licenciarse o venderse para investigación de mercado e informes de la industria\n• Nuestros ingresos principales provienen de suscripciones y publicidad de proveedores\n• Si cambiamos nuestra política de PII, notificaremos con 30 días de anticipación\n• Los usuarios podrán eliminar su cuenta y todos sus datos personales gratuitamente\n\nEsta distinción entre datos personales y datos agregados es una práctica estándar de la industria y es legalmente vinculante." },

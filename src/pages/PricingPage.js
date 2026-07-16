@@ -332,7 +332,7 @@ export default function PricingPage({ go, goBack }) {
 
         {/* Bottom note */}
         <p style={{ textAlign: "center", fontSize: 11, color: BRAND.gray, marginTop: 20 }}>
-          Bronze, Silver, and Gold are free for your first 6 months — your card is collected at checkout but not charged until then.
+          Bronze, Silver, and Gold are <strong style={{ color: BRAND.dark, fontWeight: 700 }}>free for your first 6 months</strong> — your card is collected at checkout but not charged until then.
           Payments processed securely by Stripe.
         </p>
       </div>

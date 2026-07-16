@@ -25,6 +25,14 @@ function formatSubscriptionLength(isoPeriod) {
   return "Monthly";
 }
 
+// e.g. { periodNumberOfUnits: 6, periodUnit: "MONTH" } -> "6 months"
+function formatIntroDuration(introPrice) {
+  if (!introPrice) return null;
+  const n = introPrice.periodNumberOfUnits || 1;
+  const unitLabel = { DAY: "day", WEEK: "week", MONTH: "month", YEAR: "year" }[introPrice.periodUnit] || "month";
+  return `${n} ${unitLabel}${n === 1 ? "" : "s"}`;
+}
+
 export default function UpgradeModal({ tier, isOpen, onClose }) {
   const { refreshUser } = useAuth();
   const [status, setStatus]     = useState("idle"); // idle | loading | success | error
@@ -44,8 +52,10 @@ export default function UpgradeModal({ tier, isOpen, onClose }) {
 
   if (!isOpen || !tier) return null;
 
-  const priceLabel  = product?.priceString || (tier.price ? `$${tier.price.toFixed(2)}` : "");
-  const lengthLabel = formatSubscriptionLength(product?.subscriptionPeriod);
+  const priceLabel   = product?.priceString || (tier.price ? `$${tier.price.toFixed(2)}` : "");
+  const lengthLabel  = formatSubscriptionLength(product?.subscriptionPeriod);
+  const isFreeTrial  = !!product?.introPrice && product.introPrice.price === 0;
+  const introDuration = formatIntroDuration(product?.introPrice);
 
   const handlePurchase = async () => {
     setStatus("loading");
@@ -71,13 +81,23 @@ export default function UpgradeModal({ tier, isOpen, onClose }) {
         </div>
         <div style={{ fontSize: 12, color: BRAND.gray, marginBottom: 12 }}>{tier.tagline}</div>
 
-        {/* Title / length / price — required in-app for auto-renewable subscriptions (Apple 3.1.2(c)) */}
+        {/* Title / length / price — required in-app for auto-renewable subscriptions (Apple 3.1.2(c)).
+            When there's a free-trial intro offer, the trial duration and post-trial price are
+            called out explicitly rather than folded into the base price line. */}
         <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 10, padding: "12px 14px", marginBottom: 14 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: BRAND.dark, marginBottom: 4 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: BRAND.dark, marginBottom: isFreeTrial ? 6 : 4 }}>
             <span style={{ fontWeight: 700 }}>{tier.name} Plan</span>
-            <span style={{ fontWeight: 800 }}>{priceLabel}</span>
+            <span style={{ fontWeight: 800 }}>{priceLabel}{tier.price ? "/mo" : ""}</span>
           </div>
-          <div style={{ fontSize: 12, color: BRAND.gray }}>{lengthLabel} subscription · auto-renews until cancelled</div>
+          {isFreeTrial && introDuration && (
+            <div style={{ fontSize: 13, fontWeight: 800, color: BRAND.green, marginBottom: 6 }}>
+              🎉 First {introDuration} free, then {priceLabel}/month
+            </div>
+          )}
+          <div style={{ fontSize: 12, color: BRAND.gray }}>
+            {lengthLabel} subscription. Your subscription will automatically renew
+            {isFreeTrial && introDuration ? ` at ${priceLabel}/month after the free trial ends` : ""} until cancelled.
+          </div>
         </div>
 
         <div style={{ background: "#F8FAFC", border: `1px solid ${BRAND.border}`, borderRadius: 10, padding: "12px 14px", marginBottom: 18 }}>

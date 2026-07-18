@@ -1,12 +1,9 @@
 // src/components/StoreBadges.js
 // App Store / Google Play download badges.
-// PLACEHOLDER LINKS — both badges currently point to https://prorated.app.
-// Once each app is approved, swap in:
-//   Apple:  https://apps.apple.com/us/app/prorated/id6785617187  (confirm App ID in App Store Connect)
-//   Google: https://play.google.com/store/apps/details?id=app.prorated
+// Google Play link is still a placeholder — swap once the Android listing is live.
 import { isNativeApp } from "../utils/platform";
 
-const APPLE_BADGE_URL  = "https://prorated.app";
+const APPLE_BADGE_URL  = "https://apps.apple.com/us/app/prorated/id6785617187";
 const GOOGLE_BADGE_URL = "https://prorated.app";
 
 const getDevicePlatform = () => {

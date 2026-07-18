@@ -988,11 +988,19 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                   ["Trade",   trade?.label       || "—"],
                   ["License", user?.license      || "—"],
                   ["Plan", (
-                    user?.plan === "bronze" ? "🥉 Bronze" :
-                    user?.plan === "silver" ? "🥈 Silver" :
-                    user?.plan === "gold"   ? "🥇 Gold" :
-                    user?.plan === "platinum" ? "💎 Platinum" :
-                    FREE_PLAN_LABEL
+                    <>
+                      {user?.plan === "bronze" ? "🥉 Bronze" :
+                       user?.plan === "silver" ? "🥈 Silver" :
+                       user?.plan === "gold"   ? "🥇 Gold" :
+                       user?.plan === "platinum" ? "💎 Platinum" :
+                       FREE_PLAN_LABEL}
+                      {user?.plan && user.plan !== "free" && (
+                        <button onClick={() => go("pricing")}
+                          style={{ background: "none", border: "none", color: BRAND.blue, fontSize: 11, fontWeight: 700, cursor: "pointer", marginLeft: 8, fontFamily: "'DM Sans', sans-serif" }}>
+                          Change plan →
+                        </button>
+                      )}
+                    </>
                   )],
                 ].map(([l, v]) => (
                   <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: "9px 0", borderBottom: `1px solid ${BRAND.border}`, fontSize: 13 }}>

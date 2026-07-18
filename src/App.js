@@ -472,6 +472,11 @@ export default function App() {
               {label}
             </button>
           ))}
+          {/* No account needed — property owners disputing a review can't log in */}
+          <a href="mailto:disputes@prorated.app?subject=Content%20Report"
+            style={{ color: BRAND.gray, fontSize: 11, fontFamily: "'DM Sans', sans-serif", textDecoration: "underline", textDecorationColor: BRAND.border }}>
+            Dispute a Review
+          </a>
         </div>
         <div style={{ marginBottom: 8 }}>
           <StoreBadges />

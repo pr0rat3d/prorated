@@ -1,6 +1,6 @@
 # ProRated — Content Moderation Policy
 # Required by Apple App Store for apps with user-generated content
-# Last updated: January 2025
+# Last updated: July 2026
 
 ═══════════════════════════════════════════════════════
 OVERVIEW
@@ -76,7 +76,7 @@ d) TERMS ACCEPTANCE
 
 Users and homeowners can report problematic content via:
 
-• Email: disputes@prorated.io
+• Email: disputes@prorated.app
 • Subject line: "Content Report — [address]"
 • Include: the address, reason for report, and any
   supporting documentation
@@ -85,7 +85,7 @@ Reports are reviewed within 48 hours on business days.
 
 Homeowners who believe a review about their property is
 false or defamatory may:
-1. Contact disputes@prorated.io with documentation
+1. Contact disputes@prorated.app with documentation
 2. Request review removal under our dispute process
 3. Receive a response within 5 business days
 
@@ -131,7 +131,7 @@ ProRated takes the following steps to protect homeowners:
 • Reviews reference job site conditions, not personal attacks
 • Reviews containing homeowner contact information are removed
 • Homeowners may request review removal by contacting
-  disputes@prorated.io with proof of property ownership
+  disputes@prorated.app with proof of property ownership
 • ProRated does not allow homeowners to be targeted or harassed
 
 ═══════════════════════════════════════════════════════
@@ -166,9 +166,9 @@ Emergency removal         Within 4 hours
 10. CONTACT
 ═══════════════════════════════════════════════════════
 
-Content disputes:   disputes@prorated.io
-Privacy concerns:   privacy@prorated.io
-General:            hello@prorated.io
+Content disputes:   disputes@prorated.app
+Privacy concerns:   privacy@prorated.app
+General:            hello@prorated.app
 
 ProRated · Hoover, Alabama, USA
-https://prorated-kappa.vercel.app
+https://prorated.app

@@ -169,6 +169,15 @@ export default function AddressCard({ address, go, goLogin, goReview }) {
               </button>
             </div>
           </div>
+
+          {/* Property owners can't log in to see what's on file — this is their only path to flag a concern */}
+          <p style={{ fontSize: 11, color: BRAND.gray, textAlign: "center", marginTop: 14 }}>
+            Own this property and think something here may be inaccurate?{" "}
+            <a href={`mailto:disputes@prorated.app?subject=${encodeURIComponent(`Content Report — ${address.street}, ${address.city}, ${address.state}`)}`}
+              style={{ color: BRAND.blue, fontWeight: 600, textDecoration: "underline" }}>
+              Dispute a review →
+            </a>
+          </p>
         </div>
       </div>
     );

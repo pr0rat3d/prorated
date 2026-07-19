@@ -27,7 +27,6 @@ export const translations = {
 
     // ── Home Page ──────────────────────────────────────────────
     home: {
-      badge:        "Built for trade professionals · Verified by license",
       headline1:    "Know the job site",
       headline2:    "before you bid.",
       subheadline:  "Residential job site reviews by professionals, for professionals. Verified intel so there are no surprises.",
@@ -406,7 +405,6 @@ export const translations = {
     },
 
     home: {
-      badge:        "Para contratistas · Verificado por licencia",
       headline1:    "Conoce el trabajo",
       headline2:    "antes de cotizar.",
       subheadline:  "Reseñas de sitios residenciales por profesionales, para profesionales. Información verificada para que no haya sorpresas.",

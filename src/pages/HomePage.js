@@ -145,9 +145,6 @@ export default function HomePage({ go, goLogin, goReview, initialQuery, onQueryU
                 Built by Pros, Built for Pros
               </div>
             </div>
-            <div style={{ display: "inline-block", background: "rgba(59,130,246,0.15)", color: "#93C5FD", fontSize: 10, fontWeight: 700, letterSpacing: "2px", textTransform: "uppercase", padding: "5px 16px", borderRadius: 20, border: "1px solid rgba(59,130,246,0.3)", marginBottom: 18, animation: "fadeUp 0.5s ease 0.05s both" }}>
-              {t(lang, "home.badge")}
-            </div>
             <h1 style={{ fontSize: "clamp(34px,5vw,54px)", fontWeight: 800, color: "#F8FAFC", lineHeight: 1.08, marginBottom: 16, letterSpacing: "-1px", animation: "fadeUp 0.5s ease 0.1s both" }}>
               {t(lang, "home.headline1")}<br /><span style={{ color: "#4ADE80" }}>{t(lang, "home.headline2")}</span>
             </h1>
@@ -155,11 +152,16 @@ export default function HomePage({ go, goLogin, goReview, initialQuery, onQueryU
               {t(lang, "home.subheadline")}
             </p>
             {!isLoggedIn && (
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(37,99,235,0.15)", border: "1px solid rgba(37,99,235,0.3)", borderRadius: 20, padding: "5px 14px", marginBottom: 16, animation: "fadeUp 0.5s ease 0.25s both" }}>
-                <span style={{ fontSize: 11 }}>🔐</span>
-                <span style={{ fontSize: 11, color: "#93C5FD", fontWeight: 600 }}>
-                  Verified trade professionals only · <button onClick={() => go("signup")} style={{ background: "none", border: "none", color: "#60A5FA", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", padding: 0, textDecoration: "underline" }}>Create free account</button> · <button onClick={() => { if (goLogin) goLogin(); else go("signup"); }} style={{ background: "none", border: "none", color: "#60A5FA", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", padding: 0, textDecoration: "underline" }}>Sign in</button>
-                </span>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginBottom: 18, animation: "fadeUp 0.5s ease 0.25s both" }}>
+                <button onClick={() => { if (goLogin) goLogin(); else go("signup"); }}
+                  style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.25)", color: "#F8FAFC", fontSize: 13, fontWeight: 700, padding: "9px 22px", borderRadius: 20, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+                  Log Into Your Account
+                </button>
+                <div style={{ fontSize: 11, color: "#94A3B8" }}>
+                  No Account?{" "}
+                  <button onClick={() => go("signup")} style={{ background: "none", border: "none", color: "#60A5FA", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", padding: 0, textDecoration: "underline" }}>Sign Up for Free</button>
+                  {" "}<span style={{ color: "#64748B" }}>(License Required)</span>
+                </div>
               </div>
             )}
             <div style={{ display: "flex", gap: 8, background: "#FFF", borderRadius: 14, padding: "5px 5px 5px 14px", maxWidth: 560, margin: "0 auto 16px", boxShadow: "0 16px 48px rgba(0,0,0,0.4)", animation: "fadeUp 0.5s ease 0.3s both", alignItems: "center", position: "relative", zIndex: 500 }}>

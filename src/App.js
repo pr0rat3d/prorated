@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { isNativeIOS } from "./utils/platform";
+import { isNativeIOS, isNativeApp } from "./utils/platform";
 import Nav from "./components/Nav";
 import BottomNav from "./components/BottomNav";
 import { OfflineBanner, InstallBanner, IOSInstallBanner } from "./components/Banners";
@@ -167,6 +167,7 @@ export default function App() {
     }, 8000);
 
     const t = setTimeout(() => {
+      if (isNativeApp()) return; // already installed as the native app — nothing to prompt
       const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
       const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
       if (!isStandalone) {
@@ -475,7 +476,7 @@ export default function App() {
           {/* No account needed — property owners disputing a review can't log in */}
           <a href="mailto:disputes@prorated.app?subject=Content%20Report"
             style={{ color: BRAND.gray, fontSize: 11, fontFamily: "'DM Sans', sans-serif", textDecoration: "underline", textDecorationColor: BRAND.border }}>
-            Dispute a Review
+            Dispute
           </a>
         </div>
         <div style={{ marginBottom: 8 }}>

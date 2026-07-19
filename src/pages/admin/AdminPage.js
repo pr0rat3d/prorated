@@ -437,6 +437,10 @@ export default function AdminPage({ go }) {
   const [reviewFilter, setReviewFilter] = useState("all");
   const [reviewUserFilter, setReviewUserFilter] = useState(null); // { id, name } — set from a contractor row
   const [actionMsg, setActionMsg] = useState(null); // { ok, text }
+  const [announceSubject, setAnnounceSubject] = useState("");
+  const [announceMessage, setAnnounceMessage] = useState("");
+  const [announceSending, setAnnounceSending] = useState(false);
+  const [announceResult, setAnnounceResult]   = useState(null); // { sent, failed, total }
 
   useEffect(() => { loadData(); }, []);
 
@@ -634,6 +638,30 @@ export default function AdminPage({ go }) {
     flash(res.ok, res.ok ? "Welcome email resent ✓" : "Email failed — check Resend logs");
   };
 
+  const activeContractorCount = contractors.filter(c => c.status === "approved" && !c.deleted).length;
+
+  const sendAnnouncement = async () => {
+    if (!announceSubject.trim() || !announceMessage.trim()) return;
+    if (!window.confirm(`Send this email to all ${activeContractorCount} active trade pros? This can't be undone.`)) return;
+    setAnnounceSending(true);
+    setAnnounceResult(null);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/send-announcement`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
+        body: JSON.stringify({ adminPass: getAdminPass(), subject: announceSubject, message: announceMessage }),
+      });
+      const data = await res.json();
+      if (!res.ok) { flash(false, data.error || "Send failed"); return; }
+      setAnnounceResult(data);
+      flash(true, `Sent to ${data.sent}/${data.total} trade pros${data.failed ? ` — ${data.failed} failed` : ""}`);
+    } catch {
+      flash(false, "Send failed — check your connection");
+    } finally {
+      setAnnounceSending(false);
+    }
+  };
+
   // G3 — Ownership flags
   const resolveOwnershipFlag = async (id) => {
     await adminPatch("/ownership_flags", { resolved: true }, { id: `eq.${id}` });
@@ -768,6 +796,7 @@ export default function AdminPage({ go }) {
     { id: "nda",          label: `NDA (${ndaSigs.length})`, icon: "📄" },
     { id: "push",         label: `Push (${subs.length})`, icon: "🔔" },
     { id: "flags",        label: "🚩 Feature Flags", icon: "🚩" },
+    { id: "announce",     label: "📢 Announce", icon: "📢" },
   ];
 
   const ProgressBar = ({ current, target, color }) => {
@@ -1548,6 +1577,38 @@ export default function AdminPage({ go }) {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* ── ANNOUNCE ── */}
+        {!loading && tab === "announce" && (
+          <div>
+            <SectionHead title="Send Announcement" />
+            <div style={{ background: "#1E3A5F", border: "1px solid #2563EB", borderRadius: 12, padding: "0.75rem 1rem", margin: "1rem 0", fontSize: 12, color: "#93C5FD", lineHeight: 1.6 }}>
+              Sends one email per recipient (never a shared "to" list, so no one sees anyone else's address) to every <strong>approved, active</strong> trade pro — currently <strong>{activeContractorCount}</strong>. You'll get a confirmation prompt before anything sends.
+            </div>
+            <div style={{ background: "#fff", border: `1px solid ${BRAND.border}`, borderRadius: 14, padding: "1.25rem" }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: BRAND.dark, display: "block", marginBottom: 6 }}>Subject</label>
+              <input value={announceSubject} onChange={e => setAnnounceSubject(e.target.value)}
+                placeholder="e.g. New features just shipped"
+                style={{ width: "100%", padding: "10px 12px", border: `1.5px solid ${BRAND.border}`, borderRadius: 9, fontSize: 13, outline: "none", fontFamily: "'DM Sans', sans-serif", boxSizing: "border-box", marginBottom: 14, color: BRAND.dark }} />
+
+              <label style={{ fontSize: 12, fontWeight: 700, color: BRAND.dark, display: "block", marginBottom: 6 }}>Message</label>
+              <textarea value={announceMessage} onChange={e => setAnnounceMessage(e.target.value)}
+                placeholder="What's new — separate paragraphs with a blank line."
+                rows={8}
+                style={{ width: "100%", padding: "10px 12px", border: `1.5px solid ${BRAND.border}`, borderRadius: 9, fontSize: 13, outline: "none", fontFamily: "'DM Sans', sans-serif", boxSizing: "border-box", marginBottom: 14, color: BRAND.dark, resize: "vertical", lineHeight: 1.6 }} />
+
+              <Btn onClick={sendAnnouncement} disabled={!announceSubject.trim() || !announceMessage.trim() || announceSending}>
+                {announceSending ? "Sending..." : `📢 Send to ${activeContractorCount} Trade Pros`}
+              </Btn>
+
+              {announceResult && (
+                <div style={{ marginTop: 14, background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 10, padding: "10px 14px", fontSize: 12, color: "#166534" }}>
+                  Sent to {announceResult.sent} of {announceResult.total}{announceResult.failed ? ` — ${announceResult.failed} failed (check Resend logs)` : ""}.
+                </div>
+              )}
+            </div>
           </div>
         )}
 

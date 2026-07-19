@@ -724,6 +724,12 @@ export default function AdminPage({ go }) {
   const uniqueAddressCount = Object.keys(addressCounts).length;
   const avgReviewsPerAddress = uniqueAddressCount ? (reviews.length / uniqueAddressCount).toFixed(1) : "0";
   const topAddresses = Object.entries(addressCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const reviewCountsByUser = reviews.reduce((acc, r) => { if (!r.user_id) return acc; acc[r.user_id] = (acc[r.user_id] || 0) + 1; return acc; }, {});
+  const topReviewers = Object.entries(reviewCountsByUser)
+    .map(([userId, count]) => ({ userId, count, contractor: contractors.find(c => c.id === userId) }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+  const pointsLeaderboard = contractors.filter(c => !c.deleted).sort((a, b) => (b.review_points || 0) - (a.review_points || 0));
 
   // ── Filtered views ──────────────────────────────────────────
   const filteredContractors = userFilter === "all"        ? contractors.filter(c => !c.deleted)
@@ -776,11 +782,11 @@ export default function AdminPage({ go }) {
     );
   };
 
-  const statBox = (icon, val, label, color = BRAND.blue) => (
-    <div style={{ background: "#fff", border: `1px solid ${BRAND.border}`, borderRadius: 14, padding: "1rem", textAlign: "center", flex: "1 1 120px" }}>
+  const statBox = (icon, val, label, color = BRAND.blue, onClick = null) => (
+    <div onClick={onClick || undefined} style={{ background: "#fff", border: `1px solid ${BRAND.border}`, borderRadius: 14, padding: "1rem", textAlign: "center", flex: "1 1 120px", cursor: onClick ? "pointer" : "default" }}>
       <div style={{ fontSize: 24, marginBottom: 4 }}>{icon}</div>
       <div style={{ fontSize: 26, fontWeight: 900, color, lineHeight: 1 }}>{val}</div>
-      <div style={{ fontSize: 11, color: BRAND.gray, marginTop: 4 }}>{label}</div>
+      <div style={{ fontSize: 11, color: BRAND.gray, marginTop: 4 }}>{label}{onClick ? " →" : ""}</div>
     </div>
   );
 
@@ -877,7 +883,7 @@ export default function AdminPage({ go }) {
               {statBox("⏳", pendingContractors.length, "Pending Review", "#D97706")}
               {statBox("💰", paidContractors.length, "Paid Accounts", "#7C3AED")}
               {statBox("🏡", realtors.length, "Realtors", "#EA580C")}
-              {statBox("⭐", reviews.length, "Reviews", "#CA8A04")}
+              {statBox("⭐", reviews.length, "Reviews", "#CA8A04", () => setTab("reviews"))}
             </div>
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: "1.5rem" }}>
               {statBox("🥉", bronzeContractors.length, "Bronze", "#B45309")}
@@ -1261,6 +1267,21 @@ export default function AdminPage({ go }) {
               </div>
             )}
 
+            {topReviewers.length > 0 && (
+              <div style={{ background: "#F8FAFC", border: `1px solid ${BRAND.border}`, borderRadius: 12, padding: "10px 14px", marginBottom: "1rem" }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: BRAND.dark, marginBottom: 6 }}>👤 Trade pros with most reviews</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {topReviewers.map(({ userId, count, contractor }) => (
+                    <button key={userId}
+                      onClick={() => { setReviewUserFilter({ id: userId, name: contractor?.name || contractor?.email || userId.slice(0, 8) }); setReviewFilter("user"); }}
+                      style={{ fontSize: 11, color: BRAND.gray, background: "#fff", border: `1px solid ${BRAND.border}`, borderRadius: 8, padding: "3px 9px", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+                      {contractor?.name || contractor?.email || userId.slice(0, 8)} <strong style={{ color: BRAND.dark }}>({count})</strong>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {filteredReviews.length === 0 ? <Empty msg="No reviews match this filter" /> :
               filteredReviews.map(r => (
                 <ReviewRow key={r.id} review={r} onDelete={deleteReview} onToggleDisputed={toggleDisputed} editRequests={editRequests} onResolveEditRequest={resolveEditRequest} />
@@ -1358,6 +1379,27 @@ export default function AdminPage({ go }) {
         {/* ── REWARDS ── */}
         {!loading && tab === "rewards" && (
           <div>
+            <div style={{ marginBottom: "1.5rem" }}>
+              <SectionHead title="Review Points Leaderboard" count={pointsLeaderboard.length} />
+              <div style={{ background: "#fff", border: `1px solid ${BRAND.border}`, borderRadius: 12, overflow: "hidden" }}>
+                {pointsLeaderboard.map((c, i) => (
+                  <div key={c.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", borderBottom: i < pointsLeaderboard.length - 1 ? `1px solid ${BRAND.border}` : "none" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <span style={{ fontSize: 11, color: BRAND.gray, width: 22, flexShrink: 0 }}>#{i + 1}</span>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark }}>{c.name || c.email}</div>
+                        <div style={{ fontSize: 11, color: BRAND.gray }}>{c.email}</div>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: BRAND.blue }}>{c.review_points || 0} pts</div>
+                      <div style={{ fontSize: 10, color: BRAND.gray }}>${((c.review_points || 0) * 0.25).toFixed(2)}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <SectionHead title="Merch Redemptions" count={redemptions.length} />
             <div style={{ background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 12, padding: "0.75rem 1rem", marginBottom: "1rem", fontSize: 12, color: "#92400E", lineHeight: 1.6 }}>
               Trade pros earn 1 point per review ($0.25/pt). At 40 pts they can redeem for $10 merch credit. Approve → coordinate merch → mark Fulfilled.

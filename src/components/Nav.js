@@ -5,7 +5,7 @@ import { useLang } from "../hooks/useLang";
 import { t } from "../i18n/translations";
 import LangToggle from "./LangToggle";
 
-export default function Nav({ page, go }) {
+export default function Nav({ page, go, goLogin }) {
   const { user, isLoggedIn } = useAuth();
   const { lang } = useLang();
 
@@ -27,7 +27,7 @@ export default function Nav({ page, go }) {
         {/* Center nav links */}
         <div style={{ display: "flex", alignItems: "center", gap: 2, flex: 1, justifyContent: "center" }}>
           {[
-            ["home",      "🔍", "nav.search"],
+            ["home",      "🏠", "nav.home"],
             ["review",    "⭐", "nav.review"],
             ["dashboard", "📊", "nav.dashboard"],
           ].map(([id, icon, tKey]) => (
@@ -53,6 +53,10 @@ export default function Nav({ page, go }) {
             </div>
           ) : (
             <>
+              <button className="nav-signup-full" onClick={() => { if (goLogin) goLogin(); else go("signup"); }}
+                style={{ background: "none", color: BRAND.gray, border: "none", padding: "7px 8px", borderRadius: 9, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", whiteSpace: "nowrap" }}>
+                {t(lang, "nav.signIn")}
+              </button>
               <button className="nav-signup-full" onClick={() => go("signup")}
                 style={{ background: BRAND.blue, color: "#fff", border: "none", padding: "7px 14px", borderRadius: 9, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", whiteSpace: "nowrap" }}>
                 {t(lang, "nav.signUp")}

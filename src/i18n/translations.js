@@ -8,10 +8,11 @@ export const translations = {
   en: {
     // ── Nav ────────────────────────────────────────────────────
     nav: {
-      search:    "Search",
+      home:      "Home",
       review:    "Review",
       dashboard: "Dashboard",
       signUp:    "Sign up free",
+      signIn:    "Sign in",
       tagline:   "Built by Pros, Built for Pros",
     },
 
@@ -388,10 +389,11 @@ export const translations = {
 
   es: {
     nav: {
-      search:    "Buscar",
+      home:      "Inicio",
       review:    "Reseña",
       dashboard: "Panel",
       signUp:    "Registrarse gratis",
+      signIn:    "Iniciar sesión",
       tagline:   "Construido por Pros, para Pros",
     },
 

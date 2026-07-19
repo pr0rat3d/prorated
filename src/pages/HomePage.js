@@ -157,7 +157,9 @@ export default function HomePage({ go, goLogin, goReview, initialQuery, onQueryU
             {!isLoggedIn && (
               <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(37,99,235,0.15)", border: "1px solid rgba(37,99,235,0.3)", borderRadius: 20, padding: "5px 14px", marginBottom: 16, animation: "fadeUp 0.5s ease 0.25s both" }}>
                 <span style={{ fontSize: 11 }}>🔐</span>
-                <span style={{ fontSize: 11, color: "#93C5FD", fontWeight: 600 }}>Verified trade professionals only · <button onClick={() => go("signup")} style={{ background: "none", border: "none", color: "#60A5FA", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", padding: 0, textDecoration: "underline" }}>Create free account</button></span>
+                <span style={{ fontSize: 11, color: "#93C5FD", fontWeight: 600 }}>
+                  Verified trade professionals only · <button onClick={() => go("signup")} style={{ background: "none", border: "none", color: "#60A5FA", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", padding: 0, textDecoration: "underline" }}>Create free account</button> · <button onClick={() => { if (goLogin) goLogin(); else go("signup"); }} style={{ background: "none", border: "none", color: "#60A5FA", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", padding: 0, textDecoration: "underline" }}>Sign in</button>
+                </span>
               </div>
             )}
             <div style={{ display: "flex", gap: 8, background: "#FFF", borderRadius: 14, padding: "5px 5px 5px 14px", maxWidth: 560, margin: "0 auto 16px", boxShadow: "0 16px 48px rgba(0,0,0,0.4)", animation: "fadeUp 0.5s ease 0.3s both", alignItems: "center", position: "relative", zIndex: 500 }}>

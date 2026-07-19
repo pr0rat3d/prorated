@@ -312,7 +312,7 @@ export default function App() {
       {/* Top nav — hidden on mobile, not shown on isolated pages */}
       {!isIsolated && (
       <div style={{ display: "none" }} className="desktop-nav">
-        <Nav page={page} go={go} />
+        <Nav page={page} go={go} goLogin={goLogin} />
       </div>
       )}
       <style>{`@media(min-width:640px){ .desktop-nav { display: block !important; } }`}</style>

@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext, useContext } from "react";
-import { loadSession, signOut, getCurrentUser } from "../api/auth";
+import { loadSession, signOut, getCurrentUser, checkSessionActive } from "../api/auth";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../config.js";
 import { configureRevenueCat } from "../lib/revenuecat";
 
@@ -9,6 +9,7 @@ export const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser]       = useState(null);
   const [loading, setLoading] = useState(true);
+  const [sessionKilled, setSessionKilled] = useState(false);
 
   useEffect(() => {
     // Load session from localStorage immediately (fast, no flicker)
@@ -48,8 +49,33 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  // Periodically confirm this device is still the active session — logging
+  // in elsewhere kills the row this session's JWT claim points at, so the
+  // next check here fails and this device gets force-logged-out.
+  useEffect(() => {
+    if (!user) return;
+    const check = async () => {
+      const active = await checkSessionActive();
+      if (!active) {
+        await signOut();
+        setUser(null);
+        setSessionKilled(true);
+      }
+    };
+    const interval = setInterval(check, 60000);
+    const onVisible = () => { if (document.visibilityState === "visible") check(); };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", check);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", check);
+    };
+  }, [user]);
+
   const login = (userData) => {
     setUser(userData);
+    setSessionKilled(false);
     if (userData?.id) configureRevenueCat(userData.id);
   };
 
@@ -57,6 +83,8 @@ export function AuthProvider({ children }) {
     await signOut();
     setUser(null);
   };
+
+  const dismissSessionKilled = () => setSessionKilled(false);
 
   // Fetch fresh user data from Supabase and update session + state
   const refreshUser = async () => {
@@ -84,7 +112,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser, isLoggedIn: !!user }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser, isLoggedIn: !!user, sessionKilled, dismissSessionKilled }}>
       {children}
     </AuthContext.Provider>
   );

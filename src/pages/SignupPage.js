@@ -17,7 +17,7 @@ const ADMIN_EMAIL       = "pr0rat3d@gmail.com";
 
 export default function SignupPage({ go, goBack, initialMode }) {
   const { lang } = useLang();
-  const { login } = useAuth();
+  const { login, sessionKilled, dismissSessionKilled } = useAuth();
   const [mode, setMode]    = useState(initialMode || "signup");
   const [step, setStep]    = useState(1);
   const [loading, setLoad]   = useState(false);
@@ -249,6 +249,12 @@ export default function SignupPage({ go, goBack, initialMode }) {
       {/* Login */}
       {mode === "login" && !resetMode && (
         <Card style={{ animation: "fadeUp 0.2s ease both" }}>
+          {sessionKilled && (
+            <div style={{ background: "#FFFBEB", border: "1px solid #FCD34D", borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 12, color: "#92400E" }}>
+              You were signed out because your account was signed in on another device.{" "}
+              <button onClick={dismissSessionKilled} style={{ background: "none", border: "none", color: "#92400E", fontWeight: 700, cursor: "pointer", fontSize: 12, textDecoration: "underline", padding: 0, fontFamily: "'DM Sans', sans-serif" }}>Dismiss</button>
+            </div>
+          )}
           <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: "1rem" }}>Sign in</div>
           <input type="email" placeholder="Email address" value={form.email} onChange={upd("email")} autoComplete="username" style={inp} />
           <input type="password" placeholder="Password" autoComplete="current-password" value={form.password} onChange={upd("password")} style={{ ...inp, marginBottom: 0 }} />

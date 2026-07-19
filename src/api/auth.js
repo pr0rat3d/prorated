@@ -100,6 +100,46 @@ export const signUp = async ({ email, password, name, company_name = null, trade
   return data;
 };
 
+// ── Kill every other active session for this user (one login = one device) ──
+const killOtherSessions = async (token) => {
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/rpc/kill_other_sessions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify({}),
+    });
+  } catch (err) {
+    console.warn("[ProRated] kill_other_sessions failed:", err.message);
+  }
+};
+
+// ── Check whether this device's session is still the active one ────────
+// Fails OPEN (returns true) on any network/server error — only a confirmed
+// "false" from the server should ever force a logout.
+export const checkSessionActive = async () => {
+  const session = loadSession();
+  if (!session?.access_token) return true;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/session_still_active`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({}),
+    });
+    if (!res.ok) return true;
+    return (await res.json()) === true;
+  } catch {
+    return true;
+  }
+};
+
 // ── Log in an existing contractor ─────────────────────────────
 export const signIn = async ({ email, password }) => {
   const data = await authFetch("/token?grant_type=password", {
@@ -108,6 +148,8 @@ export const signIn = async ({ email, password }) => {
   });
 
   if (data.access_token) {
+    await killOtherSessions(data.access_token);
+
     // Fetch trade professional profile — retry once if first attempt returns empty
     const fetchProfile = () => dbFetch(
       `/contractors?id=eq.${data.user.id}&select=*`,

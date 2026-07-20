@@ -6,12 +6,10 @@ export default function MissionPage({ go }) {
   const { lang } = useLang();
 
   const stats = [
-    { stat: "$280B",    label: "lost annually by the U.S. construction industry due to slow and delayed payments in 2024 — the highest ever recorded", source: "Rabbet 2024",     url: "https://www.globenewswire.com/news-release/2024/10/01/2955968/0/en/Slow-Payments-Cost-280-Billion-in-2024-Threaten-U-S-Construction-Industry-s-Financial-Health.html" },
-    { stat: "57%",      label: "of service businesses lose $1,000–$5,000 every month to unbilled scope creep — and only 1% successfully bill for all out-of-scope work", source: "Ignition 2025",   url: "https://www.ignitionapp.com/news/2025-agency-pricing-cashflow-report" },
-    { stat: "3–7%",     label: "average net profit margin for U.S. contractors — meaning a single unmanaged scope-creep job can wipe out months of profit", source: "IBIS World / Procore", url: "https://www.procore.com/library/construction-markup-and-profit-margin" },
-    { stat: "27%",      label: "average budget overrun on projects that experience scope creep — 85% of all projects that creep go over budget by this amount", source: "PMI 2025",        url: "https://www.pmi.org" },
-    { stat: "70%",      label: "of contractors say payment delays regularly threaten their ability to operate and grow their business",                        source: "Built 2025",      url: "https://getbuilt.com/blog/70-percent-of-contractors-say-payment-delays-threaten-industry/" },
-    { stat: "27%",      label: "of contractors have used personal savings or retirement funds to cover cash flow gaps caused by slow-paying clients",          source: "Billd 2025",      url: "https://billd.com/resources/2025-market-report" },
+    { stat: "$280B",           label: "Cost of slow payments to U.S. construction in 2024", source: "Rabbet 2024 Construction Payments Report", url: "https://rabbet.com/reports/construction-payments-2024" },
+    { stat: "82%",             label: "Of contractors face payment delays over 30 days (up from 49% two years ago)", source: "Rabbet 2024", url: "https://rabbet.com/reports/construction-payments-2024" },
+    { stat: "14%",             label: "Of all construction rework caused by poor data", source: "Autodesk + FMI Study", url: "https://www.autodesk.com/blogs/construction/construction-disconnected-fmi-report/" },
+    { stat: "1-3 Bad Reviews", label: "Turn away 67% of potential customers", source: "MarketSharp", url: "https://www.marketsharp.com/blog/17-sobering-online-review-stats-every-contractor-needs-to-know/" },
   ];
 
   return (
@@ -100,22 +98,6 @@ export default function MissionPage({ go }) {
             </div>
             <div style={{ background: "rgba(200,131,26,0.15)", border: "1px solid rgba(200,131,26,0.3)", borderRadius: 10, padding: "12px 14px", fontSize: 12, color: "#FBBF24", lineHeight: 1.65 }}>
               💡 Platforms like Angi and Thumbtack now factor dispute history into contractor search ranking. A single payment dispute that goes public can suppress your visibility for months. Peer intelligence before the bid protects your cash flow <em>and</em> your reputation.
-            </div>
-            <div style={{ marginTop: 12, fontSize: 9, color: "#334155", lineHeight: 1.8 }}>
-              <span style={{ color: "#475569", fontWeight: 600 }}>Further reading: </span>
-              {[
-                { label: "GlobeNewsWire — $280B Slow Payments 2024", url: "https://www.globenewswire.com/news-release/2024/10/01/2955968/0/en/Slow-Payments-Cost-280-Billion-in-2024-Threaten-U-S-Construction-Industry-s-Financial-Health.html" },
-                { label: "Ignition 2025 Agency Pricing & Cash Flow Report", url: "https://www.ignitionapp.com/news/2025-agency-pricing-cashflow-report" },
-                { label: "IBIS World / Procore — Construction Profit Margins", url: "https://www.procore.com/library/construction-markup-and-profit-margin" },
-                { label: "CFMA 2024 Construction Financial Benchmarker", url: "https://cfma.org/articles/construction-s-lifeline-key-metrics-for-measuring-financial-health" },
-                { label: "Built 2025 Construction Cash Crunch Survey", url: "https://getbuilt.com/blog/70-percent-of-contractors-say-payment-delays-threaten-industry/" },
-                { label: "Billd 2025 National Subcontractor Market Report", url: "https://billd.com/resources/2025-market-report" },
-              ].map((r, i) => (
-                <span key={i}>
-                  <a href={r.url} target="_blank" rel="noopener noreferrer" style={{ color: "#60A5FA", textDecoration: "underline" }}>{r.label}</a>
-                  {i < 3 && <span style={{ color: "#334155" }}> · </span>}
-                </span>
-              ))}
             </div>
           </div>
         </div>

@@ -395,6 +395,7 @@ The research is clear. Scope creep is one of the primary reasons residential con
     readTime: "6 min read",
     date:     "May 2026",
     keywords: ["what slow paying homeowners cost contractors", "contractor cash flow residential", "unpaid invoices small contractor", "homeowner payment delays cost"],
+    relatedLink: { label: "See the full \"By the Numbers\" breakdown on our Mission page", path: "/mission" },
     content: `
 Most contractors think about slow payment as an inconvenience. The job is done, the invoice is out, and now you're waiting. What most don't think about is what that waiting period actually costs their business in dollars.
 
@@ -736,6 +737,13 @@ function ArticleView({ article, onBack, lang }) {
           return <p key={i} style={{ fontSize: 14, color: "#334155", lineHeight: 1.8, margin: "0 0 1rem" }}>{para}</p>;
         })}
       </div>
+
+      {article.relatedLink && (
+        <a href={article.relatedLink.path}
+          style={{ display: "block", fontSize: 13, color: BRAND.blue, fontWeight: 600, textDecoration: "underline", marginTop: "1.5rem" }}>
+          {article.relatedLink.label} →
+        </a>
+      )}
 
       <div style={{ background: BRAND.dark, borderRadius: 16, padding: "1.25rem", textAlign: "center", marginTop: "2rem" }}>
         <div style={{ fontSize: 14, fontWeight: 800, color: "#F8FAFC", marginBottom: 6 }}>Ready to bid smarter?</div>

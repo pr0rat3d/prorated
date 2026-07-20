@@ -96,6 +96,10 @@ export default function MissionPage({ go }) {
                 </div>
               ))}
             </div>
+            <a href="/blog/what-slow-paying-homeowners-cost-your-business"
+              style={{ display: "block", fontSize: 12, color: "#60A5FA", fontWeight: 600, textDecoration: "underline", marginBottom: 14 }}>
+              Read the full breakdown: What Slow-Paying Homeowners Actually Cost Your Business →
+            </a>
             <div style={{ background: "rgba(200,131,26,0.15)", border: "1px solid rgba(200,131,26,0.3)", borderRadius: 10, padding: "12px 14px", fontSize: 12, color: "#FBBF24", lineHeight: 1.65 }}>
               💡 Platforms like Angi and Thumbtack now factor dispute history into contractor search ranking. A single payment dispute that goes public can suppress your visibility for months. Peer intelligence before the bid protects your cash flow <em>and</em> your reputation.
             </div>

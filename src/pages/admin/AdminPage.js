@@ -506,13 +506,23 @@ export default function AdminPage({ go }) {
   const flash = (ok, text) => { setActionMsg({ ok, text }); setTimeout(() => setActionMsg(null), 4000); };
 
   const approveContractor = async (id) => {
-    const result = await patch("contractors", id, { status: "approved" });
+    // Solo signups provide (and get manually checked against) a real license —
+    // license_verified reflects that. A contractor approved without one (e.g.
+    // license_required: false for that trade/state) gets self_attested
+    // instead, same semantic used for invited team members who are vouched
+    // for by the company rather than individually verified — this only ever
+    // runs for the solo pending-approval queue, never for invited members,
+    // who are set to "approved" (and self_attested) at signup and never pass
+    // through here.
+    const contractor = contractors.find(c => c.id === id);
+    const verificationTier = contractor?.license ? "license_verified" : "self_attested";
+    const result = await patch("contractors", id, { status: "approved", verification_tier: verificationTier });
     const savedStatus = Array.isArray(result) ? result[0]?.status : null;
     if (savedStatus !== "approved") {
       flash(false, `Approval failed — DB returned status="${savedStatus ?? "empty"}". Check SUPABASE_SERVICE_KEY in Vercel env vars, or look for a trigger resetting status in Supabase Dashboard → Database → Triggers.`);
       return;
     }
-    setContractors(cs => cs.map(c => c.id === id ? { ...c, status: "approved" } : c));
+    setContractors(cs => cs.map(c => c.id === id ? { ...c, status: "approved", verification_tier: verificationTier } : c));
     flash(true, "Approved ✓ — confirmed in DB");
     fetch(`${SUPABASE_URL}/functions/v1/send-approval-email`, {
       method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },

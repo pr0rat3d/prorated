@@ -28,8 +28,9 @@ workflows:
       - name: Capacitor sync
         script: npx cap sync ios
 
-      - name: Set build number
+      - name: Set version number
         script: |
+          agvtool new-marketing-version 1.1
           agvtool new-version -all 34
         working_directory: ios/App
 

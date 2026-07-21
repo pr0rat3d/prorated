@@ -114,11 +114,14 @@ export default function RealtorHomePage({ go, user }) {
         setResults({ address: trimmed, reviews: data });
         setLookups(l => l + 1);
 
-        // Log the lookup
+        // Log the lookup — realtor_lookups requires auth.uid() = user_id,
+        // so this must use the realtor's own token, not the anon key.
         if (user?.id) {
+          let token = SUPABASE_ANON_KEY;
+          try { token = JSON.parse(localStorage.getItem("prorated_session") || "{}").access_token || SUPABASE_ANON_KEY; } catch {}
           fetch(`${SUPABASE_URL}/rest/v1/realtor_lookups`, {
             method: "POST",
-            headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}`, "Prefer": "return=minimal" },
+            headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${token}`, "Prefer": "return=minimal" },
             body: JSON.stringify({ user_id: user.id, address: trimmed }),
           }).catch(() => {});
         }

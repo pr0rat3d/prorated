@@ -1,10 +1,9 @@
 // src/components/StoreBadges.js
 // App Store / Google Play download badges.
-// Google Play link is still a placeholder — swap once the Android listing is live.
 import { isNativeApp } from "../utils/platform";
 
 const APPLE_BADGE_URL  = "https://apps.apple.com/us/app/prorated/id6785617187";
-const GOOGLE_BADGE_URL = "https://prorated.app";
+const GOOGLE_BADGE_URL = "https://play.google.com/store/apps/details?id=app.prorated";
 
 const getDevicePlatform = () => {
   const ua = navigator.userAgent || "";

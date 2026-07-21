@@ -17,6 +17,10 @@ const currentMonthYear = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 };
 
+// lookup_log's RLS policies require auth.uid() = user_id — the bare anon
+// key has no auth.uid(), so it must always be the caller's own session token.
+const authToken = () => loadSession()?.access_token || SUPABASE_ANON_KEY;
+
 // ── Get how many lookups user has done this month ─────────────
 export const getMonthlyLookupCount = async (userId) => {
   if (!userId) return 0;
@@ -27,7 +31,7 @@ export const getMonthlyLookupCount = async (userId) => {
       {
         headers: {
           "apikey": SUPABASE_ANON_KEY,
-          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          "Authorization": `Bearer ${authToken()}`,
         },
       }
     );
@@ -45,10 +49,10 @@ export const logLookup = async (userId, address) => {
       headers: {
         "Content-Type": "application/json",
         "apikey": SUPABASE_ANON_KEY,
-        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        "Authorization": `Bearer ${authToken()}`,
         "Prefer": "return=minimal",
       },
-      body: JSON.stringify({ user_id: userId, address }),
+      body: JSON.stringify({ user_id: userId, address, month_year: currentMonthYear() }),
     });
   } catch {}
 };

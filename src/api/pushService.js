@@ -89,6 +89,14 @@ export const isSubscribed = async () => {
   } catch { return false; }
 };
 
+// push_subscriptions RLS allows (auth.uid() = user_id) OR (user_id IS NULL) —
+// the anon key satisfies that only when userId is null; a real userId needs
+// the user's own token or the row is silently rejected.
+const authToken = () => {
+  try { return JSON.parse(localStorage.getItem("prorated_session") || "{}").access_token || SUPABASE_ANON_KEY; }
+  catch { return SUPABASE_ANON_KEY; }
+};
+
 // ── Save subscription to Supabase ─────────────────────────────
 const saveSubscriptionToSupabase = async (subscription, userId) => {
   const sub = subscription.toJSON();
@@ -97,7 +105,7 @@ const saveSubscriptionToSupabase = async (subscription, userId) => {
     headers: {
       "Content-Type": "application/json",
       "apikey":        SUPABASE_ANON_KEY,
-      "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+      "Authorization": `Bearer ${userId ? authToken() : SUPABASE_ANON_KEY}`,
       "Prefer":        "return=minimal,resolution=merge-duplicates",
     },
     body: JSON.stringify({
@@ -117,7 +125,7 @@ const deleteSubscriptionFromSupabase = async (endpoint, userId) => {
       method: "DELETE",
       headers: {
         "apikey":        SUPABASE_ANON_KEY,
-        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        "Authorization": `Bearer ${userId ? authToken() : SUPABASE_ANON_KEY}`,
       },
     }
   );

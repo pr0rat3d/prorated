@@ -68,8 +68,12 @@ export default function NDAPage({ go, user, onAccepted }) {
   // Check if user has already signed
   useEffect(() => {
     if (!user?.id) return;
+    // nda_signatures SELECT requires auth.uid() = user_id — the anon key has
+    // no auth.uid(), so this always came back empty and re-prompted signed users.
+    let token = SUPABASE_ANON_KEY;
+    try { token = JSON.parse(localStorage.getItem("prorated_session") || "{}").access_token || SUPABASE_ANON_KEY; } catch {}
     fetch(`${SUPABASE_URL}/rest/v1/nda_signatures?user_id=eq.${user.id}&select=id`, {
-      headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` }
+      headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${token}` }
     })
     .then(r => r.json())
     .then(data => { if (data?.length > 0) onAccepted?.(); })

@@ -64,9 +64,13 @@ export default function AddressCard({ address, go, goLogin, goReview }) {
     if (!isLoggedIn) return;
     const streetName = (address.street || "").toLowerCase().trim().split(",")[0];
     if (!streetName || streetName.length < 5) return;
+    // property_type isn't in anon's column grant — this only ever runs for
+    // logged-in users, so it must use their own token, not the anon key.
+    let token = SUPABASE_ANON_KEY;
+    try { token = JSON.parse(localStorage.getItem("prorated_session") || "{}").access_token || SUPABASE_ANON_KEY; } catch {}
     fetch(
       `${SUPABASE_URL}/rest/v1/reviews?select=property_type&address=ilike.${encodeURIComponent("%" + streetName + "%")}&property_type=not.is.null`,
-      { headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` } }
+      { headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${token}` } }
     )
     .then(r => r.ok ? r.json() : [])
     .then(rows => {

@@ -11,7 +11,10 @@ let configured = false;
 // Call once after login (and on app boot if a session already exists) —
 // sets RevenueCat's appUserID to the contractor's own UUID so the
 // revenuecat-webhook edge function can look them up directly, no mapping table needed.
-export async function configureRevenueCat(contractorId) {
+// Also attaches the email as a subscriber attribute so customers are
+// identifiable by name/email directly in the RevenueCat dashboard instead of
+// needing to cross-reference the app_user_id against our own DB every time.
+export async function configureRevenueCat(contractorId, email) {
   if (!isNativeIOS() || !contractorId) return;
   try {
     if (!configured) {
@@ -20,6 +23,7 @@ export async function configureRevenueCat(contractorId) {
     } else {
       await Purchases.logIn({ appUserID: contractorId });
     }
+    if (email) await Purchases.setEmail({ email });
   } catch (err) {
     console.warn("[ProRated] RevenueCat configure failed:", err);
   }

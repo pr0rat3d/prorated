@@ -19,7 +19,7 @@ export function AuthProvider({ children }) {
 
     // Background refresh after short delay — gives DB writes time to settle
     if (session?.user?.id && session?.access_token) {
-      configureRevenueCat(session.user.id);
+      configureRevenueCat(session.user.id, session.user.email);
       const token = session.access_token;
       setTimeout(() => {
         fetch(
@@ -81,7 +81,7 @@ export function AuthProvider({ children }) {
   const login = (userData) => {
     setUser(userData);
     setSessionKilled(false);
-    if (userData?.id) configureRevenueCat(userData.id);
+    if (userData?.id) configureRevenueCat(userData.id, userData.email);
   };
 
   const logout = async () => {

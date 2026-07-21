@@ -51,7 +51,10 @@ export function AuthProvider({ children }) {
 
   // Periodically confirm this device is still the active session — logging
   // in elsewhere kills the row this session's JWT claim points at, so the
-  // next check here fails and this device gets force-logged-out.
+  // next check here fails and this device gets force-logged-out. Same tick
+  // also refreshes the user's profile row, so an admin action (license
+  // approval, plan change) shows up without needing to log out and back in —
+  // go() in App.js covers tab navigation; this covers sitting idle on one screen.
   useEffect(() => {
     if (!user) return;
     const check = async () => {
@@ -60,7 +63,9 @@ export function AuthProvider({ children }) {
         await signOut();
         setUser(null);
         setSessionKilled(true);
+        return;
       }
+      refreshUser();
     };
     const interval = setInterval(check, 60000);
     const onVisible = () => { if (document.visibilityState === "visible") check(); };

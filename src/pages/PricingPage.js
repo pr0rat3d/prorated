@@ -133,7 +133,7 @@ function Check({ color = BRAND.green }) {
   return <span style={{ color, fontWeight: 700, marginRight: 8, flexShrink: 0 }}>✓</span>;
 }
 
-export default function PricingPage({ go, goBack }) {
+export default function PricingPage({ go, goBack, onPurchaseSuccess }) {
   const { user, isLoggedIn } = useAuth();
   const currentPlan = user?.plan || "free";
   const { lang }             = useLang();
@@ -337,7 +337,7 @@ export default function PricingPage({ go, goBack }) {
         </p>
       </div>
 
-      <UpgradeModal tier={upgradeTier} isOpen={!!upgradeTier} onClose={() => setUpgradeTier(null)} />
+      <UpgradeModal tier={upgradeTier} isOpen={!!upgradeTier} onClose={() => setUpgradeTier(null)} go={go} onPurchaseSuccess={onPurchaseSuccess} />
     </div>
   );
 }

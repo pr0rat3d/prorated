@@ -246,6 +246,9 @@ export default function App() {
     setPage(p);
     setHistory(h => [...h, p]);
     window.scrollTo({ top: 0, behavior: "smooth" });
+    // Pick up admin actions (license approval, plan changes) that happened
+    // in another tab/device — otherwise status only refreshes on next login.
+    if (isLoggedIn && refreshUser) refreshUser();
   };
 
   // Go back in history
@@ -357,7 +360,7 @@ export default function App() {
         {page === "review"    && <ReviewPage    go={go} goBack={goBack} initialAddress={reviewAddress} editReviewId={editReviewId} />}
         {page === "dashboard" && <DashboardPage go={go} goBack={goBack} goLogin={goLogin} goReview={goReview} paymentSuccess={paymentSuccess} onPaymentAck={() => setPaymentSuccess(false)} />}
         {page === "signup"    && <SignupPage    go={go} goBack={goBack} initialMode={loginMode} />}
-        {page === "pricing"   && <PricingPage        go={go} goBack={goBack} />}
+        {page === "pricing"   && <PricingPage        go={go} goBack={goBack} onPurchaseSuccess={() => setPaymentSuccess(true)} />}
         {page === "pending"   && <VerificationPending go={go} />}
         {page === "privacy"   && <PrivacyPage go={go} goBack={goBack} />}
         {page === "terms"     && <TermsPage   go={go} goBack={goBack} />}

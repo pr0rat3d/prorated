@@ -447,7 +447,9 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
               You're all set!
             </h2>
             <p style={{ fontSize: 14, color: "#64748B", lineHeight: 1.7, marginBottom: 24 }}>
-              Your plan is now active. You have full access to all features included with your tier — including unlimited address lookups and team management.
+              {user?.status === "pending"
+                ? "Your plan is now active. Your license is still being verified — you'll get full search and review access as soon as that's approved."
+                : "Your plan is now active. You have full access to all features included with your tier — including unlimited address lookups and team management."}
             </p>
 
             {/* Plan features list */}

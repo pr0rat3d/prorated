@@ -1,8 +1,10 @@
 // src/components/UpgradeModal.js
 // iOS-only purchase modal — required so paid tiers are actually purchasable
-// in-app (Apple Guideline 3.1.1). Equal-prominence buttons: a real "Purchase
-// via Apple" IAP flow next to informational (non-clickable) web-management
-// text — no External Purchase Link Entitlement needed since there's no tap-out.
+// in-app (Apple Guideline 3.1.1). "Purchase via Apple" is the one actionable
+// button; the prorated.app-in-Safari management note is informational only
+// (not a link — no External Purchase Link Entitlement needed) and lives as a
+// small footnote below rather than beside the button, where it read as a
+// second competing purchase option.
 //
 // Apple Guideline 3.1.2(c) also requires, shown in-app at the point of
 // purchase: subscription title, length, price, and functional links to the
@@ -33,7 +35,7 @@ function formatIntroDuration(introPrice) {
   return `${n} ${unitLabel}${n === 1 ? "" : "s"}`;
 }
 
-export default function UpgradeModal({ tier, isOpen, onClose }) {
+export default function UpgradeModal({ tier, isOpen, onClose, go, onPurchaseSuccess }) {
   const { refreshUser } = useAuth();
   const [status, setStatus]     = useState("idle"); // idle | loading | success | error
   const [errorMsg, setErrorMsg] = useState("");
@@ -64,7 +66,14 @@ export default function UpgradeModal({ tier, isOpen, onClose }) {
     if (result.success) {
       setStatus("success");
       await refreshUser();
-      setTimeout(onClose, 1200);
+      // Redirect to Dashboard and show the same "You're all set!" confirmation
+      // Stripe purchasers get — previously this just closed the modal and left
+      // the buyer sitting on the Pricing grid with no next step.
+      setTimeout(() => {
+        onClose();
+        onPurchaseSuccess?.();
+        go?.("dashboard");
+      }, 1200);
     } else if (result.cancelled) {
       setStatus("idle");
     } else {
@@ -120,34 +129,36 @@ export default function UpgradeModal({ tier, isOpen, onClose }) {
           </div>
         )}
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
-          <div style={{ padding: "10px 12px", background: "#F8FAFC", border: `1px solid ${BRAND.border}`, borderRadius: 9, fontSize: 12, color: BRAND.gray, textAlign: "center", lineHeight: 1.4, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            Purchase/manage your subscription at prorated.app in Safari
-          </div>
-
-          <button
-            onClick={handlePurchase}
-            disabled={status === "loading" || status === "success"}
-            style={{
-              padding: "10px 12px",
-              background: BRAND.green,
-              color: "#fff",
-              border: "none",
-              borderRadius: 9,
-              fontWeight: 700,
-              fontSize: 13,
-              cursor: (status === "loading" || status === "success") ? "not-allowed" : "pointer",
-              opacity: status === "loading" ? 0.7 : 1,
-              fontFamily: "'DM Sans', sans-serif",
-            }}>
-            {status === "loading" ? "Purchasing..." : "Purchase via Apple"}
-          </button>
-        </div>
+        <button
+          onClick={handlePurchase}
+          disabled={status === "loading" || status === "success"}
+          style={{
+            width: "100%",
+            padding: "12px",
+            background: BRAND.green,
+            color: "#fff",
+            border: "none",
+            borderRadius: 9,
+            fontWeight: 700,
+            fontSize: 14,
+            cursor: (status === "loading" || status === "success") ? "not-allowed" : "pointer",
+            opacity: status === "loading" ? 0.7 : 1,
+            fontFamily: "'DM Sans', sans-serif",
+            marginBottom: 10,
+          }}>
+          {status === "loading" ? "Purchasing..." : "Purchase via Apple"}
+        </button>
 
         <button onClick={onClose}
-          style={{ width: "100%", padding: "10px", border: `1px solid ${BRAND.border}`, borderRadius: 9, background: "#fff", color: BRAND.dark, fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", marginBottom: 12 }}>
+          style={{ width: "100%", padding: "10px", border: `1px solid ${BRAND.border}`, borderRadius: 9, background: "#fff", color: BRAND.dark, fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", marginBottom: 14 }}>
           Close
         </button>
+
+        {/* Informational, not a link/option — moved down here after it kept
+            reading as a second purchase path next to the real Apple button. */}
+        <p style={{ fontSize: 11, color: BRAND.gray, textAlign: "center", lineHeight: 1.6, marginBottom: 14 }}>
+          You can view or manage this subscription anytime from your Apple ID subscription settings, or at prorated.app in Safari.
+        </p>
 
         <div style={{ textAlign: "center", fontSize: 11, color: BRAND.gray }}>
           <span onClick={() => window.open("/terms", "_blank")} style={{ color: BRAND.blue, fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}>

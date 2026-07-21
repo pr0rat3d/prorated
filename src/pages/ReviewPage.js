@@ -228,6 +228,7 @@ export default function ReviewPage({ go, goBack, initialAddress, editReviewId })
   const dRule2    = t(lang, "disclaimer.rule2");
   const dRule3    = t(lang, "disclaimer.rule3");
   const dRule4    = t(lang, "disclaimer.rule4");
+  const dRule5    = t(lang, "disclaimer.rule5");
   const dContinue = t(lang, "disclaimer.continue");
   const dCancel   = t(lang, "disclaimer.cancel");
   const dReminder = t(lang, "disclaimer.reminder");
@@ -301,7 +302,7 @@ export default function ReviewPage({ go, goBack, initialAddress, editReviewId })
           </p>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: "1.1rem" }}>
-          {[dRule1, dRule2, dRule3, dRule4].map(item => (
+          {[dRule1, dRule2, dRule3, dRule4, dRule5].map(item => (
             <div key={item} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#166534" }}>
               <span style={{ color: "#16A34A", fontWeight: 700, flexShrink: 0 }}>✓</span> {item}
             </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Logo from "../../components/Logo";
 import { BRAND } from "../../components/UI";
+import PasswordInput from "../../components/PasswordInput";
 import AdminPage from "./AdminPage";
 
 // No password hardcoded here — validation happens server-side via /api/admin-auth
@@ -45,8 +46,7 @@ export default function AdminGate({ go }) {
         </div>
         <h2 style={{ fontSize: 18, fontWeight: 800, color: "#F8FAFC", marginBottom: 4, marginTop: 0 }}>Admin Console</h2>
         <p style={{ fontSize: 12, color: "#64748B", marginBottom: 20 }}>Internal access only</p>
-        <input
-          type="password"
+        <PasswordInput
           value={pw}
           onChange={e => setPw(e.target.value)}
           onKeyDown={e => e.key === "Enter" && handleLogin()}

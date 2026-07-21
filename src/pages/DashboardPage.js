@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { TRADES, DASH_REVIEWS, BRAND, FREE_PLAN_LABEL, COMPANY_TIERS } from "../data/constants";
 import { getTagsForTrade } from "../data/tradeTags";
 import { Badge, Stars, Pill, Btn, Card } from "../components/UI";
+import PasswordInput from "../components/PasswordInput";
 import { useAuth } from "../hooks/useAuth";
 
 
@@ -1120,9 +1121,8 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                           { key: "next",    placeholder: "New password (6+ characters)" },
                           { key: "confirm", placeholder: "Confirm new password" },
                         ].map(({ key, placeholder }) => (
-                          <input
+                          <PasswordInput
                             key={key}
-                            type="password"
                             placeholder={placeholder}
                             value={pwForm[key]}
                             onChange={e => setPwForm(f => ({ ...f, [key]: e.target.value }))}

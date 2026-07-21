@@ -2,6 +2,7 @@ import { adminGet } from "../api/db";
 import { useState, useEffect } from "react";
 import { BRAND } from "../components/UI";
 import Logo from "../components/Logo";
+import PasswordInput from "../components/PasswordInput";
 import { PARTNERS } from "./PartnerLandingPage";
 
 function StatCard({ icon, value, label, sub, color = BRAND.blue }) {
@@ -120,7 +121,7 @@ export default function PartnerDashboardPage({ partnerId }) {
         </div>
         <h2 style={{ fontSize: 18, fontWeight: 800, color: BRAND.dark, marginBottom: 4, marginTop: 0 }}>{p.name}</h2>
         <p style={{ fontSize: 13, color: BRAND.gray, marginBottom: 20 }}>Partner Dashboard · Internal access only</p>
-        <input type="password" value={pw} onChange={e => setPw(e.target.value)}
+        <PasswordInput value={pw} onChange={e => setPw(e.target.value)}
           onKeyDown={e => e.key === "Enter" && handleLogin()}
           placeholder="Admin password" autoFocus
           style={{ width: "100%", padding: "12px", border: `1.5px solid ${error ? "#EF4444" : BRAND.border}`, borderRadius: 10, fontSize: 14, outline: "none", fontFamily: "'DM Sans', sans-serif", boxSizing: "border-box", marginBottom: 8, textAlign: "center" }} />

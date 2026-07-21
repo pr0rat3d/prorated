@@ -4,6 +4,7 @@ import Nav from "./components/Nav";
 import BottomNav from "./components/BottomNav";
 import { OfflineBanner, InstallBanner, IOSInstallBanner } from "./components/Banners";
 import StoreBadges from "./components/StoreBadges";
+import PasswordInput from "./components/PasswordInput";
 import HomePage from "./pages/HomePage";
 import ReviewPage from "./pages/ReviewPage";
 import DashboardPage from "./pages/DashboardPage";
@@ -225,8 +226,8 @@ export default function App() {
         ) : (
           <div style={{ background: "#fff", border: `1.5px solid ${BRAND.border}`, borderRadius: 14, padding: "1.5rem" }}>
             {err && <div style={{ background: "#FEE2E2", color: "#991B1B", border: "1px solid #FCA5A5", borderRadius: 10, padding: "10px 14px", fontSize: 13, marginBottom: 12 }}>{err}</div>}
-            <input type="password" placeholder="New password (6+ characters)" value={pw}  onChange={e => setPw(e.target.value)}  style={inp} />
-            <input type="password" placeholder="Confirm new password"          value={pw2} onChange={e => setPw2(e.target.value)} style={{ ...inp, marginBottom: 0 }} />
+            <PasswordInput placeholder="New password (6+ characters)" value={pw}  onChange={e => setPw(e.target.value)}  style={inp} />
+            <PasswordInput placeholder="Confirm new password"          value={pw2} onChange={e => setPw2(e.target.value)} style={{ ...inp, marginBottom: 0 }} />
             <div style={{ marginTop: "1rem" }}>
               <button onClick={handleUpdate} disabled={!pw || !pw2 || busy}
                 style={{ width: "100%", padding: "12px", background: BRAND.blue, color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: pw && pw2 && !busy ? "pointer" : "not-allowed", opacity: pw && pw2 && !busy ? 1 : 0.6, fontFamily: "'DM Sans', sans-serif" }}>

@@ -3,6 +3,7 @@ import { dbGet } from "../api/db";
 import { useState, useEffect } from "react";
 import { BRAND } from "../components/UI";
 import Logo from "../components/Logo";
+import PasswordInput from "../components/PasswordInput";
 
 
 const US_STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
@@ -192,7 +193,7 @@ export default function RealtorSignupPage({ go }) {
             </div>
             <div style={{ marginBottom: "1.25rem" }}>
               <label style={{ fontSize: 12, fontWeight: 700, color: BRAND.dark, display: "block", marginBottom: 5 }}>Password</label>
-              <input type="password" value={loginPwd} onChange={e => setLoginPwd(e.target.value)}
+              <PasswordInput value={loginPwd} onChange={e => setLoginPwd(e.target.value)}
                 placeholder="Your password"
                 onKeyDown={e => e.key === "Enter" && handleLogin()}
                 style={{ width: "100%", padding: "10px 12px", border: `1.5px solid ${BRAND.border}`, borderRadius: 10, fontSize: 13, outline: "none", fontFamily: "'DM Sans', sans-serif", boxSizing: "border-box", color: BRAND.dark, background: "#F8FAFC" }} />
@@ -237,7 +238,7 @@ export default function RealtorSignupPage({ go }) {
           {/* Password */}
           <div style={{ marginBottom: "0.9rem" }}>
             <label style={{ fontSize: 12, fontWeight: 700, color: BRAND.dark, display: "block", marginBottom: 5 }}>Password</label>
-            <input type="password" value={form.password} onChange={upd("password")} placeholder="6+ characters" style={inp} />
+            <PasswordInput value={form.password} onChange={upd("password")} placeholder="6+ characters" style={inp} />
           </div>
 
           {/* Agency */}

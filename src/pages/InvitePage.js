@@ -85,7 +85,7 @@ export default function InvitePage({ go, goLogin }) {
           cur.user.company_id        = data.company_id;
           cur.user.company_role      = "member";
           cur.user.status            = "approved";
-          cur.user.verification_tier = "verified";
+          cur.user.verification_tier = "self_attested";
           localStorage.setItem("prorated_session", JSON.stringify(cur));
         }
       } catch {}

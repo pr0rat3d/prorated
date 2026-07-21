@@ -69,7 +69,7 @@ export default async function handler(req, res) {
           company_id:        invite.company_id,
           company_role:      "member",
           status:            "approved",
-          verification_tier: "verified",
+          verification_tier: "self_attested",
         }),
       }
     );

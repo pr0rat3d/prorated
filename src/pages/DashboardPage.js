@@ -1193,6 +1193,14 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                     <div style={{ background: "#FEF2F2", border: "1px solid #FCA5A5", borderRadius: 10, padding: "10px 14px", fontSize: 12, color: "#991B1B", lineHeight: 1.6, marginBottom: 14 }}>
                       <strong>This cannot be undone.</strong> Your account will be permanently deleted and your reviews anonymized. You'll be logged out immediately.
                     </div>
+                    {user?.plan && user.plan !== "free" && (
+                      <div style={{ background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 10, padding: "10px 14px", fontSize: 12, color: "#92400E", lineHeight: 1.6, marginBottom: 14 }}>
+                        <strong>This does not cancel your subscription.</strong>{" "}
+                        {user.plan_source === "revenuecat"
+                          ? "Deleting your account does not stop billing through Apple — cancel separately in Settings → [your name] → Subscriptions on your iPhone, or you'll keep being charged."
+                          : "Deleting your account does not stop billing — email hello@prorated.app to cancel your subscription, or you'll keep being charged."}
+                      </div>
+                    )}
                     <button
                       onClick={handleDeleteAccount}
                       disabled={deleteAccountLoading}

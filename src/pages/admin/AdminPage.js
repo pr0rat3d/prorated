@@ -624,9 +624,14 @@ export default function AdminPage({ go }) {
   };
 
   // G6 — Plan override + resend welcome
+  // Tags plan_source: "admin" so this override is clearly distinguished from
+  // a real payment-provider value — otherwise a stale "stripe"/"revenuecat"
+  // tag left over from a prior real subscription could cause the
+  // revenuecat-webhook's expiration handler to downgrade an unrelated
+  // admin-granted plan when that old subscription eventually expires.
   const changePlan = async (id, plan) => {
-    await adminPatch("/contractors", { plan }, { id: `eq.${id}` });
-    setContractors(cs => cs.map(c => c.id === id ? { ...c, plan } : c));
+    await adminPatch("/contractors", { plan, plan_source: "admin" }, { id: `eq.${id}` });
+    setContractors(cs => cs.map(c => c.id === id ? { ...c, plan, plan_source: "admin" } : c));
     flash(true, `Plan updated to ${plan || "free"}`);
   };
   const resendWelcome = async (id) => {

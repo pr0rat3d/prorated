@@ -31,7 +31,7 @@ workflows:
       - name: Set version number
         script: |
           agvtool new-marketing-version 1.1
-          agvtool new-version -all 34
+          agvtool new-version -all 35
         working_directory: ios/App
 
       - name: Set up code signing

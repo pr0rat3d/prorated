@@ -11,6 +11,7 @@ import { t } from "../i18n/translations";
 import { validateLicense, getLicensePlaceholder } from "../data/licenseValidation";
 import { getLicenseRequirement } from "../data/constants";
 import { isNativeIOS } from "../utils/platform";
+import { PARTNERS } from "./PartnerLandingPage";
 
 
 
@@ -49,6 +50,24 @@ export default function SignupPage({ go, goBack, initialMode }) {
     try { invEmail = JSON.parse(localStorage.getItem("pending_invite_context") || "null")?.invitedEmail || ""; } catch {}
     return { name: "", email: invEmail, phone: "", password: "", trade: "", state: "", license: "", company_name: "" };
   });
+
+  // Prefilled when arriving via a partner landing page (e.g. /hba); still
+  // manually editable since native app users can never reach that page at
+  // all (no server.url / deep-linking configured — see partnerCode below).
+  const [partnerCode, setPartnerCode] = useState(() => {
+    try { return localStorage.getItem("pending_partner_code") || ""; } catch { return ""; }
+  });
+  const [showPartnerCode, setShowPartnerCode] = useState(!!partnerCode);
+
+  // Resolves a typed/prefilled code against every known partner's `code`
+  // field (case/whitespace-insensitive) — returns the partner's key (e.g.
+  // "hba"), which is what PartnerDashboardPage filters contractors by.
+  const resolvePartnerSource = (code) => {
+    const trimmed = (code || "").trim().toLowerCase();
+    if (!trimmed) return null;
+    const match = Object.entries(PARTNERS).find(([, p]) => p.code?.toLowerCase() === trimmed);
+    return match ? match[0] : null;
+  };
 
   // Check for pending invite — skip plan step, inherit company plan
   const inviteContext = (() => {
@@ -121,7 +140,10 @@ export default function SignupPage({ go, goBack, initialMode }) {
         plan:         signupPlan,
         promoCode:    (selectedTier && selectedTier !== "platinum") ? FREE_2026_COUPON : null,
         status:       isInviteSignup ? "approved" : "pending",
+        proSource:    isInviteSignup ? null : resolvePartnerSource(partnerCode),
       });
+
+      try { localStorage.removeItem("pending_partner_code"); } catch {}
 
       if (data.user) {
         login({
@@ -326,6 +348,22 @@ export default function SignupPage({ go, goBack, initialMode }) {
                 style={{ ...inp, ...(isInviteSignup && inviteContext?.invitedEmail ? { background: "#F1F5F9", color: BRAND.gray, cursor: "not-allowed" } : {}) }} />
               <input type="tel"      placeholder="Phone (optional)"  value={form.phone}    onChange={upd("phone")}    style={inp} />
               <PasswordInput placeholder="Create a password (6+ chars)" autoComplete="new-password" value={form.password} onChange={upd("password")} style={{ ...inp, marginBottom: 0 }} />
+
+              {!isInviteSignup && (
+                <div style={{ marginTop: 12 }}>
+                  {!showPartnerCode ? (
+                    <button type="button" onClick={() => setShowPartnerCode(true)}
+                      style={{ background: "none", border: "none", color: BRAND.blue, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", padding: 0 }}>
+                      Have a partner or referral code?
+                    </button>
+                  ) : (
+                    <input type="text" placeholder="Partner or referral code (optional)" value={partnerCode}
+                      onChange={e => setPartnerCode(e.target.value)}
+                      style={{ ...inp, marginBottom: 0, textTransform: "uppercase" }} />
+                  )}
+                </div>
+              )}
+
               <div style={{ marginTop: "1rem" }}>
                 <Btn fullWidth onClick={() => setStep(2)} disabled={!form.name || (!isInviteSignup && !form.company_name) || !form.email || form.password.length < 6}>Continue →</Btn>
               </div>

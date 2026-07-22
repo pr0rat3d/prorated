@@ -61,7 +61,7 @@ export const clearSession = () => {
 };
 
 // ── Sign up a new contractor ──────────────────────────────────
-export const signUp = async ({ email, password, name, company_name = null, trade, state, license, accountType = "solo", plan = "free", promoCode = null, status = "pending" }) => {
+export const signUp = async ({ email, password, name, company_name = null, trade, state, license, accountType = "solo", plan = "free", promoCode = null, status = "pending", proSource = null }) => {
   const data = await authFetch("/signup", {
     method: "POST",
     body: JSON.stringify({
@@ -90,6 +90,7 @@ export const signUp = async ({ email, password, name, company_name = null, trade
       plan,
       account_type: accountType,
       promo_code:   promoCode,
+      pro_source:   proSource,
       status,
     }, data.access_token).catch(err => {
       console.error("[ProRated] saveContractorProfile failed:", err.message);
@@ -217,6 +218,10 @@ export const saveContractorProfile = async (profile, token) => {
       account_type: profile.account_type || "solo",
       promo_code:   profile.promo_code || null,
       status:       profile.status || "pending",
+      // Only set on a recognized partner referral code — otherwise leave
+      // unset so the DB's own default ('paid') applies, matching how
+      // regular (non-partner) signups have always been categorized.
+      ...(profile.pro_source ? { pro_source: profile.pro_source } : {}),
     }),
   });
   if (!res.ok) {

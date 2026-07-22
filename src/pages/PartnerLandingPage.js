@@ -168,6 +168,14 @@ export const PARTNERS = {
 export default function PartnerLandingPage({ go, partnerId }) {
   const p = PARTNERS[partnerId] || PARTNERS.agc;
 
+  // Prefills SignupPage's partner/referral code field — SignupPage resolves
+  // it back to this same partnerId at signup, which is what
+  // PartnerDashboardPage filters contractors by.
+  const goToSignup = () => {
+    try { localStorage.setItem("pending_partner_code", p.code); } catch {}
+    go(p.isRealtor ? "realtor-signup" : "signup");
+  };
+
   useEffect(() => {
     const title = `ProRated × ${p.name} — Free Pro Access for Members`;
     const desc = `${p.name} members get free ProRated Pro access. Search job site ratings, payment history, and access conditions before you bid. Use code ${p.code}.`;
@@ -232,7 +240,7 @@ export default function PartnerLandingPage({ go, partnerId }) {
             </div>
             <div style={{ fontSize: 12, color: "#166534" }}>Full access · No credit card required</div>
           </div>
-          <button onClick={() => go(p.isRealtor ? "realtor-signup" : "signup")}
+          <button onClick={goToSignup}
             style={{ width: "100%", background: p.color, color: p.accent, border: "none", padding: "14px", borderRadius: 12, fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
             Claim your free {p.name} Pro account →
           </button>
@@ -286,7 +294,7 @@ export default function PartnerLandingPage({ go, partnerId }) {
         </div>
 
         {/* Final CTA */}
-        <button onClick={() => go(p.isRealtor ? "realtor-signup" : "signup")}
+        <button onClick={goToSignup}
           style={{ width: "100%", background: p.color, color: p.accent, border: "none", padding: "16px", borderRadius: 14, fontSize: 16, fontWeight: 900, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", marginBottom: 12 }}>
           Get started free — {p.name} members →
         </button>

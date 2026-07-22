@@ -45,19 +45,30 @@ export const calculateBidScore = (reviews) => {
   let totalWeight = 0;
   let weightedSum = 0;
   let tagModifier = 0;
+  let taggedReviewCount = 0;
 
   reviews.forEach(review => {
     const recency   = getRecencyWeight(review.created_at);
     const trustMult = getTrustMultiplier(review.reviewer_trust_score || 0);
     const combined  = recency * trustMult;
 
-    const score = (
-      (review.payment_score       || 0) * WEIGHTS.payment +
-      (review.communication_score || 0) * WEIGHTS.communication +
-      (review.timeline_score      || 0) * WEIGHTS.timeline +
-      (review.access_score        || 0) * WEIGHTS.access +
-      (review.obstacles_score     || 0) * WEIGHTS.obstacles
-    );
+    // Only score categories this review actually answered — a missing
+    // sub-score is "no data", not a 0. Weights are renormalized across
+    // whatever's present so payment still matters most when it's known,
+    // and a review with nothing usable is skipped rather than dragging
+    // the average toward zero.
+    const categories = [
+      { value: review.payment_score,       weight: WEIGHTS.payment },
+      { value: review.communication_score, weight: WEIGHTS.communication },
+      { value: review.timeline_score,      weight: WEIGHTS.timeline },
+      { value: review.access_score,        weight: WEIGHTS.access },
+      { value: review.obstacles_score,     weight: WEIGHTS.obstacles },
+    ].filter(c => c.value != null);
+
+    if (categories.length === 0) return;
+
+    const categoryWeightSum = categories.reduce((s, c) => s + c.weight, 0);
+    const score = categories.reduce((s, c) => s + c.value * c.weight, 0) / categoryWeightSum;
 
     weightedSum += score * combined;
     totalWeight += combined;
@@ -68,12 +79,18 @@ export const calculateBidScore = (reviews) => {
         tagModifier += TAG_MODIFIERS[tag.severity] || 0;
       }
     });
+    taggedReviewCount += 1;
   });
 
   const baseScore = totalWeight > 0 ? weightedSum / totalWeight : 0;
 
+  // Average, not sum — otherwise review COUNT alone inflates how much tags
+  // can move the score (20 mildly-tagged reviews would otherwise always
+  // outweigh 3 severely-tagged ones), independent of actual sentiment strength.
+  const avgTagModifier = taggedReviewCount > 0 ? tagModifier / taggedReviewCount : 0;
+
   const finalScore = Math.max(0, Math.min(5,
-    baseScore + (tagModifier * 0.1)));
+    baseScore + (avgTagModifier * 0.1)));
 
   const confidence =
     reviews.length >= 5 ? "high"   :
@@ -109,7 +126,7 @@ export const calculateBidScore = (reviews) => {
   return {
     finalScore:  parseFloat(finalScore.toFixed(2)),
     baseScore:   parseFloat(baseScore.toFixed(2)),
-    tagModifier: parseFloat(tagModifier.toFixed(2)),
+    tagModifier: parseFloat(avgTagModifier.toFixed(2)),
     confidence,
     signal,
     reviewCount: reviews.length,

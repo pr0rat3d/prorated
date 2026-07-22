@@ -484,13 +484,13 @@ function ScenarioCard({ scenario, expanded, onToggle }) {
           <SectionLabel>D · Algorithm Transparency</SectionLabel>
           <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 12, padding: "14px 16px", marginBottom: 20, fontSize: 12, color: "#1E3A8A", lineHeight: 1.7 }}>
             <p style={{ margin: "0 0 8px" }}>
-              <strong>Base score</strong> = weighted average of the 5 sub-category scores per review — Payment 30%, Communication 20%, Timeline 20%, Access 15%, Obstacles 15% — with each review's contribution scaled by <strong>recency</strong> (reviews &gt;24mo old count for only 25% as much as reviews from the last 6mo) and <strong>reviewer trust</strong> (a trust-score-80+ reviewer's review counts 1.3×, a brand-new reviewer counts 0.8×).
+              <strong>Base score</strong> = weighted average of the 5 sub-category scores per review — Payment 30%, Communication 20%, Timeline 20%, Access 15%, Obstacles 15% — with each review's contribution scaled by <strong>recency</strong> (reviews &gt;24mo old count for only 25% as much as reviews from the last 6mo) and <strong>reviewer trust</strong> (a trust-score-80+ reviewer's review counts 1.3×, a brand-new reviewer counts 0.8×). A review missing a sub-category entirely is treated as "no data" for that category, not a 0 — its weights are renormalized across whatever it did answer.
             </p>
             <p style={{ margin: "0 0 8px" }}>
               This scenario's base score: <strong>{bidResult.baseScore.toFixed(2)}</strong>/5.
             </p>
             <p style={{ margin: "0 0 8px" }}>
-              <strong>Tag modifier</strong> then nudges that base score: each "good"-severity tag adds +0.3, "warn" subtracts 0.2, "bad" subtracts 0.5 — summed across every tag on every review, then scaled ×0.1 before being added. This scenario's raw tag modifier: <strong>{bidResult.tagModifier >= 0 ? "+" : ""}{bidResult.tagModifier.toFixed(2)}</strong> → applied as {(bidResult.tagModifier * 0.1) >= 0 ? "+" : ""}{(bidResult.tagModifier * 0.1).toFixed(2)} to the final score.
+              <strong>Tag modifier</strong> then nudges that base score: each "good"-severity tag adds +0.3, "warn" subtracts 0.2, "bad" subtracts 0.5, <strong>averaged across all reviews</strong> (not summed) so review count alone can't inflate how much tags move the score — then scaled ×0.1 before being added. This scenario's average tag modifier: <strong>{bidResult.tagModifier >= 0 ? "+" : ""}{bidResult.tagModifier.toFixed(2)}</strong> → applied as {(bidResult.tagModifier * 0.1) >= 0 ? "+" : ""}{(bidResult.tagModifier * 0.1).toFixed(2)} to the final score.
             </p>
             <p style={{ margin: 0 }}>
               <strong>Final score</strong> = {bidResult.baseScore.toFixed(2)} + {(bidResult.tagModifier * 0.1).toFixed(2)} = <strong>{bidResult.finalScore.toFixed(2)}</strong>, clamped to [0, 5]. Confidence is {bidResult.confidence} because there {bidResult.reviewCount === 1 ? "is" : "are"} {bidResult.reviewCount} review{bidResult.reviewCount !== 1 ? "s" : ""} on file (5+ = high, 3-4 = medium, 1-2 = low).

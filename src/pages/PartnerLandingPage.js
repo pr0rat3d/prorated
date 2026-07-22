@@ -148,6 +148,26 @@ export const PARTNERS = {
     url:         "neca",
     relevantTrades: ["electrical"],
   },
+  // No outreach relationship yet — deliberately not registered as a live
+  // route in App.js's partnerPaths, so no landing page/coupon flow exists
+  // for it. Included here only so it's selectable in the profile's Trade
+  // Associations picker, letting real membership data build up before any
+  // outreach happens. Fully filled out so it needs zero rework to "flip on"
+  // as a real partner page later — just add "apca" to partnerPaths.
+  apca: {
+    code:        "APCA2026",
+    name:        "Alabama Pest Control Association",
+    fullName:    "Alabama Pest Control Association",
+    trade:       "Pest Control Operators",
+    icon:        "🐛",
+    color:       "#14532D",
+    accent:      "#86EFAC",
+    description: "Founded 1947 — represents over 85% of licensed pest control operators across Alabama.",
+    features:    ["Job site access ratings", "Payment history by homeowner", "Homeowner communication scores", "Work history by address"],
+    dataOffer:   "Quarterly pest control intelligence — payment trends, access issues, and homeowner communication scores across Alabama.",
+    url:         "apca",
+    relevantTrades: ["pest_control"],
+  },
   bar: {
     code:        "BAR2026",
     name:        "Birmingham Association of Realtors",

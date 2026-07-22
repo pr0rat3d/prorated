@@ -19,9 +19,15 @@ const CONFIDENCE_META = {
   low:    { emoji: "🔴", label: "Low Confidence" },
 };
 
-export default function BidIntelligence({ address, reviews, bidScore, user }) {
+export default function BidIntelligence({ address, reviews, bidScore, user, forceUnlock = false }) {
   const plan = user?.plan || "free";
-  const { canAccess, loading: flagLoading, isEarlyAccess } = useFeatureFlag("bid_intelligence", plan);
+  const { canAccess: flagCanAccess, loading: flagLoadingReal, isEarlyAccess } = useFeatureFlag("bid_intelligence", plan);
+  // forceUnlock is an explicit demo-only escape hatch (app walkthrough, internal
+  // previews) — it bypasses the live feature_flags row, which is off for real
+  // users until review volume hits the launch thresholds. Defaults false, so
+  // production behavior is completely unchanged unless a caller opts in.
+  const canAccess = forceUnlock || flagCanAccess;
+  const flagLoading = !forceUnlock && flagLoadingReal;
 
   const [report, setReport]           = useState(null);
   const [status, setStatus]           = useState("idle"); // idle | loading | loaded | error

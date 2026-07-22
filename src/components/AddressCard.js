@@ -23,7 +23,7 @@ const toTitleCase = (str) => {
   });
 };
 
-export default function AddressCard({ address, go, goLogin, goReview }) {
+export default function AddressCard({ address, go, goLogin, goReview, demoMode = false }) {
   const [tradeFilter, setTradeFilter]       = useState("all");
   const [expanded, setExpanded]             = useState(false);
   const [saved, setSaved]                   = useState(false);
@@ -87,7 +87,9 @@ export default function AddressCard({ address, go, goLogin, goReview }) {
     if (!isLoggedIn) { go("signup"); return; }
     setFlagging(true);
     const addr = `${address.street}, ${address.city}, ${address.state}`;
-    await submitOwnershipFlag(addr, user?.id, flagNote);
+    // demoMode addresses aren't real properties — never write a real
+    // ownership-change flag for one.
+    if (!demoMode) await submitOwnershipFlag(addr, user?.id, flagNote);
     setFlagged(true);
     setFlagging(false);
     setShowFlagModal(false);
@@ -101,7 +103,11 @@ export default function AddressCard({ address, go, goLogin, goReview }) {
     if (!isLoggedIn) { if (goLogin) goLogin(); else go("signup"); return; }
     setSaving(true);
     const fullAddress = `${toTitleCase(address.street)}, ${toTitleCase(address.city)}, ${address.state} ${address.zip || ""}`.trim();
-    if (saved) {
+    // demoMode addresses aren't real properties — toggle the UI only, never
+    // write a fake address into a real user's saved_addresses list.
+    if (demoMode) {
+      setSaved(s => !s);
+    } else if (saved) {
       await unsaveAddress(fullAddress);
       setSaved(false);
     } else {
@@ -254,7 +260,7 @@ export default function AddressCard({ address, go, goLogin, goReview }) {
       )}
 
       {/* Flag ownership change button */}
-      {isLoggedIn && !flagged && (
+      {isLoggedIn && !flagged && !demoMode && (
         <div style={{ padding: "6px 1.35rem", background: "#F8FAFC", borderBottom: `1px solid #F1F5F9`, display: "flex", justifyContent: "flex-end" }}>
           <button onClick={() => setShowFlagModal(true)}
             style={{ background: "none", border: "none", color: "#94A3B8", fontSize: 10, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", display: "flex", alignItems: "center", gap: 4 }}>
@@ -346,15 +352,20 @@ export default function AddressCard({ address, go, goLogin, goReview }) {
             reviews={translatedReviews}
             bidScore={calculateBidScore(translatedReviews)}
             user={user}
+            forceUnlock={demoMode}
           />
         </div>
       )}
-      {/* Local Points of Interest */}
-      <NearbyPlaces
-        address={`${toTitleCase(address.street)}, ${toTitleCase(address.city)}${address.state ? ", " + address.state : ""}`}
-        trade={address.reviews?.[0]?.trade || "general"}
-        go={go}
-      />
+      {/* Local Points of Interest — skipped in demoMode, address isn't real so
+          there's nothing nearby to look up and it would just burn a real
+          Places API call */}
+      {!demoMode && (
+        <NearbyPlaces
+          address={`${toTitleCase(address.street)}, ${toTitleCase(address.city)}${address.state ? ", " + address.state : ""}`}
+          trade={address.reviews?.[0]?.trade || "general"}
+          go={go}
+        />
+      )}
 
       {/* Footer */}
       <div style={{ padding: "0.75rem 1.35rem", background: "#F8FAFC", borderTop: `1px solid ${BRAND.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -368,7 +379,9 @@ export default function AddressCard({ address, go, goLogin, goReview }) {
             style={{ background: saved ? "#DCFCE7" : "#F1F5F9", color: saved ? "#166534" : BRAND.gray, border: "none", padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
             {saving ? "..." : saved ? "★ Saved" : "☆ Save"}
           </button>
-          <Btn small onClick={() => { const addr = `${address.street}, ${address.city}, ${address.state}`; if (goReview) goReview(addr); else go("review"); }}>+ Review</Btn>
+          {!demoMode && (
+            <Btn small onClick={() => { const addr = `${address.street}, ${address.city}, ${address.state}`; if (goReview) goReview(addr); else go("review"); }}>+ Review</Btn>
+          )}
         </div>
       </div>
     </div>

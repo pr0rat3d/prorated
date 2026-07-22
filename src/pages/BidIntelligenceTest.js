@@ -13,11 +13,12 @@
 // Internal tool. Not linked from product nav — reachable directly at
 // /bid-intelligence-test for demo/QA use.
 // ─────────────────────────────────────────────────────────────
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { calculateBidScore } from "../utils/bidScoring";
 import { getTagById } from "../data/tradeTags";
 import { BRAND, Bar } from "../components/UI";
 import Logo from "../components/Logo";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../config";
 
 // ── Review factory ──────────────────────────────────────────────
 // Matches the real `reviews` table shape exactly: overall_score (1-5
@@ -58,7 +59,7 @@ const bad = (overrides = {}) => R({
 // ── 14 scenarios — the 12 requested + 2 covering Part 5 edge cases
 // that weren't otherwise fully exercised (a large clean history with a
 // single bad outlier, and reviews missing sub-scores entirely) ────────
-const SCENARIOS = [
+export const SCENARIOS = [
   {
     id: "dream-client", name: "Dream Client",
     desc: "9 positive, 1 neutral. Consistent payment, varied positive tags.",
@@ -338,8 +339,148 @@ function SubScoreBar({ label, value, invert = false, formula }) {
   );
 }
 
+// ── Customer Preview — calls the REAL bid-intelligence edge function
+// (same endpoint, same request shape as the live BidIntelligence.js
+// component) and renders ONLY what a real customer sees: no raw data
+// table, no formulas, no weights. This is what gets shown outside the
+// team — the internal breakdown (sections A–F below) never leaves the
+// building.
+const previewCache = new Map();
+
+function CustomerPreviewCard({ scenario, reviews, bidResult }) {
+  const [status, setStatus] = useState("loading");
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
+  const [nonce, setNonce] = useState(0);
+
+  useEffect(() => {
+    const cached = !nonce && previewCache.get(scenario.id);
+    if (cached) {
+      setData(cached);
+      setStatus("done");
+      return;
+    }
+
+    let cancelled = false;
+    setStatus("loading");
+    setError(null);
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+
+    fetch(`${SUPABASE_URL}/functions/v1/bid-intelligence`, {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({ address: `${scenario.name} (demo scenario)`, reviews, bidScore: bidResult }),
+    })
+      .then(res => {
+        if (!res.ok) throw new Error(`Edge function returned ${res.status}`);
+        return res.json();
+      })
+      .then(json => {
+        if (cancelled) return;
+        previewCache.set(scenario.id, json);
+        setData(json);
+        setStatus("done");
+      })
+      .catch(err => {
+        if (cancelled) return;
+        setError(err.name === "AbortError" ? "Request timed out after 30s" : (err.message || "Failed to generate preview"));
+        setStatus("error");
+      })
+      .finally(() => clearTimeout(timeout));
+
+    return () => { cancelled = true; controller.abort(); clearTimeout(timeout); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scenario.id, nonce]);
+
+  const regenerate = () => {
+    previewCache.delete(scenario.id);
+    setNonce(n => n + 1);
+  };
+
+  if (status === "loading") {
+    return (
+      <div style={{ padding: "2.5rem 1.5rem", textAlign: "center" }}>
+        <div style={{ fontSize: 13, color: BRAND.gray, marginBottom: 6 }}>⏳ Generating live report…</div>
+        <div style={{ fontSize: 11, color: "#94A3B8" }}>Calling the real bid-intelligence edge function — the same one production customers hit</div>
+      </div>
+    );
+  }
+
+  if (status === "error") {
+    return (
+      <div style={{ padding: "1.75rem 1.5rem", textAlign: "center" }}>
+        <div style={{ color: "#DC2626", fontSize: 13, fontWeight: 700, marginBottom: 6 }}>⚠️ Couldn't generate preview</div>
+        <div style={{ color: BRAND.gray, fontSize: 11.5, marginBottom: 14 }}>{error}</div>
+        <button onClick={regenerate} style={{ padding: "7px 16px", borderRadius: 8, border: `1.5px solid ${BRAND.blue}`, background: "#fff", color: BRAND.blue, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  const sig = SIGNAL_META[data.signal] || SIGNAL_META.caution;
+  const conf = CONF_META[data.confidence] || CONF_META.low;
+
+  return (
+    <div>
+      <div style={{ textAlign: "center", fontSize: 10, fontWeight: 700, color: BRAND.gray, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 14 }}>
+        👤 Exactly what this customer would see — live AI output, nothing else
+      </div>
+
+      <div style={{ background: "#F8FAFC", border: `1px solid ${BRAND.border}`, borderRadius: 12, padding: "14px 16px", marginBottom: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: sig.color }}>{sig.emoji} {sig.label} Signal</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: conf.color }}>{conf.label}</div>
+        </div>
+        <p style={{ fontSize: 13, color: BRAND.dark, lineHeight: 1.7, margin: 0 }}>{data.summary}</p>
+      </div>
+
+      {data.risks?.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#991B1B", marginBottom: 6 }}>Key Risks</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {data.risks.map((r, i) => (
+              <span key={i} style={{ fontSize: 11.5, fontWeight: 600, background: "#FEE2E2", color: "#991B1B", border: "1px solid #FCA5A5", padding: "4px 10px", borderRadius: 20 }}>{r}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {data.positives?.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#166534", marginBottom: 6 }}>Key Positives</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {data.positives.map((p, i) => (
+              <span key={i} style={{ fontSize: 11.5, fontWeight: 600, background: "#DCFCE7", color: "#166534", border: "1px solid #86EFAC", padding: "4px 10px", borderRadius: 20 }}>{p}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div style={{ background: BRAND.dark, color: "#fff", borderRadius: 12, padding: "14px 16px", marginBottom: 14 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", opacity: 0.7, marginBottom: 4 }}>Recommendation</div>
+        <div style={{ fontSize: 13, lineHeight: 1.6 }}>{data.recommendation}</div>
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ fontSize: 10, color: "#94A3B8" }}>Generated just now · AI-assisted, advisory only</div>
+        <button onClick={regenerate} style={{ fontSize: 11, fontWeight: 700, color: BRAND.blue, background: "none", border: "none", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+          ↻ Regenerate
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── One scenario, fully analyzed ────────────────────────────────
-function ScenarioCard({ scenario, expanded, onToggle }) {
+function ScenarioCard({ scenario, expanded, onToggle, mode }) {
   const reviews = scenario.build();
   const bidResult = calculateBidScore(reviews);
   const mix = computeMix(reviews);
@@ -375,7 +516,13 @@ function ScenarioCard({ scenario, expanded, onToggle }) {
         </div>
       </div>
 
-      {expanded && (
+      {expanded && mode === "customer" && (
+        <div style={{ padding: "1.25rem" }}>
+          <CustomerPreviewCard scenario={scenario} reviews={reviews} bidResult={bidResult} />
+        </div>
+      )}
+
+      {expanded && mode !== "customer" && (
         <div style={{ padding: "1.25rem" }}>
           {/* A. Raw review data */}
           <SectionLabel>A · Raw Review Data ({reviews.length})</SectionLabel>
@@ -530,6 +677,7 @@ function SectionLabel({ children }) {
 export default function BidIntelligenceTest({ go }) {
   const [expandedId, setExpandedId] = useState(null);
   const [filter, setFilter] = useState("all");
+  const [mode, setMode] = useState("internal");
 
   const analyzed = SCENARIOS.map(s => {
     const reviews = s.build();
@@ -568,6 +716,25 @@ export default function BidIntelligenceTest({ go }) {
       </div>
 
       <div style={{ maxWidth: 920, margin: "0 auto", padding: "1.5rem 1.25rem 4rem" }}>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: "1.25rem" }}>
+          <div style={{ display: "inline-flex", background: "#fff", border: `1.5px solid ${BRAND.border}`, borderRadius: 12, padding: 4, gap: 4 }}>
+            {[
+              { id: "internal", label: "🔧 Internal Analysis" },
+              { id: "customer", label: "👤 Customer Preview" },
+            ].map(m => (
+              <button key={m.id} onClick={() => setMode(m.id)}
+                style={{ padding: "8px 16px", borderRadius: 9, border: "none", background: mode === m.id ? BRAND.dark : "transparent", color: mode === m.id ? "#fff" : BRAND.gray, fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+                {m.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div style={{ textAlign: "center", fontSize: 11.5, color: BRAND.gray, maxWidth: 520, margin: "0 auto 1.5rem", lineHeight: 1.6 }}>
+          {mode === "internal"
+            ? "Full engine breakdown — raw data, formulas, and algorithm transparency. Internal/Tommy use only."
+            : "Exactly what a real customer sees when they open Bid Intelligence — live AI report, no formulas, no weights."}
+        </div>
+
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: "1.5rem", justifyContent: "center" }}>
           {FILTERS.map(f => (
             <button key={f.id} onClick={() => setFilter(f.id)}
@@ -579,7 +746,7 @@ export default function BidIntelligenceTest({ go }) {
 
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           {filtered.map(s => (
-            <ScenarioCard key={s.id} scenario={s} expanded={expandedId === s.id} onToggle={() => setExpandedId(id => id === s.id ? null : s.id)} />
+            <ScenarioCard key={s.id} scenario={s} expanded={expandedId === s.id} onToggle={() => setExpandedId(id => id === s.id ? null : s.id)} mode={mode} />
           ))}
         </div>
 

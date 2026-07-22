@@ -22,23 +22,28 @@ export default function ReviewCard({ review, idx }) {
   };
 
   const handleReport = async (reason) => {
-    try {
-      await fetch(`${SUPABASE_URL}/rest/v1/reported_reviews`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": SUPABASE_ANON_KEY,
-          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-          "Prefer": "return=minimal",
-        },
-        body: JSON.stringify({
-          review_id:   review.id || null,
-          review_text: review.text,
-          reason,
-          reported_at: new Date().toISOString(),
-        }),
-      });
-    } catch {}
+    // Only real DB-backed reviews can actually be reported — synthetic/demo
+    // reviews (test harness, app walkthrough) don't carry fromDatabase and
+    // must never write a row to reported_reviews.
+    if (review.fromDatabase) {
+      try {
+        await fetch(`${SUPABASE_URL}/rest/v1/reported_reviews`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": SUPABASE_ANON_KEY,
+            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+            "Prefer": "return=minimal",
+          },
+          body: JSON.stringify({
+            review_id:   review.id || null,
+            review_text: review.text,
+            reason,
+            reported_at: new Date().toISOString(),
+          }),
+        });
+      } catch {}
+    }
     setIsReported(true);
     setShowReport(false);
   };

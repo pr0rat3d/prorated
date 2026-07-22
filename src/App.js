@@ -57,6 +57,7 @@ export default function App() {
       if (path === "/terms")    return "terms";
       if (path === "/pricing")  return "pricing";
       if (path === "/contact" || path === "/contact/") return "contact";
+      if (path === "/signup" || path === "/signup/") return "signup";
       if (path === "/admin" || path === "/admin/") return "admin";
       if (path === "/verified-pros" || path === "/directory") return "verified-pro";
       if (path === "/report" || path === "/homeowner-report") return "homeowner-report";

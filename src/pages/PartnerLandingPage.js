@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { BRAND } from "../components/UI";
 import Logo from "../components/Logo";
+import StoreBadges from "../components/StoreBadges";
 
 // ── Partner Configuration ─────────────────────────────────────
 export const PARTNERS = {
@@ -298,6 +299,15 @@ export default function PartnerLandingPage({ go, partnerId }) {
           style={{ width: "100%", background: p.color, color: p.accent, border: "none", padding: "16px", borderRadius: 14, fontSize: 16, fontWeight: 900, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", marginBottom: 12 }}>
           Get started free — {p.name} members →
         </button>
+
+        {/* Prefer the app? Same free access, but the referral code has to be
+            entered manually — the code prefill above only works on web */}
+        <div style={{ textAlign: "center", marginBottom: 20 }}>
+          <div style={{ fontSize: 11, color: BRAND.gray, marginBottom: 10 }}>Prefer the app? Download and enter code <strong style={{ color: p.color }}>{p.code}</strong> when you sign up.</div>
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <StoreBadges />
+          </div>
+        </div>
 
         <p style={{ fontSize: 11, color: BRAND.gray, textAlign: "center", lineHeight: 1.6 }}>
           Questions? Email <a href="mailto:hello@prorated.app" style={{ color: BRAND.blue }}>hello@prorated.app</a>

@@ -39,9 +39,13 @@ export default function PartnerDashboardPage({ partnerId }) {
 
   const loadData = async () => {
     try {
-      // Members who signed up with this promo code
+      // Members either referred via this partner's signup code (pro_source,
+      // set once at signup) OR who self-declared membership afterward via
+      // their profile's Trade Associations picker (trade_memberships) —
+      // the union covers both people who came in through the partner link
+      // and existing users who joined the association without ever seeing it.
       const members = await adminGet("/contractors", {
-        pro_source: `eq.${partnerId}`,
+        or: `(pro_source.eq.${partnerId},trade_memberships.cs.{${partnerId}})`,
         select: "id,name,trade,state,status,created_at,review_count,trust_score",
         order: "created_at.desc",
       });

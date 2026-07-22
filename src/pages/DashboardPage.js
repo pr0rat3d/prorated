@@ -9,7 +9,8 @@ import { useAuth } from "../hooks/useAuth";
 
 
 import { fetchMyReviews, updateReview, deleteReview } from "../api/supabase";
-import { getSavedAddresses, unsaveAddress, signIn, updatePassword } from "../api/auth";
+import { getSavedAddresses, unsaveAddress, signIn, updatePassword, saveTradeMemberships } from "../api/auth";
+import { PARTNERS } from "./PartnerLandingPage";
 import usePush from "../hooks/usePush";
 import { useLang } from "../hooks/useLang";
 import { t } from "../i18n/translations";
@@ -66,6 +67,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
   const [renameLoading, setRenameLoading]       = useState(false);
   const companyDeletedRef = useRef(false); // prevents refetch after delete
   const [seatError, setSeatError]     = useState(null);
+  const [removeMemberError, setRemoveMemberError] = useState(null);
   const [showPwChange, setShowPwChange] = useState(false);
   const [pwForm, setPwForm]             = useState({ current: "", next: "", confirm: "" });
   const [pwError, setPwError]           = useState(null);
@@ -73,6 +75,10 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
   const [pwLoading, setPwLoading]       = useState(false);
   const [showDeleteAccount, setShowDeleteAccount] = useState(false);
   const [deleteAccountLoading, setDeleteAccountLoading] = useState(false);
+  const [showMemberships, setShowMemberships] = useState(false);
+  const [selectedMemberships, setSelectedMemberships] = useState(() => user?.trade_memberships || []);
+  const [membershipsSaving, setMembershipsSaving] = useState(false);
+  const [membershipsSaved, setMembershipsSaved] = useState(false);
 
   const handlePasswordChange = async () => {
     setPwError(null);
@@ -96,6 +102,35 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
     }
     setPwLoading(false);
   };
+  // Trade associations picker — Home Builders Assoc (isRealtor entries
+  // excluded, those are for realtors, not trade contractors), sorted so
+  // associations matching the user's own in-app trade come first. Not a
+  // hard filter — someone's declared trade doesn't capture every license
+  // they hold (a roofer with a GC license may still be a real GC-association
+  // member), so everything stays selectable either way.
+  const membershipOptions = Object.entries(PARTNERS)
+    .filter(([, p]) => !p.isRealtor)
+    .sort(([, a], [, b]) => {
+      const aMatch = a.relevantTrades?.includes(user?.trade) ? 0 : 1;
+      const bMatch = b.relevantTrades?.includes(user?.trade) ? 0 : 1;
+      return aMatch - bMatch;
+    });
+  const toggleMembership = (key) => {
+    setSelectedMemberships(sel => sel.includes(key) ? sel.filter(k => k !== key) : [...sel, key]);
+  };
+  const handleSaveMemberships = async () => {
+    setMembershipsSaving(true);
+    try {
+      await saveTradeMemberships(selectedMemberships);
+      await refreshUser();
+      setMembershipsSaved(true);
+      setTimeout(() => setMembershipsSaved(false), 3000);
+    } catch {
+      // Non-critical — leave the selection as-is so the user can just retry
+    }
+    setMembershipsSaving(false);
+  };
+
   const handleDeleteAccount = async () => {
     if (!window.confirm("Delete your account? This cannot be undone — your account will be permanently deleted and your reviews anonymized. You'll be logged out immediately.")) return;
     setDeleteAccountLoading(true);
@@ -240,24 +275,31 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
   const handleRemoveMember = async (memberId) => {
     if (!company) return;
     if (!window.confirm("Remove this member from your team? They'll keep their account but lose access to team features.")) return;
+    setRemoveMemberError(null);
     try {
       const session = JSON.parse(localStorage.getItem("prorated_session") || "{}");
       const token   = session.access_token;
-      await fetch(
-        `${SUPABASE_URL}/rest/v1/contractors?id=eq.${memberId}`,
-        {
-          method: "PATCH",
-          headers: {
-            "apikey": SUPABASE_ANON_KEY,
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ company_id: null, company_role: null }),
-        }
-      );
+      // Plain PATCH doesn't work here — RLS only allows a user to update
+      // their own row, so an owner PATCHing a teammate's row was always
+      // silently rejected (0 rows affected, no error surfaced). This RPC
+      // does the same job with its own server-side authorization check.
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/remove_team_member`, {
+        method: "POST",
+        headers: {
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ p_member_id: memberId }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.message || "Could not remove member");
+      }
       setMembers(m => m.filter(x => x.id !== memberId));
     } catch (err) {
       console.warn("[ProRated] Remove member error:", err);
+      setRemoveMemberError(err.message || "Could not remove member. Please try again.");
     }
   };
 
@@ -288,25 +330,20 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
       const session = JSON.parse(localStorage.getItem("prorated_session") || "{}");
       const token   = session.access_token;
 
-      // Remove company_id from ALL members (including owner)
-      await fetch(`${SUPABASE_URL}/rest/v1/contractors?company_id=eq.${company.id}`, {
-        method: "PATCH",
+      // Plain PATCH/DELETE didn't work here — RLS blocked clearing other
+      // members' company_id/company_role (self-only update policy), and
+      // there was no DELETE policy on companies at all, so the company row
+      // itself never actually got deleted either. This RPC does the whole
+      // thing atomically server-side with its own owner authorization check.
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/delete_company_workspace`, {
+        method: "POST",
         headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ company_id: null, company_role: null }),
+        body: JSON.stringify({ p_company_id: company.id }),
       });
-
-      // Also explicitly null the current user's row in case RLS scoping missed it
-      await fetch(`${SUPABASE_URL}/rest/v1/contractors?id=eq.${user.id}`, {
-        method: "PATCH",
-        headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ company_id: null, company_role: null }),
-      });
-
-      // Delete the company record
-      await fetch(`${SUPABASE_URL}/rest/v1/companies?id=eq.${company.id}`, {
-        method: "DELETE",
-        headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${token}` },
-      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.message || "Could not delete team workspace");
+      }
 
       // Update localStorage session — do NOT call refreshUser (would re-fetch company)
       if (session.user) {
@@ -323,6 +360,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
       setTab("reviews");
     } catch (err) {
       console.warn("[ProRated] Delete team error:", err);
+      window.alert(err.message || "Could not delete team workspace. Please try again.");
     }
   };
 
@@ -864,6 +902,11 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
               {/* Team members list */}
               <Card style={{ marginBottom: "0.85rem" }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: 12 }}>Team members ({companyMembers.length})</div>
+                {removeMemberError && (
+                  <div style={{ background: "#FEF2F2", border: "1px solid #FCA5A5", borderRadius: 8, padding: "8px 12px", fontSize: 12, color: "#991B1B", marginBottom: 10 }}>
+                    {removeMemberError}
+                  </div>
+                )}
                 {companyMembers.length === 0 ? (
                   <div style={{ fontSize: 13, color: BRAND.gray, textAlign: "center", padding: "1rem 0" }}>No team members yet. Send your first invite above.</div>
                 ) : (
@@ -1136,6 +1179,55 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                           {pwLoading ? "Updating..." : "Update password →"}
                         </button>
                       </>
+                    )}
+                  </div>
+                )}
+              </Card>
+
+              {/* Trade Associations */}
+              <Card style={{ marginBottom: "0.85rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
+                  onClick={() => setShowMemberships(s => !s)}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark }}>🤝 Trade Associations</div>
+                    {!showMemberships && (
+                      <div style={{ fontSize: 11, color: BRAND.gray, marginTop: 2 }}>
+                        {(user?.trade_memberships || []).length > 0
+                          ? `${user.trade_memberships.length} membership${user.trade_memberships.length !== 1 ? "s" : ""} on file`
+                          : "Let us know which associations you're a member of"}
+                      </div>
+                    )}
+                  </div>
+                  <span style={{ fontSize: 18, color: BRAND.gray, cursor: "pointer" }}>{showMemberships ? "−" : "+"}</span>
+                </div>
+                {showMemberships && (
+                  <div style={{ marginTop: 14, borderTop: `1px solid ${BRAND.border}`, paddingTop: 14 }}>
+                    {(!user?.trade_memberships || user.trade_memberships.length === 0) && (
+                      <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 8, padding: "8px 12px", fontSize: 11, color: "#1E40AF", fontWeight: 600, marginBottom: 12 }}>
+                        🎁 Earn 5 review points for completing this section
+                      </div>
+                    )}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12, maxHeight: 280, overflowY: "auto" }}>
+                      {membershipOptions.map(([key, p]) => (
+                        <label key={key} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 8, border: `1px solid ${selectedMemberships.includes(key) ? BRAND.blue : BRAND.border}`, background: selectedMemberships.includes(key) ? "#EFF6FF" : "#F8FAFC", cursor: "pointer" }}>
+                          <input type="checkbox" checked={selectedMemberships.includes(key)} onChange={() => toggleMembership(key)}
+                            style={{ flexShrink: 0 }} />
+                          <span style={{ fontSize: 16, flexShrink: 0 }}>{p.icon}</span>
+                          <span style={{ fontSize: 12.5, fontWeight: 600, color: BRAND.dark }}>{p.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                    {membershipsSaved ? (
+                      <div style={{ background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 10, padding: "10px 14px", fontSize: 12, color: "#166534", fontWeight: 700, textAlign: "center" }}>
+                        ✅ Saved!
+                      </div>
+                    ) : (
+                      <button
+                        onClick={handleSaveMemberships}
+                        disabled={membershipsSaving}
+                        style={{ width: "100%", padding: "10px", background: BRAND.blue, color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: membershipsSaving ? "not-allowed" : "pointer", opacity: membershipsSaving ? 0.7 : 1, fontFamily: "'DM Sans', sans-serif" }}>
+                        {membershipsSaving ? "Saving..." : "Save →"}
+                      </button>
                     )}
                   </div>
                 )}

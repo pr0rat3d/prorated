@@ -17,6 +17,7 @@ export const PARTNERS = {
     features:    ["Job site access ratings", "Payment history", "Homeowner communication scores", "Subcontractor work history"],
     dataOffer:   "Quarterly aggregate intelligence reports on Alabama job site conditions, payment trends, and regional ratings — broken down by county and project type.",
     url:         "agc",
+    relevantTrades: ["general", "foundation", "concrete"],
   },
   acca: {
     code:        "ACCA2026",
@@ -30,6 +31,7 @@ export const PARTNERS = {
     features:    ["Equipment access & staging ratings", "Payment history by homeowner", "Service call communication scores", "Regional HVAC job site trends"],
     dataOffer:   "Quarterly HVAC-specific intelligence — payment delay rates, access issues, and homeowner communication trends across Alabama counties.",
     url:         "acca",
+    relevantTrades: ["hvac"],
   },
   phcc: {
     code:        "PHCC2026",
@@ -43,6 +45,7 @@ export const PARTNERS = {
     features:    ["Job site access ratings", "Payment history & delays", "Emergency call responsiveness", "Work history by address"],
     dataOffer:   "Quarterly plumbing & HVAC intelligence reports — payment trends, access issues, and regional job site ratings across Alabama.",
     url:         "phcc",
+    relevantTrades: ["plumbing", "hvac"],
   },
   iec: {
     code:        "IEC2026",
@@ -56,6 +59,7 @@ export const PARTNERS = {
     features:    ["Panel access & staging ratings", "Payment history", "Permit & inspection notes", "Homeowner communication scores"],
     dataOffer:   "Quarterly electrical contractor intelligence — payment delays, access conditions, and job site ratings by Alabama county.",
     url:         "iec",
+    relevantTrades: ["electrical"],
   },
   nrca: {
     code:        "NRCA2026",
@@ -69,6 +73,7 @@ export const PARTNERS = {
     features:    ["Roof access & staging ratings", "Payment history by address", "HOA & permit complexity", "Homeowner communication"],
     dataOffer:   "Quarterly roofing intelligence — payment trends, access issues, HOA complication rates, and job site ratings across Alabama.",
     url:         "nrca",
+    relevantTrades: ["roofing"],
   },
   pca: {
     code:        "PCA2026",
@@ -82,6 +87,7 @@ export const PARTNERS = {
     features:    ["Interior access ratings", "Payment history", "Preparation requirements", "Homeowner communication scores"],
     dataOffer:   "Quarterly painting contractor intelligence — payment delays, access complexity, and regional job site trends.",
     url:         "pca",
+    relevantTrades: ["painting"],
   },
   nalp: {
     code:        "NALP2026",
@@ -95,6 +101,7 @@ export const PARTNERS = {
     features:    ["Property access ratings", "Payment history", "HOA restriction notes", "Seasonal work trends"],
     dataOffer:   "Quarterly landscaping intelligence — payment trends, access issues, HOA complication rates across Alabama counties.",
     url:         "nalp",
+    relevantTrades: ["landscaping", "fencing", "pool_service"],
   },
   abc: {
     code:        "ABC2026",
@@ -108,6 +115,7 @@ export const PARTNERS = {
     features:    ["Job site access & staging ratings", "Homeowner payment history", "Communication scores", "Work history by address"],
     dataOffer:   "Quarterly intelligence reports on Alabama residential job site conditions — payment trends, access issues, and homeowner communication scores broken down by county and trade type.",
     url:         "abc",
+    relevantTrades: ["general"],
   },
   hba: {
     code:        "HBA2026",
@@ -122,6 +130,9 @@ export const PARTNERS = {
     dataOffer:   "Quarterly Alabama residential market reports — payment delay rates by county, access condition trends, homeowner communication scores, and work type frequency across the state. Data your members can use to bid smarter and build better.",
     url:         "hba",
     isHBA:       true,
+    // Home builders coordinate nearly every residential trade as subs —
+    // deliberately broad, unlike the single-trade associations above.
+    relevantTrades: ["general", "roofing", "electrical", "plumbing", "hvac", "foundation", "concrete", "siding", "windows", "insulation", "flooring", "garage_door", "fencing"],
   },
   neca: {
     code:        "NECA2026",
@@ -135,6 +146,7 @@ export const PARTNERS = {
     features:    ["Panel access & staging ratings", "Payment history", "Permit complexity by address", "Homeowner communication scores"],
     dataOffer:   "Quarterly electrical contractor intelligence — payment delays, access conditions, and job site ratings by Alabama county.",
     url:         "neca",
+    relevantTrades: ["electrical"],
   },
   bar: {
     code:        "BAR2026",

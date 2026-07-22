@@ -118,6 +118,28 @@ const killOtherSessions = async (token) => {
   }
 };
 
+// ── Save trade association memberships (+5 pt one-time completion bonus,
+// awarded server-side by the RPC itself — never trust a client-claimed
+// point value, since contractors.review_points has no column-level RLS
+// restriction on UPDATE) ────────────────────────────────────────────
+export const saveTradeMemberships = async (memberships) => {
+  const session = loadSession();
+  if (!session?.access_token) throw new Error("Not logged in");
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/save_trade_memberships`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": SUPABASE_ANON_KEY,
+      "Authorization": `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({ p_memberships: memberships }),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Failed to save trade memberships${body ? ": " + body : ""}`);
+  }
+};
+
 // ── Check whether this device's session is still the active one ────────
 // Fails OPEN (returns true) on any network/server error — only a confirmed
 // "false" from the server should ever force a logout.

@@ -4,6 +4,11 @@ import { BRAND } from "../components/UI";
 import Logo from "../components/Logo";
 import PasswordInput from "../components/PasswordInput";
 import { PARTNERS } from "./PartnerLandingPage";
+import { ISSUE_TAGS } from "../data/constants";
+
+const TAG_LABELS = ISSUE_TAGS.reduce((acc, t) => { acc[t.id] = t.label; return acc; }, {});
+const WATCH_TAG_IDS = new Set(ISSUE_TAGS.filter(t => t.severity !== "good").map(t => t.id));
+const PROPERTY_TYPE_LABELS = { homestead: "🏠 Primary Home", secondary: "🌴 Secondary/Vacation", rental: "🔑 Rental Property", commercial: "🏢 Commercial" };
 
 function StatCard({ icon, value, label, sub, color = BRAND.blue }) {
   return (
@@ -48,7 +53,7 @@ export default function PartnerDashboardPage({ partnerId }) {
       if (memberIds.length > 0) {
         reviews = await adminGet("/reviews", {
           user_id: `in.(${memberIds.join(",")})`,
-          select: "id,trade,work_label,overall_score,payment_score,access_score,created_at",
+          select: "id,trade,work_label,overall_score,payment_score,access_score,property_type,tags,would_return,city,created_at",
           order: "created_at.desc",
         });
         reviews = Array.isArray(reviews) ? reviews : [];
@@ -80,7 +85,41 @@ export default function PartnerDashboardPage({ partnerId }) {
         return acc;
       }, {});
 
-      setData({ members: memberList, reviews, approved, pending, avgScore, avgPayment, avgAccess, workTypes, byMonth });
+      // Would-return rate — sharper signal than a 1-5 average
+      const returnAnswered = reviews.filter(r => r.would_return !== null && r.would_return !== undefined);
+      const wouldReturnPct = returnAnswered.length > 0
+        ? Math.round((returnAnswered.filter(r => r.would_return).length / returnAnswered.length) * 100)
+        : null;
+
+      // Payment delay rate — from the slow_payment tag directly, not a
+      // score threshold, since that's the actual signal reviewers give
+      const slowPaymentPct = reviews.length > 0
+        ? Math.round((reviews.filter(r => Array.isArray(r.tags) && r.tags.includes("slow_payment")).length / reviews.length) * 100)
+        : null;
+
+      // Property type mix
+      const propertyTypes = reviews.reduce((acc, r) => {
+        if (r.property_type) acc[r.property_type] = (acc[r.property_type] || 0) + 1;
+        return acc;
+      }, {});
+
+      // Most common site-condition tags (excludes "good" severity — this
+      // panel is about conditions to watch for, not compliments)
+      const tagCounts = reviews.reduce((acc, r) => {
+        (r.tags || []).forEach(tag => { if (WATCH_TAG_IDS.has(tag)) acc[tag] = (acc[tag] || 0) + 1; });
+        return acc;
+      }, {});
+
+      // Active contributor rate — aggregate ratio only, never which members
+      // did or didn't contribute, so this doesn't compromise anonymity
+      const activeContributorPct = memberList.length > 0
+        ? Math.round((memberList.filter(m => m.review_count > 0).length / memberList.length) * 100)
+        : null;
+
+      setData({
+        members: memberList, reviews, approved, pending, avgScore, avgPayment, avgAccess, workTypes, byMonth,
+        wouldReturnPct, slowPaymentPct, propertyTypes, tagCounts, activeContributorPct,
+      });
     } catch (err) {
       console.error(err);
     }
@@ -172,6 +211,9 @@ export default function PartnerDashboardPage({ partnerId }) {
           <StatCard icon="⏳" value={data?.pending || 0}            label="Pending"          sub="Awaiting verification" color="#D97706" />
           <StatCard icon="📝" value={data?.reviews.length || 0}    label="Reviews"          sub="Job sites rated" color={BRAND.blue} />
           <StatCard icon="⭐" value={data?.avgScore || "—"}         label="Avg Rating"       sub="Overall job site score" color="#7C3AED" />
+          <StatCard icon="🔁" value={data?.wouldReturnPct != null ? `${data.wouldReturnPct}%` : "—"} label="Would Return" sub="Would work this site again" color="#16A34A" />
+          <StatCard icon="⏱️" value={data?.slowPaymentPct != null ? `${data.slowPaymentPct}%` : "—"} label="Payment Delays" sub="Reviews flagging slow payment" color="#DC2626" />
+          <StatCard icon="🙋" value={data?.activeContributorPct != null ? `${data.activeContributorPct}%` : "—"} label="Active Contributors" sub="Members who've left a review" color={p.color} />
         </div>
 
         {/* Rating breakdown */}
@@ -209,6 +251,42 @@ export default function PartnerDashboardPage({ partnerId }) {
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <div style={{ width: 80, height: 6, background: "#E2E8F0", borderRadius: 3, overflow: "hidden" }}>
                     <div style={{ height: "100%", width: `${(count / Math.max(...Object.values(data.workTypes))) * 100}%`, background: p.color, borderRadius: 3 }} />
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: BRAND.gray, width: 20, textAlign: "right" }}>{count}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Property type mix */}
+        {Object.keys(data?.propertyTypes || {}).length > 0 && (
+          <div style={{ background: "#fff", border: `1px solid ${BRAND.border}`, borderRadius: 14, padding: "1.25rem", marginBottom: "1.25rem" }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: BRAND.dark, marginBottom: "1rem" }}>🏘️ Property Type Mix</div>
+            {Object.entries(data.propertyTypes).sort((a,b) => b[1]-a[1]).map(([type, count]) => (
+              <div key={type} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${BRAND.border}` }}>
+                <span style={{ fontSize: 13, color: BRAND.dark }}>{PROPERTY_TYPE_LABELS[type] || type}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ width: 80, height: 6, background: "#E2E8F0", borderRadius: 3, overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: `${(count / Math.max(...Object.values(data.propertyTypes))) * 100}%`, background: p.color, borderRadius: 3 }} />
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: BRAND.gray, width: 20, textAlign: "right" }}>{count}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Recurring site condition tags */}
+        {Object.keys(data?.tagCounts || {}).length > 0 && (
+          <div style={{ background: "#fff", border: `1px solid ${BRAND.border}`, borderRadius: 14, padding: "1.25rem", marginBottom: "1.25rem" }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: BRAND.dark, marginBottom: "1rem" }}>🚩 Most Reported Site Conditions</div>
+            {Object.entries(data.tagCounts).sort((a,b) => b[1]-a[1]).slice(0, 8).map(([tag, count]) => (
+              <div key={tag} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${BRAND.border}` }}>
+                <span style={{ fontSize: 13, color: BRAND.dark }}>{TAG_LABELS[tag] || tag}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ width: 80, height: 6, background: "#E2E8F0", borderRadius: 3, overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: `${(count / Math.max(...Object.values(data.tagCounts))) * 100}%`, background: p.color, borderRadius: 3 }} />
                   </div>
                   <span style={{ fontSize: 12, fontWeight: 700, color: BRAND.gray, width: 20, textAlign: "right" }}>{count}</span>
                 </div>

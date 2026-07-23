@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext, useContext } from "react";
-import { loadSession, signOut, getCurrentUser, checkSessionActive } from "../api/auth";
+import { loadSession, signOut, getCurrentUser, checkSessionActive, ensureValidSession } from "../api/auth";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../config.js";
 import { configureRevenueCat } from "../lib/revenuecat";
 
@@ -17,11 +17,19 @@ export function AuthProvider({ children }) {
     if (session?.user) setUser(session.user);
     setLoading(false);
 
+    // If the app was closed/backgrounded long enough for the access token
+    // to go stale, try to silently refresh it right away on reopen —
+    // otherwise the first real API call fails before anything's had a
+    // chance to renew it.
+    if (session?.user) ensureValidSession();
+
     // Background refresh after short delay — gives DB writes time to settle
     if (session?.user?.id && session?.access_token) {
       configureRevenueCat(session.user.id, session.user.email);
-      const token = session.access_token;
       setTimeout(() => {
+        // Re-read rather than use the token captured at mount — the
+        // ensureValidSession() call above may have refreshed it by now.
+        const token = loadSession()?.access_token || session.access_token;
         fetch(
           `${SUPABASE_URL}/rest/v1/contractors?id=eq.${session.user.id}&select=*&limit=1`,
           { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${token}` } }
@@ -58,6 +66,19 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (!user) return;
     const check = async () => {
+      // Refresh the access token first — checkSessionActive fails open on
+      // network/auth errors, but a stale token here would still make every
+      // real data fetch downstream fail silently. ensureValidSession only
+      // returns false when the refresh_token itself is dead (nothing left
+      // to recover), which is a genuine logout, distinct from the
+      // "logged in elsewhere" case below.
+      const stillValid = await ensureValidSession();
+      if (!stillValid) {
+        await signOut();
+        setUser(null);
+        return;
+      }
+
       const active = await checkSessionActive();
       if (!active) {
         await signOut();

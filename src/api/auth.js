@@ -47,8 +47,11 @@ export const loadSession = () => {
     const raw = localStorage.getItem(SESSION_KEY);
     if (!raw) return null;
     const session = JSON.parse(raw);
-    // Check if token is expired
-    if (session.expires_at && Date.now() / 1000 > session.expires_at) {
+    // An expired access_token alone isn't a dead session — it's refreshable
+    // via refresh_token, and the Supabase project has session inactivity
+    // timeout disabled, so there's no policy reason to force a logout here.
+    // Only give up when there's nothing left to refresh with.
+    if (session.expires_at && Date.now() / 1000 > session.expires_at && !session.refresh_token) {
       localStorage.removeItem(SESSION_KEY);
       return null;
     }

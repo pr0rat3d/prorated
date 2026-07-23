@@ -28,6 +28,12 @@ Scoring weights used:
 
 Recency weighting applied — newer reviews count more. Reviewer trust score weighting applied — established trade professionals carry more weight than brand new accounts.
 
+You may also receive a "Detected patterns" line listing structural patterns already found in the review data by deterministic analysis (not your judgment call — these are pre-computed facts):
+- isolated_incident: the negative review(s) are a small minority against an otherwise strong, consistent history. Say so plainly — don't let one bad review read as a systemic issue.
+- split_opinion: reviewers are sharply divided (strong positive and strong negative clusters, little middle ground) — flag this as genuine disagreement worth understanding, not an averaging quirk.
+- declining_trend / improving_trend: recent reviews are meaningfully below/above older reviews — call out the direction plainly.
+If no patterns are listed, don't invent one — just assess the data as normal.
+
 CRITICAL RULES:
 - Never fabricate anything not in review data
 - Never suggest specific dollar amounts or percentages
@@ -36,10 +42,20 @@ CRITICAL RULES:
 - Under 250 words total
 - Always say trade professional not contractor`;
 
+const PATTERN_LABELS: Record<string, string> = {
+  isolated_incident: "isolated_incident — 1-2 negative reviews are a small minority against an otherwise strong history",
+  split_opinion: "split_opinion — reviewers are sharply divided, little middle ground",
+  declining_trend: "declining_trend — recent reviews are notably lower than older reviews",
+  improving_trend: "improving_trend — recent reviews are notably higher than older reviews",
+};
+
 function buildUserPrompt(address: string, reviews: any[], bidScore: any) {
-  const { finalScore, signal, confidence, reviewCount, topTags, categoryAvgs } = bidScore;
+  const { finalScore, signal, confidence, reviewCount, topTags, categoryAvgs, patterns } = bidScore;
 
   const topTagsText = (topTags || []).join(", ") || "None flagged";
+  const patternsText = Array.isArray(patterns) && patterns.length
+    ? patterns.map((p: any) => PATTERN_LABELS[p.type] || p.type).join("; ")
+    : "None detected";
 
   const recentReviews = [...(reviews || [])]
     .sort((a, b) => new Date(b.created_at || b.date || 0).getTime() - new Date(a.created_at || a.date || 0).getTime())
@@ -69,6 +85,8 @@ Job Site Obstacles:     ${categoryAvgs.obstacles}/5.0
 Note: scores weighted by reviewer credibility and recency — established trade professionals carry more influence.
 
 Top flagged conditions: ${topTagsText}
+
+Detected patterns: ${patternsText}
 
 Recent reviews (most recent first):
 ${recentReviews || "No review text available."}

@@ -4,6 +4,7 @@
 // reviewer-trust weighting, and derives a bid signal.
 // ─────────────────────────────────────────────────────────────
 import { getTagById } from "../data/tradeTags";
+import { detectPatterns } from "./bidPatterns";
 
 export const calculateBidScore = (reviews) => {
 
@@ -131,6 +132,7 @@ export const calculateBidScore = (reviews) => {
     signal,
     reviewCount: reviews.length,
     topTags,
+    patterns: detectPatterns(reviews),
     categoryAvgs: {
       payment:       avg("payment_score"),
       communication: avg("communication_score"),

@@ -264,18 +264,21 @@ function computeRedFlags(reviews, mix, bidResult) {
     flags.push({ level: "info", text: `Only ${n} review${n !== 1 ? "s" : ""} on file — ${bidResult.confidence} confidence` });
   }
 
-  const sorted = [...reviews].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-  if (sorted.length >= 4) {
-    const half = Math.floor(sorted.length / 2);
-    const avgOverall = arr => arr.reduce((s, r) => s + (r.overall_score || 0), 0) / arr.length;
-    const recentAvg = avgOverall(sorted.slice(0, half));
-    const olderAvg = avgOverall(sorted.slice(half));
-    if (recentAvg < olderAvg - 0.75) {
-      flags.push({ level: "warn", text: `Recent reviews (avg ${recentAvg.toFixed(1)}★) trending below older reviews (avg ${olderAvg.toFixed(1)}★) — declining pattern` });
-    } else if (recentAvg > olderAvg + 0.75) {
-      flags.push({ level: "good", text: `Recent reviews (avg ${recentAvg.toFixed(1)}★) trending above older reviews (avg ${olderAvg.toFixed(1)}★) — improving pattern` });
+  // Deterministic pattern detectors (src/utils/bidPatterns.js) — same
+  // functions the production engine and the customer-facing AI report use,
+  // read straight off bidResult.patterns rather than recomputed here, so
+  // this demo can never drift out of sync with what actually ships.
+  (bidResult.patterns || []).forEach(p => {
+    if (p.type === "isolated_incident") {
+      flags.push({ level: "info", text: `Isolated negative review — ${p.negativeCount} of ${p.total} reviews, ${Math.round((p.positiveCount / p.total) * 100)}% otherwise positive` });
+    } else if (p.type === "split_opinion") {
+      flags.push({ level: "warn", text: `Split opinion — ${p.positivePct}% strongly positive vs. ${p.negativePct}% strongly negative, little middle ground` });
+    } else if (p.type === "declining_trend") {
+      flags.push({ level: "warn", text: `Recent reviews (avg ${p.recentAvg}★) trending below older reviews (avg ${p.olderAvg}★) — declining pattern` });
+    } else if (p.type === "improving_trend") {
+      flags.push({ level: "good", text: `Recent reviews (avg ${p.recentAvg}★) trending above older reviews (avg ${p.olderAvg}★) — improving pattern` });
     }
-  }
+  });
 
   if (flags.length === 0) flags.push({ level: "good", text: "No significant red flags — consistent positive feedback across reviewers" });
   return flags;
@@ -639,9 +642,14 @@ function ScenarioCard({ scenario, expanded, onToggle, mode }) {
             <p style={{ margin: "0 0 8px" }}>
               <strong>Tag modifier</strong> then nudges that base score: each "good"-severity tag adds +0.3, "warn" subtracts 0.2, "bad" subtracts 0.5, <strong>averaged across all reviews</strong> (not summed) so review count alone can't inflate how much tags move the score — then scaled ×0.1 before being added. This scenario's average tag modifier: <strong>{bidResult.tagModifier >= 0 ? "+" : ""}{bidResult.tagModifier.toFixed(2)}</strong> → applied as {(bidResult.tagModifier * 0.1) >= 0 ? "+" : ""}{(bidResult.tagModifier * 0.1).toFixed(2)} to the final score.
             </p>
-            <p style={{ margin: 0 }}>
+            <p style={{ margin: bidResult.patterns?.length ? "0 0 8px" : 0 }}>
               <strong>Final score</strong> = {bidResult.baseScore.toFixed(2)} + {(bidResult.tagModifier * 0.1).toFixed(2)} = <strong>{bidResult.finalScore.toFixed(2)}</strong>, clamped to [0, 5]. Confidence is {bidResult.confidence} because there {bidResult.reviewCount === 1 ? "is" : "are"} {bidResult.reviewCount} review{bidResult.reviewCount !== 1 ? "s" : ""} on file (5+ = high, 3-4 = medium, 1-2 = low).
             </p>
+            {bidResult.patterns?.length > 0 && (
+              <p style={{ margin: 0 }}>
+                <strong>Detected patterns</strong> (deterministic, run separately from the score above — src/utils/bidPatterns.js): {bidResult.patterns.map(p => p.type).join(", ")}. These don't change the score itself — they annotate *why* it looks the way it does, and get passed to the real AI report so it can name the pattern explicitly instead of guessing.
+              </p>
+            )}
           </div>
 
           {/* E. Red flags */}

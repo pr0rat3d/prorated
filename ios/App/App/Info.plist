@@ -49,5 +49,7 @@
 	<true/>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSFaceIDUsageDescription</key>
+	<string>ProRated uses Face ID to let you sign in quickly without typing your password.</string>
 </dict>
 </plist>

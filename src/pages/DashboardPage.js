@@ -5,6 +5,8 @@ import { getTagsForTrade } from "../data/tradeTags";
 import { Badge, Stars, Pill, Btn, Card } from "../components/UI";
 import PasswordInput from "../components/PasswordInput";
 import { useAuth } from "../hooks/useAuth";
+import { isNativeApp } from "../utils/platform";
+import { hasSavedBiometricLogin, clearBiometricLogin } from "../utils/biometricAuth";
 
 
 
@@ -29,6 +31,20 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
   const { user, logout, isLoggedIn, refreshUser } = useAuth();
 
   const [planUpdated, setPlanUpdated] = useState(false);
+
+  // Face ID / Touch ID — status + off switch only; enabling happens right
+  // after login (SignupPage.js), where the plaintext password is briefly
+  // available. Nothing to enable from here without asking for it again.
+  const nativeApp = isNativeApp();
+  const [bioSaved, setBioSaved] = useState(false);
+  useEffect(() => {
+    if (!nativeApp) return;
+    hasSavedBiometricLogin().then(setBioSaved);
+  }, []);
+  const handleDisableBiometric = async () => {
+    await clearBiometricLogin();
+    setBioSaved(false);
+  };
 
   // On payment success: refresh immediately then again after 4s for webhook lag
   useEffect(() => {
@@ -1269,6 +1285,22 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
               </Card>
 
 
+
+              {/* Face ID / Touch ID sign-in — status + off switch only */}
+              {nativeApp && bioSaved && (
+                <Card style={{ marginBottom: "0.85rem" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: 2 }}>🔓 Face ID Sign-In</div>
+                      <div style={{ fontSize: 11, color: BRAND.gray }}>Enabled — sign in without typing your password</div>
+                    </div>
+                    <button onClick={handleDisableBiometric}
+                      style={{ background: "#F1F5F9", color: BRAND.gray, border: "none", padding: "7px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", flexShrink: 0, marginLeft: 10 }}>
+                      Turn off
+                    </button>
+                  </div>
+                </Card>
+              )}
 
               {/* Delete Account */}
               <Card style={{ marginBottom: "0.85rem", border: showDeleteAccount ? "1.5px solid #FCA5A5" : undefined }}>

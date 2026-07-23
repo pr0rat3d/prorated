@@ -1,5 +1,5 @@
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../config.js";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TRADES, BRAND, COMPANY_TIERS } from "../data/constants";
 import { Btn, Card } from "../components/UI";
 import Logo from "../components/Logo";
@@ -10,7 +10,8 @@ import { useLang } from "../hooks/useLang";
 import { t } from "../i18n/translations";
 import { validateLicense, getLicensePlaceholder } from "../data/licenseValidation";
 import { getLicenseRequirement } from "../data/constants";
-import { isNativeIOS } from "../utils/platform";
+import { isNativeIOS, isNativeApp } from "../utils/platform";
+import { isBiometricAvailable, hasSavedBiometricLogin, saveBiometricLogin, getBiometricLogin, clearBiometricLogin } from "../utils/biometricAuth";
 import { PARTNERS } from "./PartnerLandingPage";
 
 
@@ -45,6 +46,33 @@ export default function SignupPage({ go, goBack, initialMode }) {
   const [error, setError]       = useState(null);
   const [licenseErr, setLicErr]   = useState(null);
   const [licOverride, setOverride] = useState(false);
+
+  // Face ID / Touch ID — re-lock only, never a password replacement.
+  const nativeApp = isNativeApp();
+  const [bioAvailable, setBioAvailable] = useState(false);
+  const [bioSaved, setBioSaved]         = useState(false);
+  const [showBioEnable, setShowBioEnable] = useState(false);
+  const [pendingBio, setPendingBio]     = useState(null); // { email, password } — held only until enable/skip
+
+  useEffect(() => {
+    if (!nativeApp) return;
+    (async () => {
+      const avail = await isBiometricAvailable();
+      setBioAvailable(avail);
+      if (avail) setBioSaved(await hasSavedBiometricLogin());
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const completeLoginNav = () => {
+    const pendingInvite = localStorage.getItem("pending_invite_token");
+    if (pendingInvite) {
+      window.history.pushState({}, "", `/invite/${pendingInvite}`);
+      go("invite");
+    } else {
+      go("home");
+    }
+  };
   const [form, setForm] = useState(() => {
     let invEmail = "";
     try { invEmail = JSON.parse(localStorage.getItem("pending_invite_context") || "null")?.invitedEmail || ""; } catch {}
@@ -227,17 +255,38 @@ export default function SignupPage({ go, goBack, initialMode }) {
         // Read it back so we get name, plan, status, license etc — not just auth fields
         const session = JSON.parse(localStorage.getItem("prorated_session") || "{}");
         login(session.user || data.user);
-        // Resume pending invite if one exists
-        const pendingInvite = localStorage.getItem("pending_invite_token");
-        if (pendingInvite) {
-          window.history.pushState({}, "", `/invite/${pendingInvite}`);
-          go("invite");
-        } else {
-          go("home");
+        // Offer to enable Face ID rather than navigate straight through —
+        // only once, only where it's actually available and not already set up
+        if (nativeApp && bioAvailable && !bioSaved) {
+          setPendingBio({ email: form.email, password: form.password });
+          setShowBioEnable(true);
+          setLoad(false);
+          return;
         }
+        completeLoginNav();
       }
     } catch (err) { setError(err.message.includes("Invalid") ? "Incorrect email or password." : err.message); }
     finally { setLoad(false); }
+  };
+
+  const handleBiometricLogin = async () => {
+    setLoad(true); setError(null);
+    const creds = await getBiometricLogin();
+    if (!creds) { setLoad(false); return; } // cancelled/failed — silently fall back to the manual form
+    try {
+      const data = await signIn({ email: creds.username, password: creds.password });
+      if (data.user) {
+        const session = JSON.parse(localStorage.getItem("prorated_session") || "{}");
+        login(session.user || data.user);
+        completeLoginNav();
+      }
+    } catch (err) {
+      // Stored password is stale (changed elsewhere) — clear it rather than
+      // keep failing silently every time
+      await clearBiometricLogin();
+      setBioSaved(false);
+      setError("Face ID sign-in failed — the saved password may be out of date. Please sign in below.");
+    } finally { setLoad(false); }
   };
 
   return (
@@ -269,8 +318,30 @@ export default function SignupPage({ go, goBack, initialMode }) {
 
       {error && <div style={{ background: "#FEE2E2", color: "#991B1B", border: "1px solid #FCA5A5", borderRadius: 10, padding: "10px 14px", fontSize: 13, marginBottom: 12 }}>{error}</div>}
 
+      {/* Face ID enable prompt — shown once, right after a successful manual login */}
+      {mode === "login" && showBioEnable && (
+        <Card style={{ animation: "fadeUp 0.2s ease both", textAlign: "center" }}>
+          <div style={{ fontSize: 32, marginBottom: 10 }}>🔓</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: BRAND.dark, marginBottom: 6 }}>Enable Face ID?</div>
+          <p style={{ fontSize: 12.5, color: BRAND.gray, lineHeight: 1.6, marginBottom: 18 }}>
+            Skip typing your password next time — sign in with Face ID or Touch ID instead. You can turn this off anytime in your profile.
+          </p>
+          <Btn fullWidth onClick={async () => {
+            if (pendingBio) await saveBiometricLogin(pendingBio.email, pendingBio.password);
+            setBioSaved(true);
+            setPendingBio(null);
+            setShowBioEnable(false);
+            completeLoginNav();
+          }}>Enable Face ID</Btn>
+          <button onClick={() => { setPendingBio(null); setShowBioEnable(false); completeLoginNav(); }}
+            style={{ background: "none", border: "none", color: BRAND.gray, fontSize: 12, cursor: "pointer", marginTop: 10, fontFamily: "'DM Sans', sans-serif" }}>
+            Not now
+          </button>
+        </Card>
+      )}
+
       {/* Login */}
-      {mode === "login" && !resetMode && (
+      {mode === "login" && !resetMode && !showBioEnable && (
         <Card style={{ animation: "fadeUp 0.2s ease both" }}>
           {sessionKilled && (
             <div style={{ background: "#FFFBEB", border: "1px solid #FCD34D", borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 12, color: "#92400E" }}>
@@ -279,6 +350,14 @@ export default function SignupPage({ go, goBack, initialMode }) {
             </div>
           )}
           <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: "1rem" }}>Sign in</div>
+          {nativeApp && bioAvailable && bioSaved && (
+            <>
+              <Btn fullWidth onClick={handleBiometricLogin} disabled={loading}>
+                🔓 {loading ? aSigningIn : "Sign in with Face ID"}
+              </Btn>
+              <div style={{ textAlign: "center", margin: "14px 0", fontSize: 11, color: BRAND.gray }}>or sign in with your password</div>
+            </>
+          )}
           <input type="email" placeholder="Email address" value={form.email} onChange={upd("email")} autoComplete="username" style={inp} />
           <PasswordInput placeholder="Password" autoComplete="current-password" value={form.password} onChange={upd("password")} style={{ ...inp, marginBottom: 0 }} />
           <div style={{ marginTop: "1rem" }}>

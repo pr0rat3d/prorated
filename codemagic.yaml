@@ -121,7 +121,7 @@ workflows:
         script: |
           cd android
           chmod +x gradlew
-          ./gradlew bundleRelease
+          ./gradlew bundleRelease assembleRelease
 
     artifacts:
       - android/app/build/outputs/bundle/release/*.aab

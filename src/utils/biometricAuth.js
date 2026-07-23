@@ -8,7 +8,7 @@
 // unlock is run through the normal signIn() flow, so every
 // "biometric login" is a completely real, fresh login.
 // ─────────────────────────────────────────────────────────────
-import { NativeBiometric, AccessControl } from "@capgo/capacitor-native-biometric";
+import { NativeBiometric, AccessControl, BiometryType } from "@capgo/capacitor-native-biometric";
 import { isNativeApp } from "./platform";
 
 const SERVER = "prorated.app";
@@ -20,6 +20,28 @@ export const isBiometricAvailable = async () => {
     return !!result?.isAvailable;
   } catch {
     return false;
+  }
+};
+
+const BIOMETRY_LABELS = {
+  [BiometryType.FACE_ID]: "Face ID",
+  [BiometryType.TOUCH_ID]: "Touch ID",
+  [BiometryType.FINGERPRINT]: "fingerprint unlock",
+  [BiometryType.FACE_AUTHENTICATION]: "face unlock",
+  [BiometryType.IRIS_AUTHENTICATION]: "iris scan",
+};
+
+// Copy should never hardcode "Face ID" — older iPhones/iPads (home button)
+// report Touch ID, and Android reports fingerprint/face unlock. Falls back
+// to a device-agnostic phrase whenever the specific type isn't a single
+// known biometric (MULTIPLE, DEVICE_CREDENTIAL, or a lookup miss).
+export const getBiometryLabel = async () => {
+  if (!isNativeApp()) return "Face ID or Touch ID";
+  try {
+    const result = await NativeBiometric.isAvailable();
+    return BIOMETRY_LABELS[result?.biometryType] || "Face ID or Touch ID";
+  } catch {
+    return "Face ID or Touch ID";
   }
 };
 

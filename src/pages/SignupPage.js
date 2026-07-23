@@ -11,7 +11,7 @@ import { t } from "../i18n/translations";
 import { validateLicense, getLicensePlaceholder } from "../data/licenseValidation";
 import { getLicenseRequirement } from "../data/constants";
 import { isNativeIOS, isNativeApp } from "../utils/platform";
-import { isBiometricAvailable, hasSavedBiometricLogin, saveBiometricLogin, getBiometricLogin, clearBiometricLogin } from "../utils/biometricAuth";
+import { isBiometricAvailable, hasSavedBiometricLogin, saveBiometricLogin, getBiometricLogin, clearBiometricLogin, getBiometryLabel } from "../utils/biometricAuth";
 import { PARTNERS } from "./PartnerLandingPage";
 
 
@@ -51,6 +51,7 @@ export default function SignupPage({ go, goBack, initialMode }) {
   const nativeApp = isNativeApp();
   const [bioAvailable, setBioAvailable] = useState(false);
   const [bioSaved, setBioSaved]         = useState(false);
+  const [bioLabel, setBioLabel]         = useState("Face ID or Touch ID");
   const [showBioEnable, setShowBioEnable] = useState(false);
   const [pendingBio, setPendingBio]     = useState(null); // { email, password } — held only until enable/skip
 
@@ -59,7 +60,10 @@ export default function SignupPage({ go, goBack, initialMode }) {
     (async () => {
       const avail = await isBiometricAvailable();
       setBioAvailable(avail);
-      if (avail) setBioSaved(await hasSavedBiometricLogin());
+      if (avail) {
+        setBioSaved(await hasSavedBiometricLogin());
+        setBioLabel(await getBiometryLabel());
+      }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -285,7 +289,7 @@ export default function SignupPage({ go, goBack, initialMode }) {
       // keep failing silently every time
       await clearBiometricLogin();
       setBioSaved(false);
-      setError("Face ID sign-in failed — the saved password may be out of date. Please sign in below.");
+      setError(`${bioLabel} sign-in failed — the saved password may be out of date. Please sign in below.`);
     } finally { setLoad(false); }
   };
 
@@ -322,9 +326,9 @@ export default function SignupPage({ go, goBack, initialMode }) {
       {mode === "login" && showBioEnable && (
         <Card style={{ animation: "fadeUp 0.2s ease both", textAlign: "center" }}>
           <div style={{ fontSize: 32, marginBottom: 10 }}>🔓</div>
-          <div style={{ fontSize: 15, fontWeight: 800, color: BRAND.dark, marginBottom: 6 }}>Enable Face ID?</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: BRAND.dark, marginBottom: 6 }}>Enable {bioLabel}?</div>
           <p style={{ fontSize: 12.5, color: BRAND.gray, lineHeight: 1.6, marginBottom: 18 }}>
-            Skip typing your password next time — sign in with Face ID or Touch ID instead. You can turn this off anytime in your profile.
+            Skip typing your password next time — sign in with {bioLabel} instead. You can turn this off anytime in your profile.
           </p>
           <Btn fullWidth onClick={async () => {
             if (pendingBio) await saveBiometricLogin(pendingBio.email, pendingBio.password);
@@ -332,7 +336,7 @@ export default function SignupPage({ go, goBack, initialMode }) {
             setPendingBio(null);
             setShowBioEnable(false);
             completeLoginNav();
-          }}>Enable Face ID</Btn>
+          }}>Enable {bioLabel}</Btn>
           <button onClick={() => { setPendingBio(null); setShowBioEnable(false); completeLoginNav(); }}
             style={{ background: "none", border: "none", color: BRAND.gray, fontSize: 12, cursor: "pointer", marginTop: 10, fontFamily: "'DM Sans', sans-serif" }}>
             Not now
@@ -353,7 +357,7 @@ export default function SignupPage({ go, goBack, initialMode }) {
           {nativeApp && bioAvailable && bioSaved && (
             <>
               <Btn fullWidth onClick={handleBiometricLogin} disabled={loading}>
-                🔓 {loading ? aSigningIn : "Sign in with Face ID"}
+                🔓 {loading ? aSigningIn : `Sign in with ${bioLabel}`}
               </Btn>
               <div style={{ textAlign: "center", margin: "14px 0", fontSize: 11, color: BRAND.gray }}>or sign in with your password</div>
             </>

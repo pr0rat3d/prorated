@@ -6,7 +6,7 @@ import { Badge, Stars, Pill, Btn, Card } from "../components/UI";
 import PasswordInput from "../components/PasswordInput";
 import { useAuth } from "../hooks/useAuth";
 import { isNativeApp } from "../utils/platform";
-import { hasSavedBiometricLogin, clearBiometricLogin } from "../utils/biometricAuth";
+import { hasSavedBiometricLogin, clearBiometricLogin, getBiometryLabel } from "../utils/biometricAuth";
 
 
 
@@ -37,9 +37,11 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
   // available. Nothing to enable from here without asking for it again.
   const nativeApp = isNativeApp();
   const [bioSaved, setBioSaved] = useState(false);
+  const [bioLabel, setBioLabel] = useState("Face ID or Touch ID");
   useEffect(() => {
     if (!nativeApp) return;
     hasSavedBiometricLogin().then(setBioSaved);
+    getBiometryLabel().then(setBioLabel);
   }, []);
   const handleDisableBiometric = async () => {
     await clearBiometricLogin();
@@ -1291,7 +1293,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                 <Card style={{ marginBottom: "0.85rem" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: 2 }}>🔓 Face ID Sign-In</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: 2 }}>🔓 {bioLabel} Sign-In</div>
                       <div style={{ fontSize: 11, color: BRAND.gray }}>Enabled — sign in without typing your password</div>
                     </div>
                     <button onClick={handleDisableBiometric}

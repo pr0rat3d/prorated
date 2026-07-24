@@ -10,8 +10,9 @@ import { useLang } from "../hooks/useLang";
 import { t } from "../i18n/translations";
 import { validateLicense, getLicensePlaceholder } from "../data/licenseValidation";
 import { getLicenseRequirement } from "../data/constants";
-import { isNativeIOS, isNativeApp } from "../utils/platform";
+import { isNativeApp } from "../utils/platform";
 import { isBiometricAvailable, hasSavedBiometricLogin, saveBiometricLogin, getBiometricLogin, clearBiometricLogin, getBiometryLabel } from "../utils/biometricAuth";
+import { isNativeIAPReady } from "../lib/revenuecat";
 import { PARTNERS } from "./PartnerLandingPage";
 
 
@@ -155,10 +156,12 @@ export default function SignupPage({ go, goBack, initialMode }) {
         }
       }
 
-      // On iOS, don't grant a paid plan at signup — Apple requires the actual
-      // purchase confirmation (via RevenueCat, post-NDA below) to gate it, not
-      // account creation. Web keeps its existing pre-grant → Stripe-checkout flow.
-      const signupPlan = isNativeIOS() ? "free" : (selectedTier || "free");
+      // On a native-IAP platform (iOS today; Android once RevenueCat/Play
+      // Console is configured — see isNativeIAPReady()), don't grant a paid
+      // plan at signup — the store requires the actual purchase confirmation
+      // (via RevenueCat, post-NDA below) to gate it, not account creation.
+      // Web (and Android until it's IAP-ready) keeps the pre-grant → Stripe-checkout flow.
+      const signupPlan = isNativeIAPReady() ? "free" : (selectedTier || "free");
 
       const data = await signUp({
         email:        form.email,
@@ -217,8 +220,8 @@ export default function SignupPage({ go, goBack, initialMode }) {
             token: pendingInvite,
           }));
           localStorage.removeItem("pending_invite_context");
-        } else if (isNativeIOS() && selectedTier && selectedTier !== "platinum") {
-          // Hand off to PricingPage, which opens the UpgradeModal (real Apple
+        } else if (isNativeIAPReady() && selectedTier && selectedTier !== "platinum") {
+          // Hand off to PricingPage, which opens the UpgradeModal (real native
           // IAP purchase) for this tier on mount — see pending_iap_tier handoff.
           localStorage.setItem("pending_iap_tier", selectedTier);
           localStorage.setItem("post_nda_destination", JSON.stringify({

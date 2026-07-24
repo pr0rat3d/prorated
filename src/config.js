@@ -21,3 +21,10 @@ export const GOOGLE_MAPS_KEY  = import.meta.env.VITE_GOOGLE_MAPS_KEY  || "AIzaSy
 // SUPABASE_ANON_KEY/GOOGLE_MAPS_KEY, so Codemagic builds (which don't reliably pass
 // VITE_* env vars) don't silently ship an empty key and break IAP configure().
 export const REVENUECAT_IOS_KEY = import.meta.env.VITE_REVENUECAT_IOS_KEY || "appl_AtTgtpoEMHQliHOdkbemBVheIOQ";
+// RevenueCat public Android SDK key — intentionally has NO hardcoded fallback.
+// Unlike the keys above, this one doesn't exist yet: no Google Play app/products
+// have been set up in the RevenueCat dashboard. revenuecat.js treats an empty
+// key as "Android IAP isn't ready" and the app keeps using the existing Stripe
+// path on Android until VITE_REVENUECAT_ANDROID_KEY is actually set — don't
+// invent a placeholder value here, an empty string is the correct default.
+export const REVENUECAT_ANDROID_KEY = import.meta.env.VITE_REVENUECAT_ANDROID_KEY || "";

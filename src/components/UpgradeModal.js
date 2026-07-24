@@ -1,19 +1,23 @@
 // src/components/UpgradeModal.js
-// iOS-only purchase modal — required so paid tiers are actually purchasable
-// in-app (Apple Guideline 3.1.1). "Purchase via Apple" is the one actionable
-// button; the prorated.app-in-Safari management note is informational only
-// (not a link — no External Purchase Link Entitlement needed) and lives as a
-// small footnote below rather than beside the button, where it read as a
-// second competing purchase option.
+// Native purchase modal — required so paid tiers are actually purchasable
+// in-app on a store that mandates it (Apple Guideline 3.1.1 on iOS; Google
+// Play's equivalent payments policy on Android, once RevenueCat/Play Console
+// is configured — see isNativeIAPReady() in lib/revenuecat.js). The
+// "Purchase via ___" button is the one actionable control; the
+// prorated.app-management note is informational only (not a link — no
+// External Purchase Link Entitlement needed) and lives as a small footnote
+// below rather than beside the button, where it read as a second competing
+// purchase option.
 //
 // Apple Guideline 3.1.2(c) also requires, shown in-app at the point of
 // purchase: subscription title, length, price, and functional links to the
 // Privacy Policy and Terms of Use — all rendered below, pulled live from the
-// RevenueCat/StoreKit product where possible so the price always matches what
-// the user is actually charged.
+// RevenueCat/StoreKit(or Play Billing) product where possible so the price
+// always matches what the user is actually charged.
 import { useState, useEffect } from "react";
 import { BRAND } from "./UI";
 import { purchaseTier, getOfferings } from "../lib/revenuecat";
+import { isNativeIOS, isNativeAndroid } from "../utils/platform";
 import { useAuth } from "../hooks/useAuth";
 
 function formatSubscriptionLength(isoPeriod) {
@@ -39,7 +43,11 @@ export default function UpgradeModal({ tier, isOpen, onClose, go, onPurchaseSucc
   const { refreshUser } = useAuth();
   const [status, setStatus]     = useState("idle"); // idle | loading | success | error
   const [errorMsg, setErrorMsg] = useState("");
-  const [product, setProduct]   = useState(null); // live StoreKit product info
+  const [product, setProduct]   = useState(null); // live StoreKit/Play Billing product info
+
+  const storeName = isNativeIOS() ? "Apple" : isNativeAndroid() ? "Google Play" : "the store";
+  const accountSettingsLabel = isNativeIOS() ? "Apple ID subscription settings" : "Google Play subscription settings";
+  const webManageLabel = isNativeIOS() ? "prorated.app in Safari" : "prorated.app in your browser";
 
   useEffect(() => {
     if (!isOpen) return;
@@ -146,7 +154,7 @@ export default function UpgradeModal({ tier, isOpen, onClose, go, onPurchaseSucc
             fontFamily: "'DM Sans', sans-serif",
             marginBottom: 10,
           }}>
-          {status === "loading" ? "Purchasing..." : "Purchase via Apple"}
+          {status === "loading" ? "Purchasing..." : `Purchase via ${storeName}`}
         </button>
 
         <button onClick={onClose}
@@ -157,7 +165,7 @@ export default function UpgradeModal({ tier, isOpen, onClose, go, onPurchaseSucc
         {/* Informational, not a link/option — moved down here after it kept
             reading as a second purchase path next to the real Apple button. */}
         <p style={{ fontSize: 11, color: BRAND.gray, textAlign: "center", lineHeight: 1.6, marginBottom: 14 }}>
-          You can view or manage this subscription anytime from your Apple ID subscription settings, or at prorated.app in Safari.
+          You can view or manage this subscription anytime from your {accountSettingsLabel}, or at {webManageLabel}.
         </p>
 
         <div style={{ textAlign: "center", fontSize: 11, color: BRAND.gray }}>

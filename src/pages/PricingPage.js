@@ -5,7 +5,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useLang } from "../hooks/useLang";
 import { t } from "../i18n/translations";
 import { FREE_MONTHLY_LOOKUPS } from "../data/constants";
-import { isNativeIOS } from "../utils/platform";
+import { isNativeIAPReady } from "../lib/revenuecat";
 import UpgradeModal from "../components/UpgradeModal";
 
 // ── Stripe live links (replace test_ links before launch) ────
@@ -137,14 +137,14 @@ export default function PricingPage({ go, goBack, onPurchaseSuccess }) {
   const { user, isLoggedIn } = useAuth();
   const currentPlan = user?.plan || "free";
   const { lang }             = useLang();
-  const nativeIOS            = isNativeIOS();
+  const nativeIAP             = isNativeIAPReady();
   const [loading, setLoading]       = useState(null);
   const [upgradeTier, setUpgradeTier] = useState(null);
 
-  // Handoff from Signup/CompanySetupPage on iOS — auto-open the purchase
-  // modal for the tier the user picked before the account/company existed.
+  // Handoff from Signup/CompanySetupPage on a native-IAP platform — auto-open
+  // the purchase modal for the tier the user picked before the account/company existed.
   useEffect(() => {
-    if (!nativeIOS) return;
+    if (!nativeIAP) return;
     const pendingId = localStorage.getItem("pending_iap_tier");
     if (!pendingId) return;
     localStorage.removeItem("pending_iap_tier");
@@ -177,7 +177,7 @@ export default function PricingPage({ go, goBack, onPurchaseSuccess }) {
         <h1 style={{ fontSize: 26, fontWeight: 800, color: "#F8FAFC", margin: "12px 0 6px" }}>Simple team pricing</h1>
         <p style={{ fontSize: 14, color: "#94A3B8", margin: 0 }}>One flat monthly price. No annual lock-in. Cancel anytime.</p>
 
-        {!nativeIOS && (
+        {!nativeIAP && (
           <div style={{ maxWidth: 400, margin: "20px auto 0", background: "rgba(34,197,94,0.12)", border: "1px solid rgba(134,239,172,0.4)", borderRadius: 10, padding: "10px 16px", textAlign: "center" }}>
             <span style={{ fontSize: 12, color: "#86EFAC" }}>🎉 Bronze, Silver &amp; Gold are free for your first 6 months — card collected, no charge until then.</span>
           </div>
@@ -282,7 +282,7 @@ export default function PricingPage({ go, goBack, onPurchaseSuccess }) {
               <div style={{ width: "100%", padding: "11px", background: "#EFF6FF", border: "1.5px solid #BFDBFE", borderRadius: 10, fontSize: 14, fontWeight: 700, color: BRAND.blue, textAlign: "center" }}>
                 ✓ Your current plan
               </div>
-            ) : nativeIOS ? (
+            ) : nativeIAP ? (
               <button
                 onClick={() => setUpgradeTier(tier)}
                 style={{ width: "100%", padding: "11px", background: tier.popular ? BRAND.blue : "#0F172A", color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>

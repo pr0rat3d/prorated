@@ -9,7 +9,7 @@ import { COMPANY_TIERS } from "../data/constants";
 // via the PRORATED2026 Stripe coupon, no user-facing promo entry. Same window
 // as the iOS RevenueCat introductory offer.
 const FREE_2026_COUPON = "PRORATED2026";
-import { isNativeIOS } from "../utils/platform";
+import { isNativeIAPReady } from "../lib/revenuecat";
 
 const STRIPE_LINKS = {
   bronze: "https://buy.stripe.com/4gMfZg9mL8TM9HI9szeQM00",
@@ -131,12 +131,12 @@ export default function CompanySetupPage({ go, goBack }) {
       const company   = companies?.[0];
       if (!company) throw new Error("Failed to create company");
 
-      // On iOS, don't grant the contractor a paid plan until an actual Apple
-      // purchase completes — the company record itself always needs a plan
-      // (companies.plan is constrained to bronze/silver/gold), but the
-      // contractor's own plan — which is what actually gates features — stays
-      // as-is until the RevenueCat webhook confirms a real purchase.
-      const contractorPlan = isNativeIOS() ? (existingPlan || "free") : (selectedTier || existingPlan);
+      // On a native-IAP platform, don't grant the contractor a paid plan until
+      // an actual store purchase completes — the company record itself always
+      // needs a plan (companies.plan is constrained to bronze/silver/gold),
+      // but the contractor's own plan — which is what actually gates features
+      // — stays as-is until the RevenueCat webhook confirms a real purchase.
+      const contractorPlan = isNativeIAPReady() ? (existingPlan || "free") : (selectedTier || existingPlan);
 
       await fetch(`${SUPABASE_URL}/rest/v1/contractors?id=eq.${user.id}`, {
         method: "PATCH",
@@ -160,9 +160,9 @@ export default function CompanySetupPage({ go, goBack }) {
         return;
       }
 
-      if (isNativeIOS() && selectedTier) {
-        // Hand off to PricingPage, which opens the UpgradeModal (real Apple IAP
-        // purchase) for this tier on mount — see the pending_iap_tier handoff.
+      if (isNativeIAPReady() && selectedTier) {
+        // Hand off to PricingPage, which opens the UpgradeModal (real native
+        // IAP purchase) for this tier on mount — see the pending_iap_tier handoff.
         localStorage.setItem("pending_iap_tier", selectedTier);
         go("pricing");
       } else if (STRIPE_LINKS[selectedTier]) {

@@ -12,6 +12,10 @@ import useAddressAutocomplete, { getRecentAddresses, saveRecentAddress } from ".
 //   style        — extra styles for the wrapper
 //   inputStyle   — extra styles for the input element
 //   autoFocus    — whether to focus on mount
+//   locationBias — bias suggestions toward the device's current location.
+//                  Only pass true where "near me" is the likely intent
+//                  (e.g. reviewing a job site you're standing at) — never on
+//                  general research/browsing search. See useAddressAutocomplete.js.
 // ─────────────────────────────────────────────────────────────
 export default function AddressInput({
   value,
@@ -21,13 +25,14 @@ export default function AddressInput({
   style = {},
   inputStyle = {},
   autoFocus = false,
+  locationBias = false,
 }) {
   const inputRef                                           = useRef(null);
   const dropdownRef                                        = useRef(null);
   const [focused, setFocused]                              = useState(false);
   const [activeIndex, setActiveIndex]                      = useState(-1);
   const { suggestions, loading, fetchSuggestions, selectSuggestion, clearSuggestions } =
-    useAddressAutocomplete(inputRef);
+    useAddressAutocomplete(inputRef, { locationBias });
   const [recentAddresses, setRecentAddresses] = useState(() => getRecentAddresses());
   const [showRecent, setShowRecent]           = useState(false);
 

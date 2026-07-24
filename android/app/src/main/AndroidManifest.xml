@@ -32,4 +32,9 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Coarse only — the review-flow address bias only needs a general area,
+         not precise GPS (enableHighAccuracy is off in the app code), and
+         declaring only coarse keeps Android's permission prompt to the
+         simpler "approximate location" dialog instead of the fine/precise one. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 </manifest>

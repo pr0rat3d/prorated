@@ -416,6 +416,7 @@ export default function ReviewPage({ go, goBack, initialAddress, editReviewId })
                 onSelect={val => setForm(f => ({ ...f, address: val }))}
                 placeholder="123 Main St, City, State ZIP"
                 inputStyle={{ fontSize: 13, padding: "8px 0", background: "transparent" }}
+                locationBias
               />
             </div>
           </Card>

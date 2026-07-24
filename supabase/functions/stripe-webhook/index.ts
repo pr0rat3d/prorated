@@ -88,7 +88,7 @@ serve(async (req) => {
         // Find contractor by email
         const { data: contractors } = await supabase
           .from("contractors")
-          .select("id, company_id")
+          .select("id, company_id, plan, plan_source")
           .eq("email", email)
           .limit(1);
 
@@ -99,10 +99,22 @@ serve(async (req) => {
           await supabase.from("contractors").upsert({
             email,
             plan:               plan,
+            plan_source:        "stripe",
             stripe_customer_id: customerId,
             account_type:       "solo",
             status:             "pending",
           }, { onConflict: "email" });
+          break;
+        }
+
+        // Don't silently overwrite an active RevenueCat-sourced plan — see
+        // the matching guard in revenuecat-webhook/index.ts for why. Two
+        // separate billing systems, no awareness of each other; a live
+        // subscription on both sides needs a human to reconcile.
+        if (contractor.plan_source === "revenuecat" && contractor.plan !== "free") {
+          console.warn(
+            `[ProRated Stripe] ⚠️ CONFLICT: contractor ${contractor.id} has an active RevenueCat plan ("${contractor.plan}") — refusing to overwrite with Stripe checkout of "${plan}". Needs manual reconciliation.`
+          );
           break;
         }
 
@@ -111,6 +123,7 @@ serve(async (req) => {
           .from("contractors")
           .update({
             plan:               plan,
+            plan_source:        "stripe",
             stripe_customer_id: customerId,
           })
           .eq("id", contractor.id);
@@ -144,16 +157,25 @@ serve(async (req) => {
         // Find contractor by stripe_customer_id
         const { data: contractors } = await supabase
           .from("contractors")
-          .select("id, company_id")
+          .select("id, company_id, plan, plan_source")
           .eq("stripe_customer_id", customerId)
           .limit(1);
 
         const contractor = contractors?.[0];
         if (!contractor) break;
 
+        // Same conflict guard as checkout.session.completed above — don't
+        // clobber an active RevenueCat plan.
+        if (contractor.plan_source === "revenuecat" && contractor.plan !== "free") {
+          console.warn(
+            `[ProRated Stripe] ⚠️ CONFLICT: contractor ${contractor.id} has an active RevenueCat plan ("${contractor.plan}") — refusing to sync Stripe subscription update ("${plan}", ${status}). Needs manual reconciliation.`
+          );
+          break;
+        }
+
         await supabase
           .from("contractors")
-          .update({ plan: status === "active" ? plan : "free" })
+          .update({ plan: status === "active" ? plan : "free", plan_source: "stripe" })
           .eq("id", contractor.id);
 
         if (contractor.company_id) {
@@ -178,12 +200,24 @@ serve(async (req) => {
 
         const { data: contractors } = await supabase
           .from("contractors")
-          .select("id, company_id")
+          .select("id, company_id, plan_source")
           .eq("stripe_customer_id", customerId)
           .limit(1);
 
         const contractor = contractors?.[0];
         if (!contractor) break;
+
+        // Only downgrade if Stripe is still this contractor's plan source —
+        // don't let a cancelled/abandoned Stripe subscription (e.g. an old
+        // trial nobody ever touched again) clobber an active RevenueCat
+        // subscription on the same account. Mirrors the equivalent guard on
+        // RevenueCat's EXPIRATION handler in revenuecat-webhook/index.ts.
+        if (contractor.plan_source !== "stripe") {
+          console.warn(
+            `[ProRated Stripe] Skipping downgrade for contractor ${contractor.id} — plan_source is "${contractor.plan_source}", not stripe. Stripe subscription cancelled but isn't this account's active plan source.`
+          );
+          break;
+        }
 
         await supabase
           .from("contractors")

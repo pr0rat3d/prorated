@@ -76,6 +76,27 @@ serve(async (req) => {
     if (ACTIVATING_EVENTS.has(event.type)) {
       const plan = PRODUCT_TO_PLAN[event.product_id] || "bronze";
 
+      // Don't silently overwrite an active Stripe-sourced plan — Stripe and
+      // RevenueCat are two separate billing systems with no awareness of each
+      // other, so this means the contractor has two live subscriptions at
+      // once. That's a real conflict needing a human to reconcile, not an
+      // automatic "whichever webhook fired last wins" (which is exactly what
+      // silently clobbered a real account's plan before this check existed).
+      const { data: current } = await supabase
+        .from("contractors")
+        .select("plan, plan_source")
+        .eq("id", contractor.id)
+        .single();
+
+      if (current?.plan_source === "stripe" && current.plan !== "free") {
+        console.warn(
+          `[ProRated RevenueCat] ⚠️ CONFLICT: contractor ${contractor.id} has an active Stripe plan ("${current.plan}") — refusing to overwrite with RevenueCat purchase of "${plan}". Needs manual reconciliation.`
+        );
+        return new Response(JSON.stringify({ received: true, conflict: true }), {
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
       await supabase
         .from("contractors")
         .update({ plan, plan_source: "revenuecat" })

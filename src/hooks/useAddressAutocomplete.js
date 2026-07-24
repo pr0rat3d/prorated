@@ -1,5 +1,6 @@
 import { GOOGLE_MAPS_KEY } from "../config.js";
 import { useState, useEffect, useRef, useCallback } from "react";
+import { Geolocation } from "@capacitor/geolocation";
 
 // ─────────────────────────────────────────────────────────────
 // ProRated — Google Places Autocomplete Hook
@@ -54,13 +55,20 @@ export const saveRecentAddress = (address) => {
   } catch {}
 };
 
-export default function useAddressAutocomplete(inputRef) {
+// locationBias: only pass true for a search field where "near me" is
+// actually the likely intent (e.g. ReviewPage's job-site address field —
+// someone reviewing a job is probably standing at or near it right now).
+// Never enable it on general research/browsing search (HomePage) — biasing
+// results toward the user's current position there would work against
+// someone researching a property they aren't physically at.
+export default function useAddressAutocomplete(inputRef, { locationBias = false } = {}) {
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading]         = useState(false);
   const [error, setError]             = useState(null);
   const [apiReady, setApiReady]       = useState(false);
   const serviceRef                    = useRef(null);
   const sessionTokenRef               = useRef(null);
+  const biasLocationRef               = useRef(null);
 
   // Load Google Maps on mount
   useEffect(() => {
@@ -77,6 +85,22 @@ export default function useAddressAutocomplete(inputRef) {
       .catch(() => setError("load-failed"));
   }, []);
 
+  // Best-effort location bias — never blocks or errors the search UI.
+  // enableHighAccuracy is deliberately off: this only needs a general area to
+  // bias toward, not a precise GPS fix, and coarse/network location returns
+  // much faster (and doesn't force an Android ACCESS_FINE_LOCATION prompt
+  // when the user has only granted approximate location).
+  useEffect(() => {
+    if (!locationBias) return;
+    let cancelled = false;
+    Geolocation.getCurrentPosition({ enableHighAccuracy: false, timeout: 6000 })
+      .then(pos => {
+        if (!cancelled) biasLocationRef.current = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      })
+      .catch(() => {}); // denied, timed out, or unavailable — search still works unbiased
+    return () => { cancelled = true; };
+  }, [locationBias]);
+
   // Fetch suggestions for a query
   const fetchSuggestions = useCallback((query) => {
     if (!apiReady || !serviceRef.current || !query || query.length < 3) {
@@ -86,6 +110,15 @@ export default function useAddressAutocomplete(inputRef) {
 
     setLoading(true);
 
+    // location + radius on the legacy AutocompleteService is a soft bias, not
+    // a hard restriction (unlike locationRestriction on the newer Places API)
+    // — a real match further away still surfaces, it just doesn't get
+    // artificially outranked by a closer, less-relevant one.
+    const bias = biasLocationRef.current;
+    const biasParams = bias
+      ? { location: new window.google.maps.LatLng(bias.lat, bias.lng), radius: 80000 } // ~50mi
+      : {};
+
     // Legacy AutocompleteService
     serviceRef.current.getPlacePredictions(
       {
@@ -93,6 +126,7 @@ export default function useAddressAutocomplete(inputRef) {
         sessionToken:      sessionTokenRef.current,
         componentRestrictions: { country: "us" },
         types:             ["address"], // Street addresses only
+        ...biasParams,
       },
       (predictions, status) => {
         setLoading(false);

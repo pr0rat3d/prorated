@@ -140,6 +140,20 @@ serve(async (req) => {
 
         console.log(`[ProRated RevenueCat] ❌ Expired — downgraded contractor ${contractor.id} to free`);
       }
+    } else if (event.type === "BILLING_ISSUE") {
+      // Grace period — a renewal payment failed but the store is still
+      // retrying and the subscriber keeps access, same as Stripe's
+      // invoice.payment_failed. Don't touch plan/plan_source here, just
+      // surface it for visibility — if it resolves, the next RENEWAL event
+      // already flips company status back to "active" via the branch above;
+      // if it doesn't, EXPIRATION eventually handles the real downgrade.
+      if (contractor.company_id) {
+        await supabase
+          .from("companies")
+          .update({ status: "past_due" })
+          .eq("id", contractor.company_id);
+      }
+      console.log(`[ProRated RevenueCat] ⚠️ Billing issue (grace period) for contractor ${contractor.id}`);
     } else {
       console.log(`[ProRated RevenueCat] Unhandled event: ${event.type}`);
     }

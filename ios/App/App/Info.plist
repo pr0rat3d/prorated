@@ -53,5 +53,7 @@
 	<string>ProRated uses Face ID to let you sign in quickly without typing your password.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>ProRated uses your location to help find the job site address faster when you're leaving a review.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>ProRated uses your location to help find the job site address faster when you're leaving a review.</string>
 </dict>
 </plist>

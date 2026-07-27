@@ -30,7 +30,7 @@ workflows:
 
       - name: Set version number
         script: |
-          agvtool new-marketing-version 1.1
+          agvtool new-marketing-version 1.2
           agvtool new-version -all 39
         working_directory: ios/App
 

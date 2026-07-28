@@ -4,7 +4,7 @@ import { Stars, Btn, Card, BRAND } from "../components/UI";
 import { TRADES, RATING_CATEGORIES, WORK_CATEGORIES } from "../data/constants";
 import { getTagsForTrade } from "../data/tradeTags";
 import { useAuth } from "../hooks/useAuth";
-import { saveReview, updateReview } from "../api/supabase";
+import { saveReview, updateReview, checkRecentDuplicateReview } from "../api/supabase";
 import { notifyAddressWatchers } from "../api/pushService";
 import AddressInput from "../components/AddressInput";
 import { useLang } from "../hooks/useLang";
@@ -56,6 +56,7 @@ export default function ReviewPage({ go, goBack, initialAddress, editReviewId })
   const [showDisclaimer, setShowDisclaimer] = useState(() => isMilestone(getReviewCount()));
   const [milestoneMsg, setMilestoneMsg]     = useState(() => getMilestoneMessage(getReviewCount()));
   const [submitting, setSubmit]             = useState(false);
+  const [retrying, setRetrying]             = useState(false);
   const [done, setDone]                     = useState(false);
 
   const toTitleCase = (str) => str ? str.replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()) : str;
@@ -146,7 +147,7 @@ export default function ReviewPage({ go, goBack, initialAddress, editReviewId })
 
       const nameParts = (user?.name || "").trim().split(/\s+/);
       const initials = (nameParts[0]?.[0] || "C").toUpperCase() + (nameParts[1]?.[0] || nameParts[0]?.[1] || "R").toUpperCase();
-      await saveReview({
+      const reviewPayload = {
         userId:           user?.id,
         address:          cleanAddress,
         property_type:    form.propertyType || null,
@@ -168,7 +169,25 @@ export default function ReviewPage({ go, goBack, initialAddress, editReviewId })
         review_text:      form.text,
         helpful_count:    0,
         would_return:     form.would_return,
-      });
+      };
+
+      try {
+        await saveReview(reviewPayload);
+      } catch (firstErr) {
+        const wasTimeout = firstErr?.message?.includes("timed out") || firstErr?.message?.includes("timeout");
+        if (!wasTimeout) throw firstErr; // any other error (auth, schema, etc.) — no point retrying, surface it immediately
+
+        // The client gave up waiting, but the INSERT may well have already
+        // landed server-side — check before blindly retrying so a slow
+        // connection can't produce a duplicate review.
+        setRetrying(true);
+        const alreadySaved = await checkRecentDuplicateReview(user?.id, cleanAddress);
+        if (!alreadySaved) {
+          await saveReview(reviewPayload); // one retry — if this also throws, let it propagate to the outer catch
+        }
+        setRetrying(false);
+      }
+
       notifyAddressWatchers(cleanAddress, { trade: form.trade, score: form.overall }).catch(() => {});
       try {
         const count = parseInt(localStorage.getItem("pr_review_count") || "0");
@@ -189,6 +208,7 @@ export default function ReviewPage({ go, goBack, initialAddress, editReviewId })
       alert(msg);
     } finally {
       setSubmit(false);
+      setRetrying(false);
     }
   };
 
@@ -743,10 +763,15 @@ export default function ReviewPage({ go, goBack, initialAddress, editReviewId })
             ))}
           </Card>
 
+          {retrying && (
+            <div style={{ textAlign: "center", fontSize: 12, color: BRAND.gray, marginBottom: 10 }}>
+              Still working on it — retrying...
+            </div>
+          )}
           <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
             <Btn variant="secondary" onClick={() => setStep(2)}>← Back</Btn>
             <Btn onClick={handleSubmit} disabled={!ok1 || !ok2 || submitting}>
-              {submitting ? "Saving..." : isEditMode ? "Save changes ✓" : "Submit review ✓"}
+              {retrying ? "Retrying..." : submitting ? "Saving..." : isEditMode ? "Save changes ✓" : "Submit review ✓"}
             </Btn>
           </div>
         </div>

@@ -152,7 +152,7 @@ export const saveReview = async (formData) => {
 
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
+    const timeout = setTimeout(() => controller.abort(), 15000); // 15s — the actual insert (incl. all 3 triggers) confirmed to complete in well under 1s server-side; this only needs to cover slow transit, not slow processing
     const res = await fetch(`${SUPABASE_URL}/rest/v1/reviews`, {
       method: "POST",
       signal: controller.signal,
@@ -198,6 +198,26 @@ export const saveReview = async (formData) => {
       : err.message;
     console.error("[ProRated] saveReview failed:", msg);
     throw new Error(msg);
+  }
+};
+
+// ── Check for a review that already landed despite a client-side
+// timeout — a slow/aborted fetch doesn't necessarily mean the server
+// never received or finished the INSERT. Used to decide whether a
+// timeout retry is safe, so a slow connection can't produce a
+// duplicate review. 30s window comfortably covers "abort fired, but
+// the original request was still in flight."
+export const checkRecentDuplicateReview = async (userId, address) => {
+  if (!userId || !address) return false;
+  try {
+    const since = new Date(Date.now() - 30000).toISOString();
+    const rows = await sb(
+      `/reviews?user_id=eq.${userId}&address=eq.${encodeURIComponent(normalizeAddress(address))}&created_at=gte.${since}&select=id&limit=1`,
+      { method: "GET" }
+    );
+    return Array.isArray(rows) && rows.length > 0;
+  } catch {
+    return false; // fails open to "no duplicate found" — worst case is one retry, not a blocked submission
   }
 };
 

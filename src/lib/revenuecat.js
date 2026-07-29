@@ -84,7 +84,13 @@ export async function purchaseTier(productId) {
   if (!activeKey()) return { success: false, cancelled: false, error: "In-app purchase isn't available on this platform yet" };
   try {
     const packages = await getOfferings();
-    const pkg = packages.find(p => p.product?.identifier === productId);
+    // Android's Google Play base-plan subscriptions often come back from
+    // RevenueCat as "productId:basePlanId" rather than the bare productId
+    // iOS uses — match either form so a shared cross-platform ID list works.
+    const pkg = packages.find(p =>
+      p.product?.identifier === productId ||
+      p.product?.identifier?.startsWith(`${productId}:`)
+    );
     if (!pkg) {
       const foundIds = packages.map(p => p.product?.identifier).filter(Boolean);
       console.warn(

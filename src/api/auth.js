@@ -64,7 +64,7 @@ export const clearSession = () => {
 };
 
 // ── Sign up a new contractor ──────────────────────────────────
-export const signUp = async ({ email, password, name, company_name = null, trade, state, license, accountType = "solo", plan = "free", promoCode = null, status = "pending", proSource = null }) => {
+export const signUp = async ({ email, password, name, company_name = null, trade, state, license, phone = null, accountType = "solo", plan = "free", promoCode = null, status = "pending", proSource = null }) => {
   const data = await authFetch("/signup", {
     method: "POST",
     body: JSON.stringify({
@@ -79,7 +79,7 @@ export const signUp = async ({ email, password, name, company_name = null, trade
       access_token:  data.access_token,
       refresh_token: data.refresh_token,
       expires_at:    data.expires_at,
-      user: { ...data.user, name, company_name, trade, state, license, account_type: accountType, plan },
+      user: { ...data.user, name, company_name, trade, state, license, phone, account_type: accountType, plan },
     });
 
     await saveContractorProfile({
@@ -90,6 +90,7 @@ export const signUp = async ({ email, password, name, company_name = null, trade
       trade,
       state,
       license,
+      phone,
       plan,
       account_type: accountType,
       promo_code:   promoCode,
@@ -239,6 +240,7 @@ export const saveContractorProfile = async (profile, token) => {
       trade:        profile.trade || "",
       state:        profile.state || "",
       license:      profile.license || "",
+      phone:        profile.phone || null,
       plan:         profile.plan || "free",
       account_type: profile.account_type || "solo",
       promo_code:   profile.promo_code || null,

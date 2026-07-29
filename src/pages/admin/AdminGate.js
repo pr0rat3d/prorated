@@ -10,6 +10,7 @@ export default function AdminGate({ go }) {
     try { return !!sessionStorage.getItem("pr_admin_auth"); } catch { return false; }
   });
   const [pw, setPw]       = useState("");
+  const [adminName, setAdminName] = useState("Canaan");
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -23,7 +24,10 @@ export default function AdminGate({ go }) {
       });
       const data = await res.json();
       if (data.ok) {
-        try { sessionStorage.setItem("pr_admin_auth", data.token); } catch {}
+        try {
+          sessionStorage.setItem("pr_admin_auth", data.token);
+          sessionStorage.setItem("pr_admin_name", adminName);
+        } catch {}
         setAuthed(true);
       } else {
         setError(true);
@@ -46,6 +50,13 @@ export default function AdminGate({ go }) {
         </div>
         <h2 style={{ fontSize: 18, fontWeight: 800, color: "#F8FAFC", marginBottom: 4, marginTop: 0 }}>Admin Console</h2>
         <p style={{ fontSize: 12, color: "#64748B", marginBottom: 20 }}>Internal access only</p>
+        <select
+          value={adminName}
+          onChange={e => setAdminName(e.target.value)}
+          style={{ width: "100%", padding: "12px", border: "1.5px solid #334155", borderRadius: 10, fontSize: 14, outline: "none", fontFamily: "'DM Sans', sans-serif", boxSizing: "border-box", marginBottom: 8, background: "#0F172A", color: "#F8FAFC" }}>
+          <option value="Canaan">Canaan</option>
+          <option value="Tommy">Tommy</option>
+        </select>
         <PasswordInput
           value={pw}
           onChange={e => setPw(e.target.value)}

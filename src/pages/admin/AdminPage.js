@@ -78,7 +78,7 @@ function UserRow({ user: u, onApprove, onReject, onCompleteDelete, onAdminDelete
   const [rejecting, setRejecting] = useState(false);
   const [notes, setNotes] = useState(u.admin_notes || "");
   const [notesSaved, setNotesSaved] = useState(false);
-  const licUrl = getLicenseUrl(u.state, u.license_number);
+  const licUrl = getLicenseUrl(u.state, u.license);
 
   const statusColor = u.status === "approved" ? { bg: "#DCFCE7", text: "#166534" }
     : u.status === "rejected"  ? { bg: "#FEE2E2", text: "#991B1B" }
@@ -114,8 +114,8 @@ function UserRow({ user: u, onApprove, onReject, onCompleteDelete, onAdminDelete
           </div>
           {expanded && (
             <div style={{ marginTop: 10, padding: "10px 12px", background: "#F8FAFC", borderRadius: 8, fontSize: 11, color: BRAND.gray, lineHeight: 1.8 }}>
-              <div><strong>License #:</strong> {u.license_number || (u.company_role === "member" ? "No license (team member)" : "—")}
-                {licUrl && u.license_number && <a href={licUrl} target="_blank" rel="noreferrer" style={{ marginLeft: 8, color: BRAND.blue }}>Verify ↗</a>}
+              <div><strong>License #:</strong> {u.license || (u.company_role === "member" ? "No license (team member)" : "—")}
+                {licUrl && u.license && <a href={licUrl} target="_blank" rel="noreferrer" style={{ marginLeft: 8, color: BRAND.blue }}>Verify ↗</a>}
               </div>
               <div><strong>Trade:</strong> {u.trade || "—"}</div>
               <div><strong>Phone:</strong> {u.phone || "—"}</div>
@@ -130,6 +130,8 @@ function UserRow({ user: u, onApprove, onReject, onCompleteDelete, onAdminDelete
               {u.company_id && (
                 <div><strong>Company:</strong> {companies.find(c => c.id === u.company_id)?.name || u.company_id.slice(0, 8)} · <strong>Role:</strong> {u.company_role || "member"}</div>
               )}
+              {u.status === "approved" && <div><strong>Approved by:</strong> {u.reviewed_by || "—"} {u.verified_at ? `on ${new Date(u.verified_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : ""}</div>}
+              {u.status === "rejected" && <div><strong>Rejected by:</strong> {u.reviewed_by || "—"}</div>}
               <div><strong>Promo Code:</strong> {u.promo_code || "—"}</div>
               <div><strong>Trust Score:</strong> {u.trust_score ?? "—"}</div>
               <div><strong>User ID:</strong> <span style={{ fontFamily: "monospace" }}>{u.id}</span></div>
@@ -516,7 +518,13 @@ export default function AdminPage({ go }) {
     // through here.
     const contractor = contractors.find(c => c.id === id);
     const verificationTier = contractor?.license ? "license_verified" : "self_attested";
-    const result = await patch("contractors", id, { status: "approved", verification_tier: verificationTier });
+    const reviewer = sessionStorage.getItem("pr_admin_name") || "admin";
+    const result = await patch("contractors", id, {
+      status: "approved",
+      verification_tier: verificationTier,
+      reviewed_by: reviewer,
+      verified_at: new Date().toISOString(),
+    });
     const savedStatus = Array.isArray(result) ? result[0]?.status : null;
     if (savedStatus !== "approved") {
       flash(false, `Approval failed — DB returned status="${savedStatus ?? "empty"}". Check SUPABASE_SERVICE_KEY in Vercel env vars, or look for a trigger resetting status in Supabase Dashboard → Database → Triggers.`);
@@ -531,7 +539,8 @@ export default function AdminPage({ go }) {
   };
 
   const rejectContractor = async (id, reason) => {
-    await patch("contractors", id, { status: "rejected", rejected_at: new Date().toISOString(), rejection_reason: reason || "Unable to verify license", reviewed_by: "admin" });
+    const reviewer = sessionStorage.getItem("pr_admin_name") || "admin";
+    await patch("contractors", id, { status: "rejected", rejected_at: new Date().toISOString(), rejection_reason: reason || "Unable to verify license", reviewed_by: reviewer });
     setContractors(cs => cs.map(c => c.id === id ? { ...c, status: "rejected" } : c));
     fetch(`${SUPABASE_URL}/functions/v1/send-approval-email`, {
       method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },

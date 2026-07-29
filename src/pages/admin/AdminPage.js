@@ -794,7 +794,7 @@ export default function AdminPage({ go }) {
     : userFilter === "silver"     ? contractors.filter(c => c.plan === "silver")
     : userFilter === "gold"       ? contractors.filter(c => c.plan === "gold")
     : userFilter === "platinum"   ? contractors.filter(c => c.plan === "platinum")
-    : userFilter === "no_license" ? contractors.filter(c => !c.license_number && !c.company_id && !c.deleted)
+    : userFilter === "no_license" ? contractors.filter(c => !c.license && !c.company_id && !c.deleted)
     : contractors.filter(c => !c.deleted);
 
   const filteredReviews = reviewFilter === "all"     ? reviews

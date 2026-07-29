@@ -79,6 +79,14 @@ export default function ReviewPage({ go, goBack, initialAddress, editReviewId })
     }).finally(() => setMilestoneChecked(true));
   }, [isEditMode, user?.id]);
 
+  const toTitleCase = (str) => str ? str.replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()) : str;
+
+  const [form, setForm] = useState({
+    address: initialAddress ? toTitleCase(initialAddress) : "", trade: user?.trade || "", propertyType: "", overall: 0,
+    ratings: { access: 0, payment: 0, timeline: 0, communication: 0, obstacles: 0 },
+    tags: [], text: "", workCategory: "", workItems: [], would_return: null,
+  });
+
   // Work category/items are trade-specific defaults, not a hard restriction
   // — but they should follow the trade selector when it changes rather than
   // staying stuck on whatever was auto-picked for the previous trade. Edit
@@ -90,14 +98,6 @@ export default function ReviewPage({ go, goBack, initialAddress, editReviewId })
     if (defaultCat) setForm(f => ({ ...f, workCategory: defaultCat, workItems: [] }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.trade, isEditMode]);
-
-  const toTitleCase = (str) => str ? str.replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()) : str;
-
-  const [form, setForm] = useState({
-    address: initialAddress ? toTitleCase(initialAddress) : "", trade: user?.trade || "", propertyType: "", overall: 0,
-    ratings: { access: 0, payment: 0, timeline: 0, communication: 0, obstacles: 0 },
-    tags: [], text: "", workCategory: "", workItems: [], would_return: null,
-  });
 
   // If in edit mode, fetch the existing review and pre-fill the form
   useEffect(() => {

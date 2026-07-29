@@ -5,7 +5,10 @@ import Logo from "../../components/Logo";
 import { dbGet, adminPost, adminPatch, adminDelete } from "../../api/db";
 
 const STATE_LICENSE_URLS = {
-  AL: "https://genlic.alabama.gov/contractor/public/index.cfm?action=search&licenseNumber={license}",
+  // No query-param deep link support anymore — genlic.alabama.gov is dead,
+  // this replacement is a client-side filterable table (paste the license
+  // number into its own search box once it opens).
+  AL: "https://licensesearch.alabama.gov/genconbd",
   FL: "https://www.myfloridalicense.com/LicenseDetail.asp?SID=&id={license}",
   GA: "https://verify.sos.ga.gov/verification/Search.aspx?facility={license}",
   TN: "https://verify.tn.gov/contractor?license={license}",

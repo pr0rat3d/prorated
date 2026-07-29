@@ -266,33 +266,14 @@ export const fetchMyReviews = async (userId) => {
   } catch { return []; }
 };
 
-// ── Increment helpful count (deduped via helpful_votes) ───────
+// ── Increment helpful count (deduped + counted server-side via the
+// mark_review_helpful RPC — voting requires no direct UPDATE access
+// to reviews, so a voter can never touch anything but the count) ──
 export const incrementHelpful = async (reviewId) => {
-  let userId = null;
   try {
-    const session = JSON.parse(localStorage.getItem("prorated_session") || "{}");
-    userId = session.user?.id;
-  } catch {}
-  if (!userId) return;
-
-  // Insert vote — UNIQUE(review_id, voter_id) rejects double votes
-  try {
-    await sb("/helpful_votes", {
+    await sb("/rpc/mark_review_helpful", {
       method: "POST",
-      prefer: "return=minimal",
-      body: JSON.stringify({ review_id: reviewId, voter_id: userId }),
-    });
-  } catch {
-    return; // Already voted or unauthenticated — do not increment
-  }
-
-  // Vote was new — increment count
-  try {
-    const rows = await sb(`/reviews?id=eq.${reviewId}&select=helpful_count`);
-    if (!rows?.length) return;
-    await sb(`/reviews?id=eq.${reviewId}`, {
-      method: "PATCH",
-      body: JSON.stringify({ helpful_count: (rows[0].helpful_count || 0) + 1 }),
+      body: JSON.stringify({ p_review_id: reviewId }),
     });
   } catch (err) {
     console.warn("[ProRated] Could not update helpful count:", err.message);

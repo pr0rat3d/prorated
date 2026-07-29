@@ -93,11 +93,22 @@ export default function useAddressAutocomplete(inputRef, { locationBias = false 
   useEffect(() => {
     if (!locationBias) return;
     let cancelled = false;
-    Geolocation.getCurrentPosition({ enableHighAccuracy: false, timeout: 6000 })
-      .then(pos => {
+    (async () => {
+      try {
+        // getCurrentPosition() alone doesn't reliably trigger the OS
+        // permission prompt on a fresh install on every platform/plugin
+        // version — check first and explicitly request if undetermined,
+        // so the prompt actually fires instead of silently failing.
+        const status = await Geolocation.checkPermissions();
+        if (status.location === "denied") return; // user said no — nothing to do but skip the bias
+        if (status.location !== "granted") {
+          const requested = await Geolocation.requestPermissions();
+          if (requested.location !== "granted") return;
+        }
+        const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: false, timeout: 6000 });
         if (!cancelled) biasLocationRef.current = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-      })
-      .catch(() => {}); // denied, timed out, or unavailable — search still works unbiased
+      } catch {} // denied, timed out, or unavailable — search still works unbiased
+    })();
     return () => { cancelled = true; };
   }, [locationBias]);
 

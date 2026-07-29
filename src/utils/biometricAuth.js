@@ -12,6 +12,14 @@ import { NativeBiometric, AccessControl, BiometryType } from "@capgo/capacitor-n
 import { isNativeApp } from "./platform";
 
 const SERVER = "prorated.app";
+// Whether biometric login is enabled, mirrored in plain localStorage
+// alongside the actual Keychain/Keystore credential. NativeBiometric's
+// isCredentialsSaved() check against a BIOMETRY_ANY-protected item
+// triggers a real Face ID/Touch ID prompt on this plugin — fine for a
+// one-time login-flow check, but callers that just need this for a
+// settings toggle (checked on every page mount) must read this flag
+// instead, or the OS prompt fires on every visit.
+const ENABLED_FLAG = "pr_biometric_enabled";
 
 export const isBiometricAvailable = async () => {
   if (!isNativeApp()) return false;
@@ -45,11 +53,12 @@ export const getBiometryLabel = async () => {
   }
 };
 
+// UI-only check (settings toggle, "sign in with Face ID" button visibility) —
+// reads the plain flag, never touches the protected credential itself.
 export const hasSavedBiometricLogin = async () => {
   if (!isNativeApp()) return false;
   try {
-    const result = await NativeBiometric.isCredentialsSaved({ server: SERVER });
-    return !!result?.isSaved;
+    return localStorage.getItem(ENABLED_FLAG) === "true";
   } catch {
     return false;
   }
@@ -64,6 +73,7 @@ export const saveBiometricLogin = async (email, password) => {
       server: SERVER,
       accessControl: AccessControl.BIOMETRY_ANY,
     });
+    try { localStorage.setItem(ENABLED_FLAG, "true"); } catch {}
     return true;
   } catch {
     return false;
@@ -97,4 +107,5 @@ export const clearBiometricLogin = async () => {
   try {
     await NativeBiometric.deleteCredentials({ server: SERVER });
   } catch {}
+  try { localStorage.removeItem(ENABLED_FLAG); } catch {}
 };

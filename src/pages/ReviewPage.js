@@ -4,7 +4,7 @@ import { Stars, Btn, Card, BRAND } from "../components/UI";
 import { TRADES, RATING_CATEGORIES, WORK_CATEGORIES } from "../data/constants";
 import { getTagsForTrade } from "../data/tradeTags";
 import { useAuth } from "../hooks/useAuth";
-import { saveReview, updateReview, checkRecentDuplicateReview } from "../api/supabase";
+import { saveReview, updateReview, checkRecentDuplicateReview, fetchMyReviews } from "../api/supabase";
 import { notifyAddressWatchers } from "../api/pushService";
 import AddressInput from "../components/AddressInput";
 import { useLang } from "../hooks/useLang";
@@ -14,11 +14,17 @@ const STEPS = ["Address & trade", "Ratings", "Details"];
 
 const MILESTONES = [0, 24, 49, 99, 249, 499, 999];
 
-const getReviewCount = () => {
-  try { return parseInt(localStorage.getItem("pr_review_count") || "0"); } catch { return 0; }
-};
-
 const isMilestone = (count) => MILESTONES.includes(count);
+
+const TRADE_TO_CATEGORY = {
+  general: "general", roofing: "roofing", painting: "painting",
+  plumbing: "plumbing", hvac: "hvac", electrical: "electrical",
+  flooring: "flooring", windows: "windows", foundation: "foundation",
+  siding: "siding", insulation: "insulation", pest_control: "pest_control",
+  landscaping: "landscaping", concrete: "concrete", garage_door: "garage_door",
+  pool_service: "pool_service", fencing: "fencing",
+  pressure_washing: "pressure_washing",
+};
 
 const getMilestoneMessage = (count) => {
   if (count === 0)   return null;
@@ -53,11 +59,37 @@ export default function ReviewPage({ go, goBack, initialAddress, editReviewId })
     if (tooltipTimer.current) clearTimeout(tooltipTimer.current);
     setTooltip(null);
   }, []);
-  const [showDisclaimer, setShowDisclaimer] = useState(() => isMilestone(getReviewCount()));
-  const [milestoneMsg, setMilestoneMsg]     = useState(() => getMilestoneMessage(getReviewCount()));
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
+  const [milestoneMsg, setMilestoneMsg]     = useState(null);
+  const [milestoneChecked, setMilestoneChecked] = useState(false);
   const [submitting, setSubmit]             = useState(false);
   const [retrying, setRetrying]             = useState(false);
   const [done, setDone]                     = useState(false);
+
+  // Milestone disclaimer is keyed off the account's real, server-side review
+  // count (not a local counter) — a local counter resets on every reinstall/
+  // new device/TestFlight update and would show "first review" copy to
+  // users with a long real review history.
+  useEffect(() => {
+    if (isEditMode || !user?.id) { setMilestoneChecked(true); return; }
+    fetchMyReviews(user.id).then(rows => {
+      const count = rows?.length || 0;
+      setShowDisclaimer(isMilestone(count));
+      setMilestoneMsg(getMilestoneMessage(count));
+    }).finally(() => setMilestoneChecked(true));
+  }, [isEditMode, user?.id]);
+
+  // Work category/items are trade-specific defaults, not a hard restriction
+  // — but they should follow the trade selector when it changes rather than
+  // staying stuck on whatever was auto-picked for the previous trade. Edit
+  // mode loads the review's own real category/items separately and must
+  // never have them clobbered here.
+  useEffect(() => {
+    if (isEditMode) return;
+    const defaultCat = TRADE_TO_CATEGORY[form.trade] || null;
+    if (defaultCat) setForm(f => ({ ...f, workCategory: defaultCat, workItems: [] }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.trade, isEditMode]);
 
   const toTitleCase = (str) => str ? str.replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()) : str;
 
@@ -189,10 +221,6 @@ export default function ReviewPage({ go, goBack, initialAddress, editReviewId })
       }
 
       notifyAddressWatchers(cleanAddress, { trade: form.trade, score: form.overall }).catch(() => {});
-      try {
-        const count = parseInt(localStorage.getItem("pr_review_count") || "0");
-        localStorage.setItem("pr_review_count", String(count + 1));
-      } catch {}
       setDone(true);
     } catch (err) {
       console.error("[ReviewPage] Submit failed:", err?.message);
@@ -212,15 +240,15 @@ export default function ReviewPage({ go, goBack, initialAddress, editReviewId })
     }
   };
 
-  const reset = () => {
+  const reset = async () => {
     setDone(false); setStep(1);
     setForm({ address: "", trade: user?.trade || "", overall: 0, ratings: { access: 0, payment: 0, timeline: 0, communication: 0, obstacles: 0 }, tags: [], text: "", workCategory: "", workItems: [], would_return: null });
     try {
-      const count = getReviewCount();
-      const show = isMilestone(count);
-      setShowDisclaimer(show);
+      const rows = await fetchMyReviews(user?.id);
+      const count = rows?.length || 0;
+      setShowDisclaimer(isMilestone(count));
       setMilestoneMsg(getMilestoneMessage(count));
-    } catch { setShowDisclaimer(true); setMilestoneMsg(null); }
+    } catch { setShowDisclaimer(false); setMilestoneMsg(null); }
   };
 
   const inp = { width: "100%", padding: "10px 12px", border: `1.5px solid ${BRAND.border}`, borderRadius: 10, fontSize: 13, background: "#F8FAFC", color: BRAND.dark, outline: "none", fontFamily: "'DM Sans', sans-serif", boxSizing: "border-box" };
@@ -295,6 +323,10 @@ export default function ReviewPage({ go, goBack, initialAddress, editReviewId })
       </div>
     </div>
   );
+
+  // Wait for the real review-count check before deciding whether to show
+  // the disclaimer, so it doesn't briefly flash the form first
+  if (!milestoneChecked) return null;
 
   // ── Disclaimer — only shown to logged-in approved users ──────
   if (showDisclaimer) return (
@@ -531,26 +563,13 @@ export default function ReviewPage({ go, goBack, initialAddress, editReviewId })
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: "0.75rem" }}>
                 {/* Work category — show trade-matched one first */}
                 {(() => {
-                  const tradeToCategory = {
-                    general: "general", roofing: "roofing", painting: "painting",
-                    plumbing: "plumbing", hvac: "hvac", electrical: "electrical",
-                    flooring: "flooring", windows: "windows", foundation: "foundation",
-                    siding: "siding", insulation: "insulation", pest_control: "pest_control",
-                    landscaping: "landscaping", concrete: "concrete", garage_door: "garage_door",
-                    pool_service: "pool_service", fencing: "fencing",
-                    pressure_washing: "pressure_washing",
-                  };
-                  const defaultCat = tradeToCategory[form.trade] || null;
-                  // Auto-select if not already set
-                  if (defaultCat && !form.workCategory) {
-                    setTimeout(() => setForm(f => f.workCategory ? f : ({ ...f, workCategory: defaultCat })), 0);
-                  }
+                  const defaultCat = TRADE_TO_CATEGORY[form.trade] || null;
                   // Show matching category first, then rest
                   const sorted = defaultCat
                     ? [WORK_CATEGORIES.find(c => c.id === defaultCat), ...WORK_CATEGORIES.filter(c => c.id !== defaultCat)].filter(Boolean)
                     : WORK_CATEGORIES;
                   return sorted.map(cat => (
-                  <button key={cat.id} onClick={() => setForm(f => ({ ...f, workCategory: cat.id, workItem: "" }))}
+                  <button key={cat.id} onClick={() => setForm(f => ({ ...f, workCategory: cat.id, workItems: [] }))}
                     style={{ padding: "5px 10px", borderRadius: 8, border: `1.5px solid ${form.workCategory === cat.id ? BRAND.blue : BRAND.border}`, background: form.workCategory === cat.id ? "#EFF6FF" : "#F8FAFC", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 600, color: form.workCategory === cat.id ? BRAND.blue : BRAND.dark }}>
                     {cat.icon} {cat.label}
                   </button>

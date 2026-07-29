@@ -31,7 +31,7 @@ workflows:
       - name: Set version number
         script: |
           agvtool new-marketing-version 1.2
-          agvtool new-version -all 41
+          agvtool new-version -all 42
         working_directory: ios/App
 
       - name: Set up code signing
@@ -73,20 +73,19 @@ workflows:
             -exportPath build/ios/ipa \
             -exportOptionsPlist /tmp/ExportOptions.plist
 
-      - name: Publish to TestFlight
-        script: |
-          echo "$APP_STORE_CONNECT_PUBLISHER_PRIVATE_KEY" > /tmp/asc_key.p8
-          app-store-connect publish \
-            --path build/ios/ipa/App.ipa \
-            --key-id "$APP_STORE_CONNECT_KEY_ID" \
-            --issuer-id "$APP_STORE_CONNECT_ISSUER_ID" \
-            --private-key @file:/tmp/asc_key.p8 \
-            --testflight
-
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
       - /tmp/ProRated.xcarchive/Products/Applications/*.app
+
+    publishing:
+      app_store_connect:
+        api_key: $APP_STORE_CONNECT_PUBLISHER_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_ID
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        submit_to_testflight: true
+        beta_groups:
+          - new tester
 
   android-play-store:
     name: ProRated Android Play Store

@@ -38,7 +38,15 @@ workflows:
           # burning whatever number was hardcoded here. Querying Apple directly
           # means every trigger is always correct, with nothing to remember or
           # bump by hand.
-          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-app-store-build-number 6785617187 \
+          #
+          # get-latest-app-store-build-number only looks at builds tied to a
+          # formally submitted App Store *version* (public release history) —
+          # we're TestFlight-only right now, so that undercounts every build
+          # we've actually uploaded. get-latest-testflight-build-number with
+          # --all-versions is the one that actually sees every TestFlight
+          # upload across every marketing version, which is what we need.
+          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-testflight-build-number 6785617187 \
+            --all-versions \
             --key-id "$APP_STORE_CONNECT_KEY_ID" \
             --issuer-id "$APP_STORE_CONNECT_ISSUER_ID" \
             --private-key @env:APP_STORE_CONNECT_PUBLISHER_PRIVATE_KEY)
@@ -95,8 +103,12 @@ workflows:
         key_id: $APP_STORE_CONNECT_KEY_ID
         issuer_id: $APP_STORE_CONNECT_ISSUER_ID
         submit_to_testflight: true
-        beta_groups:
-          - new tester
+        # No beta_groups here — "new tester" is an Internal Testing group,
+        # and internal testers automatically get access to every new build
+        # the moment it finishes processing. Apple's API actively rejects
+        # trying to explicitly assign a build to an internal group
+        # ("Cannot add internal group to a build") — beta_groups is only
+        # for External Testing groups, which do need per-build assignment.
 
   android-play-store:
     name: ProRated Android Play Store

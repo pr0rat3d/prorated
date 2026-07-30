@@ -60,23 +60,23 @@ export default function HomePage({ go, goLogin, goReview, initialQuery, onQueryU
       return;
     }
 
-    // 1. Check lookup limit (skip for demo data — free to access)
     const isDemoAddress = Object.keys(DEMO_DATA).some(k =>
       k.toLowerCase().includes(trimmed.toLowerCase().split(",")[0].toLowerCase())
     );
 
-    if (!isDemoAddress) {
+    // Only actually revealing another pro's real review data counts against
+    // the free-tier lookup cap — searching an address that turns out to have
+    // nothing (often step one of "search, find nothing, leave a review
+    // myself") is free, since there was nothing to look up.
+    const chargeLookup = async () => {
+      if (isDemoAddress) return true;
       const check = await canDoLookup();
-      if (!check.allowed) {
-        setBlocked(true);
-        setLoading(false);
-        return;
-      }
-      // Log the lookup
+      if (!check.allowed) { setBlocked(true); setLoading(false); return false; }
       const session = loadSession();
       if (session?.user) logLookup(session.user.id, trimmed);
       setRemaining(check.remaining != null ? check.remaining - 1 : null);
-    }
+      return true;
+    };
 
     // 1. Check Supabase for real submitted reviews
     setLoading(true); setError(null); setResults(null);
@@ -85,6 +85,7 @@ export default function HomePage({ go, goLogin, goReview, initialQuery, onQueryU
       try {
         const hasReviews = await checkAddressHasReviews(trimmed);
         if (hasReviews) {
+          if (!(await chargeLookup())) return;
           setResults([buildAddressPreview(trimmed)]);
           setLoading(false);
           return;
@@ -96,6 +97,7 @@ export default function HomePage({ go, goLogin, goReview, initialQuery, onQueryU
       try {
         const storedRows = await fetchReviewsForAddress(trimmed);
         if (storedRows.length > 0) {
+          if (!(await chargeLookup())) return;
           setResults([buildAddressFromReviews(trimmed, storedRows)]);
           setLoading(false);
           return;

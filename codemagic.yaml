@@ -31,7 +31,18 @@ workflows:
       - name: Set version number
         script: |
           agvtool new-marketing-version 1.2
-          agvtool new-version -all 45
+          # Ask App Store Connect for the real highest build number instead of
+          # trusting a hardcoded value in this file — a build can be accepted
+          # by Apple even when Codemagic's own post-processing step reports
+          # "failed" (transient errors after a successful upload), silently
+          # burning whatever number was hardcoded here. Querying Apple directly
+          # means every trigger is always correct, with nothing to remember or
+          # bump by hand.
+          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-app-store-build-number 6785617187 \
+            --key-id "$APP_STORE_CONNECT_KEY_ID" \
+            --issuer-id "$APP_STORE_CONNECT_ISSUER_ID" \
+            --private-key @env:APP_STORE_CONNECT_PUBLISHER_PRIVATE_KEY)
+          agvtool new-version -all $(($LATEST_BUILD_NUMBER + 1))
         working_directory: ios/App
 
       - name: Set up code signing

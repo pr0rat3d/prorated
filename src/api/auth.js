@@ -167,6 +167,16 @@ export const checkSessionActive = async () => {
   }
 };
 
+// ── Fetch the caller's own row from contractor_private (stripe_customer_id,
+// rejection_reason — the only two fields there a user legitimately reads for
+// themselves; RLS scopes this to auth.uid() = id so it's own-row only) ──
+export const fetchContractorPrivate = async (userId, token) => {
+  try {
+    const rows = await dbFetch(`/contractor_private?id=eq.${userId}&select=*&limit=1`, { method: "GET" }, token);
+    return rows?.[0] || {};
+  } catch { return {}; }
+};
+
 // ── Log in an existing contractor ─────────────────────────────
 export const signIn = async ({ email, password }) => {
   const data = await authFetch("/token?grant_type=password", {
@@ -192,6 +202,7 @@ export const signIn = async ({ email, password }) => {
     }
 
     const contractor = profile?.[0] || {};
+    const privateFields = await fetchContractorPrivate(data.user.id, data.access_token);
     saveSession({
       access_token:  data.access_token,
       refresh_token: data.refresh_token,
@@ -199,6 +210,7 @@ export const signIn = async ({ email, password }) => {
       user: {
         ...data.user,
         ...contractor,
+        ...privateFields,
         // Preserve critical fields even if contractor row fetch failed
         email: contractor.email || email,
         status: contractor.status || "pending",

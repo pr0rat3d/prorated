@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext, useContext } from "react";
-import { loadSession, signOut, getCurrentUser, checkSessionActive, ensureValidSession } from "../api/auth";
+import { loadSession, signOut, getCurrentUser, checkSessionActive, ensureValidSession, fetchContractorPrivate } from "../api/auth";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../config.js";
 import { configureRevenueCat } from "../lib/revenuecat";
 
@@ -30,12 +30,14 @@ export function AuthProvider({ children }) {
         // Re-read rather than use the token captured at mount — the
         // ensureValidSession() call above may have refreshed it by now.
         const token = loadSession()?.access_token || session.access_token;
-        fetch(
-          `${SUPABASE_URL}/rest/v1/contractors?id=eq.${session.user.id}&select=*&limit=1`,
-          { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${token}` } }
-        )
-          .then(r => r.json())
-          .then(rows => {
+        Promise.all([
+          fetch(
+            `${SUPABASE_URL}/rest/v1/contractors?id=eq.${session.user.id}&select=*&limit=1`,
+            { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${token}` } }
+          ).then(r => r.json()),
+          fetchContractorPrivate(session.user.id, token),
+        ])
+          .then(([rows, privateFields]) => {
             if (rows?.[0]) {
               const freshRow = rows[0];
               // Re-read session in case it was updated by a concurrent operation
@@ -43,6 +45,7 @@ export function AuthProvider({ children }) {
               const fresh = {
                 ...latestSession.user,
                 ...freshRow,
+                ...privateFields,
                 // Preserve company fields from latest session if DB hasn't caught up
                 company_id:   freshRow.company_id   ?? latestSession.user?.company_id,
                 company_role: freshRow.company_role ?? latestSession.user?.company_role,
@@ -123,8 +126,9 @@ export function AuthProvider({ children }) {
         { headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${token}` } }
       );
       const rows = await res.json();
+      const privateFields = await fetchContractorPrivate(session.user.id, token);
       if (rows?.[0]) {
-        const fresh = { ...session.user, ...rows[0] };
+        const fresh = { ...session.user, ...rows[0], ...privateFields };
         // Update localStorage session with fresh data
         const updatedSession = { ...session, user: fresh };
         localStorage.setItem("prorated_session", JSON.stringify(updatedSession));

@@ -64,7 +64,6 @@ serve(async (req) => {
       .from("contractors")
       .update({
         deleted:            true,
-        deletion_requested: false,
         name:               "Deleted Member",
         email:              `deleted_${userId.replace(/-/g, "")}@deleted.invalid`,
         phone:              null,
@@ -79,6 +78,14 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // deletion_requested lives in contractor_private now (split out for RLS —
+    // see the migration that created that table). Best-effort: the row may
+    // not exist for accounts created before that split.
+    await supabase
+      .from("contractor_private")
+      .update({ deletion_requested: false, deletion_requested_at: null })
+      .eq("id", userId);
 
     // Step 2 — anonymize reviews
     await supabase

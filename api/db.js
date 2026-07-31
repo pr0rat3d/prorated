@@ -36,7 +36,7 @@ export default async function handler(req, res) {
 
   // Only allow whitelisted tables
   const allowedTables = [
-    "reviews", "contractors", "realtor_subscriptions", "realtor_lookups",
+    "reviews", "contractors", "contractor_private", "realtor_subscriptions", "realtor_lookups",
     "beta_feedback", "nda_signatures", "reported_reviews", "push_subscriptions",
     "translation_cache", "saved_addresses", "address_watches",
     "featured_suppliers", "review_edit_requests",

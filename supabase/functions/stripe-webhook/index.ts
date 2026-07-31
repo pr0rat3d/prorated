@@ -40,6 +40,26 @@ const getPlanFromPriceId = (priceId: string): string => {
   return PRICE_TO_PLAN[priceId] || "bronze"; // default to bronze if unknown
 };
 
+// stripe_customer_id lives in contractor_private now (split out for RLS —
+// it's PII a user can legitimately read for their own row, but the old
+// table-wide policy let any authenticated user read anyone's). Look up the
+// contractor id there first, then fetch the actual contractor fields needed.
+const findContractorByStripeCustomerId = async (supabase: any, customerId: string) => {
+  const { data: priv } = await supabase
+    .from("contractor_private")
+    .select("id")
+    .eq("stripe_customer_id", customerId)
+    .limit(1);
+  const id = priv?.[0]?.id;
+  if (!id) return null;
+  const { data: contractors } = await supabase
+    .from("contractors")
+    .select("id, company_id, plan, plan_source")
+    .eq("id", id)
+    .limit(1);
+  return contractors?.[0] || null;
+};
+
 serve(async (req) => {
   const signature = req.headers.get("stripe-signature");
   if (!signature) {
@@ -96,14 +116,17 @@ serve(async (req) => {
         if (!contractor) {
           // Contractor profile not created yet — upsert it
           console.warn(`[ProRated Stripe] Contractor not found for ${email} — creating basic record`);
-          await supabase.from("contractors").upsert({
+          const { data: upserted } = await supabase.from("contractors").upsert({
             email,
             plan:               plan,
             plan_source:        "stripe",
-            stripe_customer_id: customerId,
             account_type:       "solo",
             status:             "pending",
-          }, { onConflict: "email" });
+          }, { onConflict: "email" }).select("id").limit(1);
+          const newId = upserted?.[0]?.id;
+          if (newId) {
+            await supabase.from("contractor_private").upsert({ id: newId, stripe_customer_id: customerId }, { onConflict: "id" });
+          }
           break;
         }
 
@@ -124,9 +147,12 @@ serve(async (req) => {
           .update({
             plan:               plan,
             plan_source:        "stripe",
-            stripe_customer_id: customerId,
           })
           .eq("id", contractor.id);
+
+        await supabase
+          .from("contractor_private")
+          .upsert({ id: contractor.id, stripe_customer_id: customerId }, { onConflict: "id" });
 
         // Update company if they have one
         if (contractor.company_id) {
@@ -155,13 +181,7 @@ serve(async (req) => {
         const status       = subscription.status; // active, past_due, canceled, etc.
 
         // Find contractor by stripe_customer_id
-        const { data: contractors } = await supabase
-          .from("contractors")
-          .select("id, company_id, plan, plan_source")
-          .eq("stripe_customer_id", customerId)
-          .limit(1);
-
-        const contractor = contractors?.[0];
+        const contractor = await findContractorByStripeCustomerId(supabase, customerId);
         if (!contractor) break;
 
         // Same conflict guard as checkout.session.completed above — don't
@@ -198,13 +218,7 @@ serve(async (req) => {
         const subscription = event.data.object as Stripe.Subscription;
         const customerId   = subscription.customer as string;
 
-        const { data: contractors } = await supabase
-          .from("contractors")
-          .select("id, company_id, plan_source")
-          .eq("stripe_customer_id", customerId)
-          .limit(1);
-
-        const contractor = contractors?.[0];
+        const contractor = await findContractorByStripeCustomerId(supabase, customerId);
         if (!contractor) break;
 
         // Only downgrade if Stripe is still this contractor's plan source —
@@ -240,13 +254,7 @@ serve(async (req) => {
         const invoice    = event.data.object as Stripe.Invoice;
         const customerId = invoice.customer as string;
 
-        const { data: contractors } = await supabase
-          .from("contractors")
-          .select("id, company_id")
-          .eq("stripe_customer_id", customerId)
-          .limit(1);
-
-        const contractor = contractors?.[0];
+        const contractor = await findContractorByStripeCustomerId(supabase, customerId);
         if (!contractor) break;
 
         if (contractor.company_id) {

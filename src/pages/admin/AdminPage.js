@@ -469,9 +469,10 @@ export default function AdminPage({ go }) {
   const loadData = async () => {
     setLoading(true);
     const safe = async (path) => { try { const r = await sb(path); return Array.isArray(r) ? r : []; } catch { return []; } };
-    const [[co, re, rv, er, fb, rp, nd, rl, cm, cmem, rd, sup, of_, inv, ff], authUsers] = await Promise.all([
+    const [[co0, priv, re, rv, er, fb, rp, nd, rl, cm, cmem, rd, sup, of_, inv, ff], authUsers] = await Promise.all([
       Promise.all([
         safe("/contractors?select=*&order=created_at.desc&limit=500"),
+        safe("/contractor_private?select=*"),
         safe("/realtor_subscriptions?select=*&order=created_at.desc&limit=200"),
         safe("/reviews?select=*&order=created_at.desc&limit=5000"),
         safe("/review_edit_requests?select=*&order=created_at.desc&limit=100"),
@@ -489,6 +490,12 @@ export default function AdminPage({ go }) {
       ]),
       fetchAuthUsers(),
     ]);
+    // Merge contractor_private (admin_notes, reviewed_by, stripe_customer_id,
+    // rejection_reason, deletion_requested*) back onto each contractor row —
+    // split into its own table for RLS reasons, but the admin UI reads it as
+    // one merged object same as before.
+    const privateById = new Map(priv.map(p => [p.id, p]));
+    const co = co0.map(c => ({ ...c, ...(privateById.get(c.id) || {}) }));
     setContractors(co); setRealtors(re); setReviews(rv);
     setEditRequests(er); setFeedback(fb);
     setReported(rp); setNdaSigs(nd);
@@ -523,7 +530,6 @@ export default function AdminPage({ go }) {
     const result = await patch("contractors", id, {
       status: "approved",
       verification_tier: verificationTier,
-      reviewed_by: reviewer,
       verified_at: new Date().toISOString(),
     });
     const savedStatus = Array.isArray(result) ? result[0]?.status : null;
@@ -531,7 +537,8 @@ export default function AdminPage({ go }) {
       flash(false, `Approval failed — DB returned status="${savedStatus ?? "empty"}". Check SUPABASE_SERVICE_KEY in Vercel env vars, or look for a trigger resetting status in Supabase Dashboard → Database → Triggers.`);
       return;
     }
-    setContractors(cs => cs.map(c => c.id === id ? { ...c, status: "approved", verification_tier: verificationTier } : c));
+    patch("contractor_private", id, { reviewed_by: reviewer }).catch(() => {});
+    setContractors(cs => cs.map(c => c.id === id ? { ...c, status: "approved", verification_tier: verificationTier, reviewed_by: reviewer } : c));
     flash(true, "Approved ✓ — confirmed in DB");
     fetch(`${SUPABASE_URL}/functions/v1/send-approval-email`, {
       method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
@@ -541,8 +548,10 @@ export default function AdminPage({ go }) {
 
   const rejectContractor = async (id, reason) => {
     const reviewer = sessionStorage.getItem("pr_admin_name") || "admin";
-    await patch("contractors", id, { status: "rejected", rejected_at: new Date().toISOString(), rejection_reason: reason || "Unable to verify license", reviewed_by: reviewer });
-    setContractors(cs => cs.map(c => c.id === id ? { ...c, status: "rejected" } : c));
+    const rejectionReason = reason || "Unable to verify license";
+    await patch("contractors", id, { status: "rejected", rejected_at: new Date().toISOString() });
+    patch("contractor_private", id, { rejection_reason: rejectionReason, reviewed_by: reviewer }).catch(() => {});
+    setContractors(cs => cs.map(c => c.id === id ? { ...c, status: "rejected", rejection_reason: rejectionReason, reviewed_by: reviewer } : c));
     fetch(`${SUPABASE_URL}/functions/v1/send-approval-email`, {
       method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
       body: JSON.stringify({ contractorId: id, status: "rejected", rejectionReason: reason }),
@@ -734,7 +743,7 @@ export default function AdminPage({ go }) {
 
   // ── Contractor admin notes / force-remove from company ───────
   const saveAdminNotes = async (id, notes) => {
-    await adminPatch("/contractors", { admin_notes: notes }, { id: `eq.${id}` });
+    await adminPatch("/contractor_private", { admin_notes: notes }, { id: `eq.${id}` });
     setContractors(cs => cs.map(c => c.id === id ? { ...c, admin_notes: notes } : c));
     flash(true, "Admin note saved");
   };

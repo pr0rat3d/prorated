@@ -215,7 +215,7 @@ serve(async (req) => {
               <p style="color: #166534; font-size: 13px; margin: 4px 0;">✓ Search job site addresses (${searchLimit})</p>
               <p style="color: #166534; font-size: 13px; margin: 4px 0;">✓ Leave reviews for job sites you've worked</p>
               <p style="color: #166534; font-size: 13px; margin: 4px 0;">✓ Save addresses to your watchlist</p>
-              <p style="color: #166534; font-size: 13px; margin: 4px 0;">✓ Get push notifications on saved addresses</p>
+              <p style="color: #166534; font-size: 13px; margin: 4px 0;">✓ Get email alerts on saved addresses</p>
             </div>
             <div style="text-align: center;">
               <a href="https://prorated.app" 

@@ -48,7 +48,6 @@ import { BRAND, TAGLINE } from "./data/constants";
 import { saveSession, updatePassword } from "./api/auth";
 import usePWA from "./hooks/usePWA";
 import { useAuth } from "./hooks/useAuth";
-import PushPrompt from "./components/PushPrompt";
 
 export default function App() {
   const getInitialPage = () => {
@@ -128,7 +127,6 @@ export default function App() {
   });
   const [showInstall, setShowInstall] = useState(false);
   const [showIOS, setShowIOS]         = useState(false);
-  const [showPush, setShowPush]       = useState(false);
   const { installPrompt, isInstalled, promptInstall } = usePWA();
   const { user, isLoggedIn, refreshUser } = useAuth(); // eslint-disable-line no-unused-vars
 
@@ -160,18 +158,6 @@ export default function App() {
   // Show install banner after 6s
   useEffect(() => {
     if (isInstalled) return;
-    // Show push prompt after 30s
-    // Show push prompt after 8s if not already subscribed/denied
-    const pushTimer = setTimeout(async () => {
-      if (typeof Notification !== "undefined" && Notification.permission !== "denied") {
-        try {
-          const reg = await navigator.serviceWorker?.getRegistration();
-          const sub = await reg?.pushManager?.getSubscription();
-          if (!sub) setShowPush(true);
-        } catch { setShowPush(true); }
-      }
-    }, 8000);
-
     const t = setTimeout(() => {
       if (isNativeApp()) return; // already installed as the native app — nothing to prompt
       const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
@@ -181,7 +167,7 @@ export default function App() {
         else if (installPrompt) setShowInstall(true);
       }
     }, 6000);
-    return () => { clearTimeout(t); clearTimeout(pushTimer); };
+    return () => { clearTimeout(t); };
   }, [isInstalled, installPrompt]);
 
   // ── Password Reset Page ─────────────────────────────────────
@@ -361,7 +347,6 @@ export default function App() {
       </div>}
 
       <main style={{ paddingBottom: 0 }}>
-        {!isIsolated && showPush && <PushPrompt onDismiss={() => { setShowPush(false); try { localStorage.setItem("pr_push_dismissed", Date.now()); } catch {} }} />}
         {page === "home"      && <HomePage      go={go} goLogin={goLogin} goReview={goReview} initialQuery={searchQuery} onQueryUsed={() => setSearchQuery("")} />}
         {page === "review"    && <ReviewPage    go={go} goBack={goBack} initialAddress={reviewAddress} editReviewId={editReviewId} />}
         {page === "dashboard" && <DashboardPage go={go} goBack={goBack} goLogin={goLogin} goReview={goReview} paymentSuccess={paymentSuccess} onPaymentAck={() => setPaymentSuccess(false)} />}

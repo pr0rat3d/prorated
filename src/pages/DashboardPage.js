@@ -13,7 +13,6 @@ import { hasSavedBiometricLogin, clearBiometricLogin, getBiometryLabel } from ".
 import { fetchMyReviews, updateReview, deleteReview } from "../api/supabase";
 import { getSavedAddresses, unsaveAddress, signIn, updatePassword, saveTradeMemberships } from "../api/auth";
 import { PARTNERS } from "./PartnerLandingPage";
-import usePush from "../hooks/usePush";
 import { useLang } from "../hooks/useLang";
 import { t } from "../i18n/translations";
 
@@ -63,7 +62,6 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
       return () => clearTimeout(t);
     }
   }, [paymentSuccess]);
-  const { subscribed, permission, subscribe, unsubscribe } = usePush();
   const { lang } = useLang();
 
   const [tab, setTab]           = useState("reviews");
@@ -516,7 +514,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                 "✓  Full 5-category rating breakdowns",
                 "✓  Bid Prep Summary + Would-Return rate",
                 "✓  Team logins (based on your plan)",
-                "✓  Push notifications for saved addresses",
+                "✓  Email alerts for saved addresses",
                 "✓  Local Points of Interest",
                 "✓  Watchlist alerts before you bid",
               ].map(f => (
@@ -1264,27 +1262,6 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                   </button>
                 </div>
               )}
-
-              {/* Push notifications */}
-              <Card style={{ marginBottom: "0.85rem" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: 2 }}>🔔 Push Notifications</div>
-                    <div style={{ fontSize: 11, color: BRAND.gray }}>
-                      {subscribed ? "Enabled — you'll get alerts for saved addresses" : permission === "denied" ? "Blocked — enable in browser settings" : "Get notified when saved addresses get new reviews"}
-                    </div>
-                  </div>
-                  {!subscribed && permission !== "denied" && (
-                    <button onClick={subscribe}
-                      style={{ background: BRAND.blue, color: "#fff", border: "none", padding: "7px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", flexShrink: 0, marginLeft: 10 }}>
-                      Enable
-                    </button>
-                  )}
-                  {subscribed && (
-                    <span style={{ fontSize: 11, color: BRAND.green, fontWeight: 600 }}>✓ Enabled</span>
-                  )}
-                </div>
-              </Card>
 
 
 

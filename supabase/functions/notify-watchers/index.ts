@@ -2,30 +2,19 @@
 // ProRated — Supabase Edge Function: notify-watchers
 //
 // Called when a new review is submitted for an address.
-// Finds all users who saved that address and sends them
-// a Web Push notification via VAPID.
+// Finds all users who saved that address and emails them via
+// Resend — replaces the earlier Web Push approach, which had no
+// real path to deliver inside the native iOS/Android apps (no
+// APNs/FCM integration, browser-only Push API).
 //
 // Deploy with: supabase functions deploy notify-watchers
 //
 // Set secrets with:
-//   supabase secrets set VAPID_PUBLIC_KEY=your_public_key
-//   supabase secrets set VAPID_PRIVATE_KEY=your_private_key
-//   supabase secrets set VAPID_SUBJECT=mailto:hello@prorated.io
+//   supabase secrets set RESEND_API_KEY=your_resend_key
 // ─────────────────────────────────────────────────────────────
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-// Web Push implementation for Deno
-const sendWebPush = async (subscription: any, payload: string, vapidKeys: any) => {
-  const webpush = await import("https://esm.sh/web-push@3.6.7");
-  webpush.setVapidDetails(
-    vapidKeys.subject,
-    vapidKeys.publicKey,
-    vapidKeys.privateKey,
-  );
-  return webpush.sendNotification(subscription, payload);
-};
 
 serve(async (req) => {
   // Handle CORS
@@ -51,12 +40,11 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // VAPID keys from Supabase secrets
-    const vapidKeys = {
-      publicKey:  Deno.env.get("VAPID_PUBLIC_KEY")!,
-      privateKey: Deno.env.get("VAPID_PRIVATE_KEY")!,
-      subject:    Deno.env.get("VAPID_SUBJECT") || "mailto:hello@prorated.io",
-    };
+    const resendKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendKey) {
+      console.log("[ProRated] notify-watchers — no RESEND_API_KEY, skipping");
+      return new Response(JSON.stringify({ sent: 0, reason: "no-resend-key" }));
+    }
 
     // 1. Find all users who saved this address
     const normalizedAddress = address.toLowerCase().trim();
@@ -72,78 +60,81 @@ serve(async (req) => {
 
     const userIds = [...new Set(savedRows.map((r: any) => r.user_id))];
 
-    // 2. Get push subscriptions for those users
-    const { data: subscriptions } = await supabase
-      .from("push_subscriptions")
-      .select("*")
-      .in("user_id", userIds);
+    // 2. Get email addresses for those watchers
+    const { data: watchers } = await supabase
+      .from("contractors")
+      .select("id, email, name")
+      .in("id", userIds);
 
-    if (!subscriptions || subscriptions.length === 0) {
-      return new Response(JSON.stringify({ sent: 0, message: "No push subscriptions" }));
+    if (!watchers || watchers.length === 0) {
+      return new Response(JSON.stringify({ sent: 0, message: "No watcher emails found" }));
     }
 
-    // 3. Build notification payload
+    // 3. Build the email
     const streetName = address.split(",")[0]?.trim() || address;
-    const payload = JSON.stringify({
-      title: "ProRated 🛡️ — New Review",
-      body:  `${streetName} just got a new contractor review. Tap to see it before you bid.`,
-      url:   "/",
-      tag:   `review-${Date.now()}`,
-    });
+    const subject = `🛡️ New review on ${streetName}`;
+    const html = `
+      <div style="font-family: 'DM Sans', Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px; background: #F8FAFC;">
+        <div style="background: #0F172A; border-radius: 16px; padding: 32px; text-align: center; margin-bottom: 24px;">
+          <h1 style="color: #F8FAFC; font-size: 24px; font-weight: 800; margin: 0 0 8px;">ProRated</h1>
+          <p style="color: #94A3B8; font-size: 13px; margin: 0;">Built by Pros, Built for Pros</p>
+        </div>
+        <div style="background: #fff; border-radius: 16px; padding: 32px; border: 1px solid #E2E8F0;">
+          <h2 style="color: #0F172A; font-size: 20px; font-weight: 800; margin: 0 0 12px;">New review on a saved address</h2>
+          <p style="color: #64748B; font-size: 14px; line-height: 1.65; margin: 0 0 24px;">
+            <strong>${streetName}</strong> just got a new verified trade professional review${reviewData?.trade ? ` (${reviewData.trade})` : ""}. Take a look before you bid.
+          </p>
+          <div style="text-align: center;">
+            <a href="https://prorated.app"
+              style="display: inline-block; background: #2563EB; color: #fff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-size: 15px; font-weight: 700;">
+              View the review →
+            </a>
+          </div>
+        </div>
+        <p style="text-align: center; color: #94A3B8; font-size: 11px; margin-top: 20px;">
+          ProRated · You're getting this because you saved this address to your watchlist.
+          <a href="https://prorated.app/dashboard" style="color: #2563EB;">Manage saved addresses</a>
+        </p>
+      </div>
+    `;
 
-    // 4. Send push to each subscription
+    // 4. Send one email per watcher (never a shared "to" array — that would
+    // expose every recipient's address to every other recipient)
     let sent = 0;
     let failed = 0;
-    const expiredEndpoints: string[] = [];
-    const sentIds: string[] = [];
 
-    for (const sub of subscriptions) {
+    for (const watcher of watchers) {
+      if (!watcher.email) { failed++; continue; }
       try {
-        await sendWebPush(
-          {
-            endpoint: sub.endpoint,
-            keys: { p256dh: sub.p256dh, auth: sub.auth },
+        const emailRes = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${resendKey}`,
+            "Content-Type": "application/json",
           },
-          payload,
-          vapidKeys,
-        );
-        sentIds.push(sub.id);
-        sent++;
-      } catch (err: any) {
-        // 404/410 = subscription expired, clean it up
-        if (err.statusCode === 404 || err.statusCode === 410) {
-          expiredEndpoints.push(sub.endpoint);
-        }
+          body: JSON.stringify({
+            from:    "ProRated <hello@prorated.app>",
+            to:      [watcher.email],
+            subject,
+            html,
+          }),
+        });
+        if (emailRes.ok) sent++; else failed++;
+      } catch {
         failed++;
       }
     }
 
-    // Batch update last_used for all successful sends (was N individual writes)
-    if (sentIds.length > 0) {
-      await supabase
-        .from("push_subscriptions")
-        .update({ last_used: new Date().toISOString() })
-        .in("id", sentIds);
-    }
-
-    // 5. Clean up expired subscriptions
-    if (expiredEndpoints.length > 0) {
-      await supabase
-        .from("push_subscriptions")
-        .delete()
-        .in("endpoint", expiredEndpoints);
-    }
-
-    // 6. Log the notification
+    // 5. Log the notification
     await supabase.from("notification_log").insert({
       type:    "new_review",
-      title:   "New Review",
-      body:    payload,
+      title:   subject,
+      body:    `Emailed ${sent} watcher(s) for ${streetName}`,
       address: normalizedAddress,
       success: sent > 0,
     });
 
-    console.log(`[ProRated] Push sent: ${sent} success, ${failed} failed`);
+    console.log(`[ProRated] Watcher emails sent: ${sent} success, ${failed} failed`);
 
     return new Response(
       JSON.stringify({ sent, failed, watchers: userIds.length }),

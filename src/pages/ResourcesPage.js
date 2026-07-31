@@ -22,15 +22,6 @@ const VIDEOS = [
     src:     "https://pub-adda1244317b474f9827ed482efd0c69.r2.dev/RPReplay_Final1781285403.mp4",
   },
   {
-    id:      "notifications",
-    tab:     "account",
-    title:   "How to Add Push Notifications",
-    desc:    "How to enable push notifications so you get alerted when a saved address gets a new contractor review — before you bid.",
-    runtime: "0:45",
-    icon:    "🔔",
-    src:     "https://pub-adda1244317b474f9827ed482efd0c69.r2.dev/RPReplay_Final1781296798.mp4",
-  },
-  {
     id:      "trust-score",
     tab:     "account",
     title:   "Understanding Your Trust Score",

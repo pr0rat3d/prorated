@@ -425,7 +425,6 @@ export default function AdminPage({ go }) {
   const [realtors, setRealtors] = useState([]);
   const [reviews, setReviews]   = useState([]);
   const [editRequests, setEditRequests] = useState([]);
-  const [subs, setSubs]         = useState([]);
   const [feedback, setFeedback] = useState([]);
   const [reported, setReported] = useState([]);
   const [ndaSigs, setNdaSigs]   = useState([]);
@@ -470,13 +469,12 @@ export default function AdminPage({ go }) {
   const loadData = async () => {
     setLoading(true);
     const safe = async (path) => { try { const r = await sb(path); return Array.isArray(r) ? r : []; } catch { return []; } };
-    const [[co, re, rv, er, ss, fb, rp, nd, rl, cm, cmem, rd, sup, of_, inv, ff], authUsers] = await Promise.all([
+    const [[co, re, rv, er, fb, rp, nd, rl, cm, cmem, rd, sup, of_, inv, ff], authUsers] = await Promise.all([
       Promise.all([
         safe("/contractors?select=*&order=created_at.desc&limit=500"),
         safe("/realtor_subscriptions?select=*&order=created_at.desc&limit=200"),
         safe("/reviews?select=*&order=created_at.desc&limit=5000"),
         safe("/review_edit_requests?select=*&order=created_at.desc&limit=100"),
-        safe("/push_subscriptions?select=*&order=created_at.desc&limit=200"),
         safe("/beta_feedback?select=*&order=created_at.desc&limit=200"),
         safe("/reported_reviews?select=*&order=reported_at.desc&limit=100"),
         safe("/nda_signatures?select=*&order=agreed_at.desc&limit=200"),
@@ -492,7 +490,7 @@ export default function AdminPage({ go }) {
       fetchAuthUsers(),
     ]);
     setContractors(co); setRealtors(re); setReviews(rv);
-    setEditRequests(er); setSubs(ss); setFeedback(fb);
+    setEditRequests(er); setFeedback(fb);
     setReported(rp); setNdaSigs(nd);
     setCompanies(cm); setCompanyMembers(cmem);
     setRedemptions(rd); setSuppliers(sup); setOwnershipFlags(of_); setAllInvites(inv);
@@ -821,7 +819,6 @@ export default function AdminPage({ go }) {
     { id: "feedback",     label: `Feedback${openFeedback.length > 0 ? ` (${openFeedback.length})` : ""}`, icon: "💬" },
     { id: "reported",     label: `Reports${(openReports.length + openOwnershipFlags.length) > 0 ? ` (${openReports.length + openOwnershipFlags.length})` : ""}`, icon: "🚩" },
     { id: "nda",          label: `NDA (${ndaSigs.length})`, icon: "📄" },
-    { id: "push",         label: `Push (${subs.length})`, icon: "🔔" },
     { id: "flags",        label: "🚩 Feature Flags", icon: "🚩" },
     { id: "announce",     label: "📢 Announce", icon: "📢" },
   ];
@@ -1520,25 +1517,6 @@ export default function AdminPage({ go }) {
                       </div>
                     </div>
                     <Badge color="#DCFCE7" text="#166534">✓ Signed</Badge>
-                  </div>
-                </Row>
-              ))
-            }
-          </div>
-        )}
-
-        {/* ── PUSH ── */}
-        {!loading && tab === "push" && (
-          <div>
-            <SectionHead title="Push Subscriptions" count={subs.length} />
-            {subs.length === 0 ? <Empty msg="No push subscribers yet" /> :
-              subs.map(s => (
-                <Row key={s.id}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: BRAND.dark, marginBottom: 3, fontFamily: "monospace", wordBreak: "break-all" }}>
-                    {s.endpoint?.slice(0, 70)}...
-                  </div>
-                  <div style={{ fontSize: 11, color: BRAND.gray }}>
-                    User: {s.user_id ? s.user_id.slice(0, 8) + "..." : "Anonymous"} · {s.created_at ? new Date(s.created_at).toLocaleDateString() : ""}
                   </div>
                 </Row>
               ))

@@ -14,11 +14,17 @@ export default function ReviewCard({ review, idx }) {
   const [isReported, setIsReported] = useState(false);
   const [showReport, setShowReport] = useState(false);
 
-  const handleHelpful = () => {
+  const handleHelpful = async () => {
     if (voted) return;
     setHelpful(h => h + 1);
     setVoted(true);
-    if (review.fromDatabase && review.id) incrementHelpful(review.id).catch(() => {});
+    if (review.fromDatabase && review.id) {
+      const ok = await incrementHelpful(review.id);
+      // Roll back the optimistic update if it didn't actually record server-side
+      // — otherwise the button stays permanently stuck in "voted" with a count
+      // that was never real, recoverable only by a full page reload.
+      if (!ok) { setHelpful(h => h - 1); setVoted(false); }
+    }
   };
 
   const handleReport = async (reason) => {

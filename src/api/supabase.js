@@ -275,8 +275,10 @@ export const incrementHelpful = async (reviewId) => {
       method: "POST",
       body: JSON.stringify({ p_review_id: reviewId }),
     });
+    return true;
   } catch (err) {
     console.warn("[ProRated] Could not update helpful count:", err.message);
+    return false;
   }
 };
 

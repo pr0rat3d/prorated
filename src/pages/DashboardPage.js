@@ -170,6 +170,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
       go("home");
     } catch (err) {
       console.warn("[ProRated] Delete account error:", err);
+      window.alert(err.message || "Could not delete account. Please try again or contact hello@prorated.app.");
       setDeleteAccountLoading(false);
     }
   };
@@ -244,7 +245,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
       const expiresAt   = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
       // Create invite record with token
-      await fetch(`${SUPABASE_URL}/rest/v1/invites`, {
+      const inviteRes = await fetch(`${SUPABASE_URL}/rest/v1/invites`, {
         method: "POST",
         headers: {
           "apikey": SUPABASE_ANON_KEY,
@@ -260,6 +261,10 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
           expires_at:  expiresAt,
         }),
       });
+      if (!inviteRes.ok) {
+        const body = await inviteRes.text().catch(() => "");
+        throw new Error(`Invite record failed (${inviteRes.status})${body ? ": " + body : ""}`);
+      }
 
       // Send invite email
       try {

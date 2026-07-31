@@ -82,8 +82,8 @@ serve(async (req) => {
 
     let sent = 0, failed = 0;
 
-    for (const r of recipients || []) {
-      if (!r.email) { failed++; continue; }
+    const sendToOne = async (r: { id: string; email: string; name: string }) => {
+      if (!r.email) return false;
       const html = `
         <div style="font-family: 'DM Sans', Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px; background: #F8FAFC;">
           <div style="background: #0F172A; border-radius: 16px; padding: 32px; text-align: center; margin-bottom: 24px;">
@@ -125,7 +125,6 @@ serve(async (req) => {
       } catch {
         ok = false;
       }
-      if (ok) sent++; else failed++;
 
       // Log per-recipient, matching the existing notification_log convention
       await supabase.from("notification_log").insert({
@@ -135,6 +134,21 @@ serve(async (req) => {
         body:    `Sent to ${r.email}`,
         success: ok,
       }).catch(() => {});
+
+      return ok;
+    };
+
+    // Batched concurrency instead of one-at-a-time — still one Resend call
+    // per recipient (privacy: nobody sees another recipient's address in
+    // the `to` field), just several in flight together instead of fully
+    // sequential, so this doesn't scale linearly with recipient count and
+    // risk hitting the function's execution time limit mid-send.
+    const BATCH_SIZE = 10;
+    const list = recipients || [];
+    for (let i = 0; i < list.length; i += BATCH_SIZE) {
+      const batch = list.slice(i, i + BATCH_SIZE);
+      const results = await Promise.all(batch.map(sendToOne));
+      for (const ok of results) { if (ok) sent++; else failed++; }
     }
 
     return new Response(JSON.stringify({ sent, failed, total: (recipients || []).length }), {

@@ -259,7 +259,7 @@ export default function CompanySetupPage({ go, goBack }) {
         const inviteToken = crypto.randomUUID();
         const expiresAt   = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 days
 
-        await fetch(`${SUPABASE_URL}/rest/v1/invites`, {
+        const inviteRes = await fetch(`${SUPABASE_URL}/rest/v1/invites`, {
           method: "POST",
           headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json", Prefer: "return=minimal" },
           body: JSON.stringify({
@@ -270,6 +270,10 @@ export default function CompanySetupPage({ go, goBack }) {
             expires_at:  expiresAt,
           }),
         });
+        if (!inviteRes.ok) {
+          const body = await inviteRes.text().catch(() => "");
+          throw new Error(`Invite record failed (${inviteRes.status})${body ? ": " + body : ""}`);
+        }
 
         // Send invite email
         try {

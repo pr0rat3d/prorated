@@ -1066,14 +1066,18 @@ export default function AdminPage({ go }) {
                     </Row>
                   ))
             ) : (
-              filteredContractors.length === 0 ? <Empty msg="No contractors match this filter" /> :
-                filteredContractors.map(c => (
+              filteredContractors.length === 0 ? <Empty msg="No contractors match this filter" /> : (() => {
+                // Single pass instead of filtering the full reviews array per
+                // contractor row (was O(contractors × reviews) every render).
+                const reviewCountByUser = reviews.reduce((acc, r) => { acc[r.user_id] = (acc[r.user_id] || 0) + 1; return acc; }, {});
+                return filteredContractors.map(c => (
                   <UserRow key={c.id} user={c} onApprove={approveContractor} onReject={rejectContractor} onCompleteDelete={completeDelete} onAdminDelete={deleteUser} onChangePlan={changePlan} onResendWelcome={resendWelcome}
                     onSaveNotes={saveAdminNotes} onForceRemoveCompany={forceRemoveFromCompany}
                     onViewReviews={(id, name) => { setReviewUserFilter({ id, name }); setReviewFilter("user"); setTab("reviews"); }}
-                    reviewCount={reviews.filter(r => r.user_id === c.id).length}
+                    reviewCount={reviewCountByUser[c.id] || 0}
                     companies={companies} />
-                ))
+                ));
+              })()
             )}
           </div>
         )}

@@ -19,13 +19,15 @@ const getRiskLevel = (score) => {
   return              { label: "High Risk",     color: "#991B1B", bg: "#FFF1F2", icon: "🔴" };
 };
 
+// Descriptive only — ProRated informs, contractors decide. No deposit sizes,
+// no "proceed with caution" style directives; just what was reported.
 const getPaymentRisk = (score) => {
   if (!score) return { label: "Unknown",       color: "#94A3B8", bg: "#F8FAFC",  detail: "No payment history on record" };
   if (score >= 4.5) return { label: "Excellent",    color: "#166534", bg: "#F0FDF4",  detail: "Consistently pays on time" };
   if (score >= 3.5) return { label: "Good",          color: "#166534", bg: "#F0FDF4",  detail: "Generally pays on time" };
-  if (score >= 2.5) return { label: "Moderate Risk", color: "#854D0E", bg: "#FFFBEB",  detail: "Some payment delays reported — consider larger deposit" };
-  if (score >= 1.5) return { label: "High Risk",     color: "#991B1B", bg: "#FFF1F2",  detail: "Frequent delays reported — require 50%+ deposit upfront" };
-  return                    { label: "Very High Risk",color: "#7F1D1D", bg: "#FFF1F2",  detail: "Serious payment issues — proceed with extreme caution" };
+  if (score >= 2.5) return { label: "Moderate Risk", color: "#854D0E", bg: "#FFFBEB",  detail: "Some payment delays reported" };
+  if (score >= 1.5) return { label: "High Risk",     color: "#991B1B", bg: "#FFF1F2",  detail: "Frequent payment delays reported" };
+  return                    { label: "Very High Risk",color: "#7F1D1D", bg: "#FFF1F2",  detail: "Serious payment issues reported" };
 };
 
 // Recommendations removed — ProRated informs, contractors decide

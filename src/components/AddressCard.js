@@ -13,6 +13,7 @@ import ReviewCard from "./ReviewCard";
 import BidPrepSummary from "./BidPrepSummary";
 import BidIntelligence from "./BidIntelligence";
 import { calculateBidScore } from "../utils/bidScoring";
+import { useFeatureFlag } from "../hooks/useFeatureFlag";
 
 const toTitleCase = (str) => {
   if (!str) return "";
@@ -41,6 +42,18 @@ export default function AddressCard({ address, go, goLogin, goReview, demoMode =
   const [propertyType, setPropertyType]     = useState(null);
   const { isLoggedIn, user } = useAuth();
   const { lang } = useLang();
+  // Bid Prep is a paid-tier perk (Bronze+) that gets superseded by Bid
+  // Intelligence once it's actually available to this plan — tied to the
+  // real feature flag state, not a hardcoded plan rule, so Bronze/Silver
+  // keep Bid Prep through Early Access and this naturally does the right
+  // thing again on its own once Full Launch extends Bid Intelligence to
+  // them too, no code change needed at either threshold. In demoMode,
+  // mirrors BidIntelligence's own forceUnlock (gold/platinum previews the
+  // live report, not the flag's real current state).
+  const { canAccess: biCanAccess } = useFeatureFlag("bid_intelligence", user?.plan);
+  const isGoldPlusPlan = user?.plan === "gold" || user?.plan === "platinum";
+  const biAccessible = demoMode ? isGoldPlusPlan : biCanAccess;
+  const canShowBidPrep = user?.plan && user.plan !== "free" && !biAccessible;
 
   // Translate reviews when language changes
   useEffect(() => {
@@ -371,10 +384,12 @@ export default function AddressCard({ address, go, goLogin, goReview, demoMode =
       <div style={{ padding: "0.75rem 1.35rem", background: "#F8FAFC", borderTop: `1px solid ${BRAND.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span style={{ fontSize: 11, color: BRAND.gray }}>Worked here? Share your experience.</span>
         <div style={{ display: "flex", gap: 6 }}>
-          <button onClick={() => setShowBidPrep(true)}
-            style={{ background: "#1E3A5F", color: "#93C5FD", border: "1px solid #2563EB", padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", display: "flex", alignItems: "center", gap: 4 }}>
-            📋 Bid Prep
-          </button>
+          {canShowBidPrep && (
+            <button onClick={() => setShowBidPrep(true)}
+              style={{ background: "#1E3A5F", color: "#93C5FD", border: "1px solid #2563EB", padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", display: "flex", alignItems: "center", gap: 4 }}>
+              📋 Bid Prep
+            </button>
+          )}
           <button onClick={handleSave}
             style={{ background: saved ? "#DCFCE7" : "#F1F5F9", color: saved ? "#166534" : BRAND.gray, border: "none", padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
             {saving ? "..." : saved ? "★ Saved" : "☆ Save"}

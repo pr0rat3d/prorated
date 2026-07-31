@@ -20,6 +20,7 @@ import VerificationPending from "./pages/VerificationPending";
 import VerificationRejected from "./pages/VerificationRejected";
 import PrivacyPage from "./pages/PrivacyPage";
 import TermsPage from "./pages/TermsPage";
+import DMCAPage from "./pages/DMCAPage";
 import ContactPage from "./pages/ContactPage";
 import NDAPage from "./pages/NDAPage";
 import RealtorSignupPage from "./pages/RealtorSignupPage";
@@ -56,6 +57,7 @@ export default function App() {
       if (path === "/beta" || path === "/beta/") return "beta";
       if (path === "/privacy")  return "privacy";
       if (path === "/terms")    return "terms";
+      if (path === "/dmca")     return "dmca";
       if (path === "/pricing")  return "pricing";
       if (path === "/contact" || path === "/contact/") return "contact";
       if (path === "/signup" || path === "/signup/") return "signup";
@@ -355,6 +357,7 @@ export default function App() {
         {page === "pending"   && <VerificationPending go={go} />}
         {page === "privacy"   && <PrivacyPage go={go} goBack={goBack} />}
         {page === "terms"     && <TermsPage   go={go} goBack={goBack} />}
+        {page === "dmca"      && <DMCAPage    go={go} goBack={goBack} />}
         {page === "contact"   && <ContactPage go={go} goBack={goBack} />}
         {page === "support"     && <SupportPage go={go} />}
         {page === "resources"   && <ResourcesPage go={go} />}

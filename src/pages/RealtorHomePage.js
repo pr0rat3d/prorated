@@ -246,10 +246,10 @@ export default function RealtorHomePage({ go, user }) {
             <div style={{ fontSize: 28, marginBottom: 10 }}>⚡</div>
             <div style={{ fontSize: 16, fontWeight: 800, color: "#854D0E", marginBottom: 8 }}>Monthly lookup limit reached</div>
             <div style={{ fontSize: 13, color: "#92400E", marginBottom: 16 }}>Upgrade to Pro for unlimited address lookups</div>
-            <button onClick={() => go("realtor-pricing")}
-              style={{ background: BRAND.blue, color: "#fff", border: "none", padding: "12px 24px", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
-              View Pro plans →
-            </button>
+            <a href="mailto:hello@prorated.app?subject=Realtor%20Pro%20upgrade"
+              style={{ display: "inline-block", background: BRAND.blue, color: "#fff", border: "none", padding: "12px 24px", borderRadius: 10, fontSize: 14, fontWeight: 700, textDecoration: "none", fontFamily: "'DM Sans', sans-serif" }}>
+              Contact us to upgrade →
+            </a>
           </div>
         )}
 

@@ -210,16 +210,20 @@ export default function HomeownerReportPage({ go }) {
                     <div style={{ background: "#F8FAFC", border: `1px solid ${BRAND.border}`, borderRadius: 12, padding: "12px 16px", fontSize: 12, color: BRAND.gray, textAlign: "center", lineHeight: 1.6 }}>
                       {IOS_SUBSCRIPTION_MSG}
                     </div>
-                  ) : (
+                  ) : STRIPE_LINK ? (
                     <>
-                      <button onClick={handlePay} disabled={!email || !STRIPE_LINK}
-                        style={{ width: "100%", background: email && STRIPE_LINK ? BRAND.blue : "#E2E8F0", color: email && STRIPE_LINK ? "#fff" : BRAND.gray, border: "none", padding: "14px", borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: email && STRIPE_LINK ? "pointer" : "not-allowed", fontFamily: "'DM Sans', sans-serif" }}>
+                      <button onClick={handlePay} disabled={!email}
+                        style={{ width: "100%", background: email ? BRAND.blue : "#E2E8F0", color: email ? "#fff" : BRAND.gray, border: "none", padding: "14px", borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: email ? "pointer" : "not-allowed", fontFamily: "'DM Sans', sans-serif" }}>
                         Pay ${REPORT_PRICE} & Unlock Report →
                       </button>
                       <p style={{ fontSize: 10, color: BRAND.gray, textAlign: "center", marginTop: 8, marginBottom: 0 }}>
                         Secured by Stripe · One-time purchase · No account needed
                       </p>
                     </>
+                  ) : (
+                    <div style={{ background: "#F8FAFC", border: `1px solid ${BRAND.border}`, borderRadius: 12, padding: "12px 16px", fontSize: 12, color: BRAND.gray, textAlign: "center", lineHeight: 1.6 }}>
+                      One-time property reports aren't available yet — check back soon, or email <a href="mailto:hello@prorated.app" style={{ color: BRAND.blue }}>hello@prorated.app</a> to be notified when this launches.
+                    </div>
                   )}
                 </div>
               </>

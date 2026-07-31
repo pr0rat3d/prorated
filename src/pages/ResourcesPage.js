@@ -1,95 +1,99 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLang } from "../hooks/useLang";
 import { t } from "../i18n/translations";
 import { BRAND } from "../components/UI";
 import Logo from "../components/Logo";
+import { useAuth } from "../hooks/useAuth";
+import { useFeatureFlag } from "../hooks/useFeatureFlag";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../config";
 
 const TABS = [
-  { id: "account",  label: "Account",           icon: "👤" },
-  { id: "basics",   label: "The Basics",         icon: "🚀" },
+  { id: "general",  label: "General",           icon: "👤" },
+  { id: "basics",   label: "Basics",             icon: "🚀" },
   { id: "advanced", label: "Advanced Features",  icon: "⚡" },
 ];
 
+// Each tab renders a fixed layout (3 tiles for General/Basics — one big top
+// tile + two side-by-side below; 4 equal tiles for Advanced), so every entry
+// carries a `slot` instead of relying on array order.
 const VIDEOS = [
-  // ── Account ───────────────────────────────────────────────
+  // ── General ───────────────────────────────────────────────
   {
-    id:      "create-account",
-    tab:     "account",
-    title:   "New Account Setup",
-    desc:    "How to sign up, what license information you need, and how to get started once you're approved.",
+    id:      "account-setup",
+    tab:     "general",
+    slot:    "top",
+    title:   "Account Setup / Management",
+    desc:    "How to sign up, verify your license, sign in with Face ID or Touch ID, and manage your account settings.",
     runtime: "1:30",
     icon:    "🔐",
-    src:     "https://pub-adda1244317b474f9827ed482efd0c69.r2.dev/RPReplay_Final1781285403.mp4",
-  },
-  {
-    id:      "trust-score",
-    tab:     "account",
-    title:   "Understanding Your Trust Score",
-    desc:    "Understand how your Trust Score is calculated, what each tier means, and what it takes to earn Verified Pro status.",
-    runtime: "1:30",
-    icon:    "🛡️",
-    src:     "https://pub-adda1244317b474f9827ed482efd0c69.r2.dev/RPReplay_Final1781299024.mp4",
+    src:     null,
   },
   {
     id:      "plan-upgrades",
-    tab:     "account",
-    title:   "Plan Options & Upgrades",
+    tab:     "general",
+    slot:    "bottomLeft",
+    title:   "Plan Options and Upgrades",
     desc:    "ProRated's plan structure — Free, Bronze, Silver, Gold, and Platinum. How team accounts work, how to invite teammates, and how to upgrade or contact us for custom enterprise pricing.",
     runtime: "1:00",
     icon:    "💰",
     src:     "https://pub-adda1244317b474f9827ed482efd0c69.r2.dev/RPReplay_Final1781286269.mp4",
   },
-  // ── The Basics ────────────────────────────────────────────
   {
-    id:      "install-pwa",
-    tab:     "basics",
-    title:   "Adding ProRated to Your Home Screen",
-    desc:    "Install ProRated as an app on your iPhone or Android in under 30 seconds. No App Store required.",
-    runtime: "0:45",
-    icon:    "📲",
-    src:     "https://pub-adda1244317b474f9827ed482efd0c69.r2.dev/RPReplay_Final1781285978.mp4",
+    id:      "trust-score",
+    tab:     "general",
+    slot:    "bottomRight",
+    title:   "Trust Score",
+    desc:    "Understand how your Trust Score is calculated, what each tier means, and what it takes to earn Verified Pro status.",
+    runtime: "1:30",
+    icon:    "🛡️",
+    src:     "https://pub-adda1244317b474f9827ed482efd0c69.r2.dev/RPReplay_Final1781299024.mp4",
   },
-
+  // ── Basics ────────────────────────────────────────────────
   {
     id:      "leave-review",
     tab:     "basics",
-    title:   "Adding a Service Record / Reviewing",
+    slot:    "top",
+    title:   "Adding a Service Record / Review",
     desc:    "Rate a job site in 60 seconds. Select your trade, rate all 5 categories, and add notes for other trade professionals.",
     runtime: "1:00",
     icon:    "⭐",
     src:     "https://pub-adda1244317b474f9827ed482efd0c69.r2.dev/RPReplay_Final1781299999.mp4",
   },
   {
+    id:      "search-bid-prep",
+    tab:     "basics",
+    slot:    "bottomLeft",
+    title:   "Searching Addresses / Bid Prep",
+    desc:    "Search any job site address, read the 5 rating categories, and pull the Bid Prep summary before you bid.",
+    runtime: "2:00",
+    icon:    "🔍",
+    src:     null,
+  },
+  {
     id:      "save-address",
     tab:     "basics",
-    title:   "Adding Addresses to Favorites / Watchlist",
+    slot:    "bottomRight",
+    title:   "Adding Addresses to Favorites",
     desc:    "How to save a job site address to your watchlist, view your saved addresses in the dashboard, and remove them when you no longer need them.",
     runtime: "0:45",
     icon:    "⭐",
     src:     "https://pub-adda1244317b474f9827ed482efd0c69.r2.dev/RPReplay_Final1781299636.mp4",
   },
-  {
-    id:      "search-and-report",
-    tab:     "basics",
-    title:   "Searching Addresses & Reading the Report",
-    desc:    "How to search any job site address, what the 5 rating categories mean, and how to use the scores to make a better bidding decision.",
-    runtime: "2:00",
-    icon:    "🔍",
-    src:     "https://pub-adda1244317b474f9827ed482efd0c69.r2.dev/RPReplay_Final1781300675.mp4",
-  },
   // ── Advanced Features ─────────────────────────────────────
   {
-    id:      "bid-prep",
+    id:      "managing-team-access",
     tab:     "advanced",
-    title:   "Using Bid Prep",
-    desc:    "Tap 📋 Bid Prep on any address card for a consolidated data summary — payment score, access rating, work history, and ownership info.",
-    runtime: "1:00",
-    icon:    "📋",
-    src:     "https://pub-adda1244317b474f9827ed482efd0c69.r2.dev/RPReplay_Final1781289070.mp4",
+    slot:    "topLeft",
+    title:   "Team Management",
+    desc:    "Learn how to create your company workspace, invite team members, manage seats, and control member permissions.",
+    runtime: "1:30",
+    icon:    "🏗️",
+    src:     "https://pub-adda1244317b474f9827ed482efd0c69.r2.dev/managing-team-access.mp4",
   },
   {
     id:      "local-poi",
     tab:     "advanced",
+    slot:    "topRight",
     title:   "Local Points of Interest",
     desc:    "Find supply houses, lumber yards, and trade suppliers near any job site — right from the address card.",
     runtime: "1:30",
@@ -99,67 +103,84 @@ const VIDEOS = [
   {
     id:      "ownership-flag",
     tab:     "advanced",
-    title:   "Flagging an Ownership Change",
+    slot:    "bottomLeft",
+    title:   "Flagging Ownership Change",
     desc:    "Think the homeowner changed since the existing reviews were left? Flag it in one tap to alert other trade professionals.",
     runtime: "0:45",
     icon:    "🏠",
     src:     "https://pub-adda1244317b474f9827ed482efd0c69.r2.dev/RPReplay_Final1781289300.mp4",
   },
-  {
-    id:      "managing-team-access",
-    tab:     "advanced",
-    title:   "Managing Team Access",
-    desc:    "Learn how to create your company workspace, invite team members, manage seats, and control member permissions.",
-    runtime: "1:30",
-    icon:    "🏗️",
-    src:     "https://pub-adda1244317b474f9827ed482efd0c69.r2.dev/managing-team-access.mp4",
-  },
+  // "bid-intelligence" (Advanced, bottomRight) isn't a static entry — its
+  // locked/coming-soon state depends on the live feature flag + the
+  // viewer's plan, computed in the component below.
 ];
 
-function VideoCard({ video, onPlay }) {
+function VideoCard({ video, onPlay, onLocked, big }) {
+  if (!video) return null;
   const hasVideo = !!video.src;
+  const locked   = !!video.locked;
   const tabColor = {
-    account:  { bg: "#EFF6FF", accent: "#1E40AF" },
+    general:  { bg: "#EFF6FF", accent: "#1E40AF" },
     basics:   { bg: "#F0FDF4", accent: "#166534" },
     advanced: { bg: "#FFFBEB", accent: "#92400E" },
   }[video.tab];
 
+  const clickable = hasVideo || locked;
+  const handleClick = () => {
+    if (locked) onLocked(video);
+    else if (hasVideo) onPlay(video);
+  };
+
   return (
     <div
-      onClick={() => hasVideo && onPlay(video)}
+      onClick={clickable ? handleClick : undefined}
       style={{
         background: "#fff",
         border: `1px solid ${BRAND.border}`,
         borderRadius: 16, overflow: "hidden",
-        cursor: hasVideo ? "pointer" : "default",
+        cursor: clickable ? "pointer" : "default",
         transition: "transform 0.15s, box-shadow 0.15s",
+        height: "100%",
       }}
-      onMouseOver={e => { if (hasVideo) { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.1)"; }}}
+      onMouseOver={e => { if (clickable) { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.1)"; }}}
       onMouseOut={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}
     >
       {/* Thumbnail */}
       <div style={{
-        height: 130,
+        height: big ? 200 : 130,
         background: hasVideo
           ? "linear-gradient(135deg,#1a3328,#1E3A5F)"
-          : `linear-gradient(135deg,${tabColor.bg},#fff)`,
+          : locked
+            ? "linear-gradient(135deg,#1F2937,#374151)"
+            : `linear-gradient(135deg,${tabColor.bg},#fff)`,
         display: "flex", alignItems: "center", justifyContent: "center",
         position: "relative",
       }}>
         {hasVideo ? (
           <>
             <div style={{
-              width: 48, height: 48, borderRadius: "50%",
+              width: big ? 60 : 48, height: big ? 60 : 48, borderRadius: "50%",
               background: "rgba(255,255,255,0.2)",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
-              <span style={{ fontSize: 18, marginLeft: 3 }}>▶</span>
+              <span style={{ fontSize: big ? 22 : 18, marginLeft: 3 }}>▶</span>
             </div>
             <div style={{
               position: "absolute", bottom: 8, right: 10,
               background: "rgba(0,0,0,0.6)", color: "#fff",
               fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 5,
             }}>{video.runtime}</div>
+          </>
+        ) : locked ? (
+          <>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 34, marginBottom: 6 }}>🔒</div>
+              <div style={{
+                background: "rgba(255,255,255,0.12)", color: "#FBBF24",
+                fontSize: 9, fontWeight: 700, padding: "2px 10px",
+                borderRadius: 10, letterSpacing: "0.08em", textTransform: "uppercase",
+              }}>Locked — Gold & Platinum</div>
+            </div>
           </>
         ) : (
           <>
@@ -171,11 +192,13 @@ function VideoCard({ video, onPlay }) {
                 borderRadius: 10, letterSpacing: "0.08em", textTransform: "uppercase",
               }}>Coming Soon</div>
             </div>
-            <div style={{
-              position: "absolute", bottom: 8, right: 10,
-              background: "rgba(0,0,0,0.1)", color: tabColor.accent,
-              fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 5,
-            }}>{video.runtime}</div>
+            {video.runtime && video.runtime !== "—" && (
+              <div style={{
+                position: "absolute", bottom: 8, right: 10,
+                background: "rgba(0,0,0,0.1)", color: tabColor.accent,
+                fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 5,
+              }}>{video.runtime}</div>
+            )}
           </>
         )}
       </div>
@@ -183,13 +206,13 @@ function VideoCard({ video, onPlay }) {
       {/* Content */}
       <div style={{ padding: "12px 14px" }}>
         <div style={{ display: "flex", alignItems: "flex-start", gap: 6, marginBottom: 5 }}>
-          <span style={{ fontSize: 14, flexShrink: 0 }}>{video.icon}</span>
-          <div style={{ fontSize: 13, fontWeight: 800, color: BRAND.dark, lineHeight: 1.3 }}>{video.title}</div>
+          <span style={{ fontSize: big ? 16 : 14, flexShrink: 0 }}>{video.icon}</span>
+          <div style={{ fontSize: big ? 15 : 13, fontWeight: 800, color: BRAND.dark, lineHeight: 1.3 }}>{video.title}</div>
         </div>
         <div style={{ fontSize: 11, color: BRAND.gray, lineHeight: 1.6 }}>{video.desc}</div>
-        <div style={{ marginTop: 8, display: "flex", justifyContent: "flex-end" }}>
-          <span style={{ fontSize: 10, color: BRAND.gray }}>⏱ {video.runtime}</span>
-        </div>
+        {locked && (
+          <div style={{ marginTop: 8, fontSize: 11, fontWeight: 700, color: BRAND.blue }}>Upgrade to unlock →</div>
+        )}
       </div>
     </div>
   );
@@ -235,12 +258,37 @@ function VideoModal({ video, onClose }) {
 
 export default function ResourcesPage({ go }) {
   const { lang } = useLang();
-  const [activeTab, setActiveTab]     = useState("account");
+  const { user } = useAuth();
+  const [activeTab, setActiveTab]     = useState("general");
   const [activeVideo, setActiveVideo] = useState(null);
 
-  const videos = VIDEOS.filter(v => v.tab === activeTab);
-  const ready  = videos.filter(v => v.src);
-  const soon   = videos.filter(v => !v.src);
+  // Raw flag row (not just this user's access) — needed to tell "nobody has
+  // this yet" (Coming Soon) apart from "it's live, but not for your plan"
+  // (Locked). useFeatureFlag only answers the latter question for one plan.
+  const [biFlag, setBiFlag] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${SUPABASE_URL}/rest/v1/feature_flags?name=eq.bid_intelligence&select=enabled,early_access_plans`, {
+      headers: { apikey: SUPABASE_ANON_KEY },
+    }).then(r => r.json()).then(d => { if (!cancelled) setBiFlag(d?.[0] || null); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+  const { canAccess: biCanAccess } = useFeatureFlag("bid_intelligence", user?.plan);
+  const biFlagLive = !!(biFlag && (biFlag.enabled || (biFlag.early_access_plans || []).length > 0));
+
+  const biVideo = {
+    id: "bid-intelligence", tab: "advanced", slot: "bottomRight",
+    title: "Bid Intelligence",
+    desc: "AI-generated bid-prep reports for every address — payment reliability, access difficulty, and would-return rate, summarized in seconds.",
+    runtime: "—", icon: "🤖",
+    src: null,
+    locked: biFlagLive && !biCanAccess,
+  };
+
+  const allVideos  = [...VIDEOS, biVideo];
+  const bySlot      = Object.fromEntries(allVideos.filter(v => v.tab === activeTab).map(v => [v.slot, v]));
+  const handlePlay   = v => setActiveVideo(v);
+  const handleLocked = () => go("pricing");
 
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "1.5rem 1.25rem 5rem", fontFamily: "'DM Sans', sans-serif" }}>
@@ -286,55 +334,23 @@ export default function ResourcesPage({ go }) {
         ))}
       </div>
 
-      {/* Coming soon banner */}
-      {ready.length === 0 && (
-        <div style={{
-          background: "#F0FDF4", border: "1px solid #86EFAC",
-          borderRadius: 14, padding: "1rem 1.25rem",
-          marginBottom: "1.5rem",
-          display: "flex", gap: 12, alignItems: "flex-start",
-        }}>
-          <div style={{ fontSize: 22, flexShrink: 0 }}>🎬</div>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 800, color: "#166534", marginBottom: 3 }}>
-              Tutorial videos coming soon
-            </div>
-            <div style={{ fontSize: 12, color: "#166534", lineHeight: 1.6 }}>
-              We're recording short walkthrough videos for every feature. Visit{" "}
-              <span
-                onClick={() => go("support")}
-                style={{ fontWeight: 700, cursor: "pointer", textDecoration: "underline" }}
-              >Support</span>{" "}
-              for written guides in the meantime.
-            </div>
+      {/* Video grid — one big top tile + two below for General/Basics,
+          an even 2x2 grid for Advanced */}
+      {activeTab !== "advanced" ? (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+          <div style={{ gridColumn: "1 / -1" }}>
+            <VideoCard video={bySlot.top} onPlay={handlePlay} onLocked={handleLocked} big />
           </div>
+          <VideoCard video={bySlot.bottomLeft} onPlay={handlePlay} onLocked={handleLocked} />
+          <VideoCard video={bySlot.bottomRight} onPlay={handlePlay} onLocked={handleLocked} />
         </div>
-      )}
-
-      {/* Ready videos */}
-      {ready.length > 0 && (
-        <>
-          <div style={{ fontSize: 11, fontWeight: 700, color: BRAND.gray, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>
-            Available Now
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 14, marginBottom: "1.5rem" }}>
-            {ready.map(v => <VideoCard key={v.id} video={v} onPlay={setActiveVideo} />)}
-          </div>
-        </>
-      )}
-
-      {/* Coming soon videos */}
-      {soon.length > 0 && (
-        <>
-          {ready.length > 0 && (
-            <div style={{ fontSize: 11, fontWeight: 700, color: BRAND.gray, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>
-              Coming Soon
-            </div>
-          )}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 14 }}>
-            {soon.map(v => <VideoCard key={v.id} video={v} onPlay={setActiveVideo} />)}
-          </div>
-        </>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+          <VideoCard video={bySlot.topLeft} onPlay={handlePlay} onLocked={handleLocked} />
+          <VideoCard video={bySlot.topRight} onPlay={handlePlay} onLocked={handleLocked} />
+          <VideoCard video={bySlot.bottomLeft} onPlay={handlePlay} onLocked={handleLocked} />
+          <VideoCard video={bySlot.bottomRight} onPlay={handlePlay} onLocked={handleLocked} />
+        </div>
       )}
 
       {/* Support link */}

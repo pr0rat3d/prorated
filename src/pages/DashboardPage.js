@@ -11,7 +11,7 @@ import { hasSavedBiometricLogin, clearBiometricLogin, getBiometryLabel } from ".
 
 
 import { fetchMyReviews, updateReview, deleteReview } from "../api/supabase";
-import { getSavedAddresses, unsaveAddress, signIn, updatePassword, saveTradeMemberships } from "../api/auth";
+import { getSavedAddresses, unsaveAddress, signIn, updatePassword, saveTradeMemberships, saveWatchlistOptIn } from "../api/auth";
 import { PARTNERS } from "./PartnerLandingPage";
 import { useLang } from "../hooks/useLang";
 import { t } from "../i18n/translations";
@@ -98,10 +98,10 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
 
   const handlePasswordChange = async () => {
     setPwError(null);
-    if (!pwForm.current)               { setPwError("Please enter your current password."); return; }
-    if (pwForm.next.length < 6)        { setPwError("New password must be at least 6 characters."); return; }
-    if (pwForm.next !== pwForm.confirm) { setPwError("New passwords don't match."); return; }
-    if (pwForm.next === pwForm.current) { setPwError("New password must be different from your current password."); return; }
+    if (!pwForm.current)               { setPwError(t(lang,"dashboard.errPwCurrent")); return; }
+    if (pwForm.next.length < 6)        { setPwError(t(lang,"dashboard.errPwLength")); return; }
+    if (pwForm.next !== pwForm.confirm) { setPwError(t(lang,"dashboard.errPwMismatch")); return; }
+    if (pwForm.next === pwForm.current) { setPwError(t(lang,"dashboard.errPwSame")); return; }
     setPwLoading(true);
     try {
       await signIn({ email: user.email, password: pwForm.current });
@@ -111,9 +111,9 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
       setTimeout(() => { setPwSuccess(false); setShowPwChange(false); }, 3000);
     } catch (err) {
       if (err.message?.toLowerCase().includes("invalid")) {
-        setPwError("Current password is incorrect.");
+        setPwError(t(lang,"dashboard.errPwIncorrect"));
       } else {
-        setPwError(err.message || "Could not update password. Please try again.");
+        setPwError(err.message || t(lang,"dashboard.errPwGeneric"));
       }
     }
     setPwLoading(false);
@@ -131,6 +131,19 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
       const bMatch = b.relevantTrades?.includes(user?.trade) ? 0 : 1;
       return aMatch - bMatch;
     });
+  const [watchlistOptInSaving, setWatchlistOptInSaving] = useState(false);
+  const handleToggleWatchlistOptIn = async () => {
+    const next = !user?.watchlist_email_opt_in;
+    setWatchlistOptInSaving(true);
+    try {
+      await saveWatchlistOptIn(next);
+      await refreshUser();
+    } catch {
+      // Non-critical — leave as-is so the user can just retry
+    }
+    setWatchlistOptInSaving(false);
+  };
+
   const toggleMembership = (key) => {
     setSelectedMemberships(sel => sel.includes(key) ? sel.filter(k => k !== key) : [...sel, key]);
   };
@@ -148,7 +161,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
   };
 
   const handleDeleteAccount = async () => {
-    if (!window.confirm("Delete your account? This cannot be undone — your account will be permanently deleted and your reviews anonymized. You'll be logged out immediately.")) return;
+    if (!window.confirm(t(lang,"dashboard.confirmDeleteAccount"))) return;
     setDeleteAccountLoading(true);
     try {
       const session = JSON.parse(localStorage.getItem("prorated_session") || "{}");
@@ -170,7 +183,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
       go("home");
     } catch (err) {
       console.warn("[ProRated] Delete account error:", err);
-      window.alert(err.message || "Could not delete account. Please try again or contact hello@prorated.app.");
+      window.alert(err.message || t(lang,"dashboard.errDeleteAccount"));
       setDeleteAccountLoading(false);
     }
   };
@@ -234,7 +247,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
       const token       = session.access_token;
       const seatLimit   = COMPANY_TIERS[company.plan]?.seatLimit || 5;
       if (companyMembers.length >= seatLimit) {
-        setSeatError(`Seat limit reached (${seatLimit}). Upgrade your plan to add more team members.`);
+        setSeatError(`${t(lang,"dashboard.errSeatLimit")} (${seatLimit}). ${t(lang,"dashboard.errSeatLimitBody")}`);
         setInvLoad(false);
         return;
       }
@@ -288,14 +301,14 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
       setInviteEmail("");
       setTimeout(() => setInvSuccess(false), 3000);
     } catch (err) {
-      setInvError("Could not send invite. Please try again.");
+      setInvError(t(lang,"dashboard.errInvite"));
     }
     setInvLoad(false);
   };
 
   const handleRemoveMember = async (memberId) => {
     if (!company) return;
-    if (!window.confirm("Remove this member from your team? They'll keep their account but lose access to team features.")) return;
+    if (!window.confirm(t(lang,"dashboard.confirmRemoveMember"))) return;
     setRemoveMemberError(null);
     try {
       const session = JSON.parse(localStorage.getItem("prorated_session") || "{}");
@@ -315,12 +328,12 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.message || "Could not remove member");
+        throw new Error(body.message || t(lang,"dashboard.errRemoveMember"));
       }
       setMembers(m => m.filter(x => x.id !== memberId));
     } catch (err) {
       console.warn("[ProRated] Remove member error:", err);
-      setRemoveMemberError(err.message || "Could not remove member. Please try again.");
+      setRemoveMemberError(err.message || t(lang,"dashboard.errRemoveMemberRetry"));
     }
   };
 
@@ -346,7 +359,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
 
   const handleDeleteTeam = async () => {
     if (!company) return;
-    if (!window.confirm(`Delete "${company.name}" and remove all team members? This cannot be undone.`)) return;
+    if (!window.confirm(`${t(lang,"dashboard.confirmDeleteTeamPrefix")} "${company.name}"${t(lang,"dashboard.confirmDeleteTeamSuffix")}`)) return;
     try {
       const session = JSON.parse(localStorage.getItem("prorated_session") || "{}");
       const token   = session.access_token;
@@ -363,7 +376,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.message || "Could not delete team workspace");
+        throw new Error(body.message || t(lang,"dashboard.errDeleteTeam"));
       }
 
       // Update localStorage session — do NOT call refreshUser (would re-fetch company)
@@ -381,7 +394,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
       setTab("reviews");
     } catch (err) {
       console.warn("[ProRated] Delete team error:", err);
-      window.alert(err.message || "Could not delete team workspace. Please try again.");
+      window.alert(err.message || t(lang,"dashboard.errDeleteTeamRetry"));
     }
   };
 
@@ -421,8 +434,8 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
         <div style={{ background: "#DCFCE7", border: "1px solid #86EFAC", borderRadius: 10, padding: "12px 16px", marginBottom: 16, display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ fontSize: 18 }}>🎉</span>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#166534" }}>Payment successful! Your plan is being activated.</div>
-            <div style={{ fontSize: 12, color: "#15803D", marginTop: 2 }}>Your Team tab will appear once your plan is confirmed (usually within seconds).</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#166534" }}>{t(lang,"dashboard.paymentSuccessBanner")}</div>
+            <div style={{ fontSize: 12, color: "#15803D", marginTop: 2 }}>{t(lang,"dashboard.paymentSuccessBannerSub")}</div>
           </div>
         </div>
       )}
@@ -430,8 +443,8 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
       {/* Pending verification banner */}
       {isLoggedIn && user?.status === "pending" && (
         <div style={{ background: "#FEF3C7", border: "1px solid #FDE68A", borderRadius: 10, padding: "12px 16px", marginBottom: 16 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#92400E" }}>⏳ Verification in progress</div>
-          <div style={{ fontSize: 11, color: "#92400E", marginTop: 2 }}>You can browse while you wait — reviews unlock once approved (usually under 24hrs)</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#92400E" }}>{t(lang,"dashboard.verificationBanner")}</div>
+          <div style={{ fontSize: 11, color: "#92400E", marginTop: 2 }}>{t(lang,"dashboard.verificationBannerSub")}</div>
         </div>
       )}
 
@@ -449,16 +462,16 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
               {isLoggedIn && user?.status === "pending"  && <span style={{ background: "#FEF3C7", color: "#92400E", fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 20 }}>⏳ PENDING</span>}
             </div>
             <div style={{ fontSize: 12, color: BRAND.gray }}>
-              {trade?.icon} {trade?.label || "Contractor"}{user?.state ? ` · ${user.state}` : ""}
+              {trade?.icon} {trade?.label || t(lang,"dashboard.contractor")}{user?.state ? ` · ${user.state}` : ""}
             </div>
             {isLoggedIn && (() => {
               const score = user?.trust_score || 0;
               const helpful = myReviews.reduce((sum, r) => sum + (r.helpfulCount || 0), 0);
-              const tier = score >= 90 ? { badge: "🛡️", label: "Elite Pro",    color: "#7C3AED" }
-                         : score >= 75 ? { badge: "⭐", label: "Verified Pro", color: "#D97706" }
-                         : score >= 50 ? { badge: "🟢", label: "Trusted",      color: "#16A34A" }
-                         : score >= 25 ? { badge: "🔵", label: "Established",  color: "#2563EB" }
-                         :               { badge: "⚪", label: "New Member",   color: "#64748B" };
+              const tier = score >= 90 ? { badge: "🛡️", label: t(lang,"dashboard.tierElite"),     color: "#7C3AED" }
+                         : score >= 75 ? { badge: "⭐", label: t(lang,"dashboard.tierVerified"),  color: "#D97706" }
+                         : score >= 50 ? { badge: "🟢", label: t(lang,"dashboard.tierTrusted"),   color: "#16A34A" }
+                         : score >= 25 ? { badge: "🔵", label: t(lang,"dashboard.tierEstablished"), color: "#2563EB" }
+                         :               { badge: "⚪", label: t(lang,"dashboard.tierNew"),        color: "#64748B" };
               return (
                 <div style={{ fontSize: 11, fontWeight: 700, color: tier.color, marginTop: 3 }}>
                   {tier.badge} {score}/100 · {tier.label}
@@ -469,11 +482,11 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
           </div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <Btn onClick={() => go("review")}>+ New review</Btn>
+          <Btn onClick={() => go("review")}>{t(lang,"dashboard.newReview")}</Btn>
           {isLoggedIn && (
             <button onClick={handleLogout}
               style={{ background: "none", border: `1px solid ${BRAND.border}`, color: BRAND.gray, padding: "8px 14px", borderRadius: 9, fontSize: 13, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
-              Log out
+              {t(lang,"dashboard.logOut")}
             </button>
           )}
         </div>
@@ -483,9 +496,9 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "0.6rem", marginBottom: "1.25rem" }}>
         {[
           [myReviews.length.toString(),              t(lang,"dashboard.reviewsSubmitted"), ""],
-          [(user?.helpful_count ?? 0).toString(),    "Helpful votes", "From peers"],
-          [saved.length.toString(),                  "Saved",         "Watching"],
-          [(user?.trust_score ?? 0).toString(),      "Trust score",   "Reviewer rating"],
+          [(user?.helpful_count ?? 0).toString(),    t(lang,"dashboard.helpfulVotes"), t(lang,"dashboard.fromPeers")],
+          [saved.length.toString(),                  t(lang,"dashboard.saved"),        t(lang,"dashboard.watching")],
+          [(user?.trust_score ?? 0).toString(),      t(lang,"dashboard.trustScore"),   t(lang,"dashboard.reviewerRating")],
         ].map(([v, l, s]) => (
           <Card key={l} style={{ textAlign: "center", padding: "1rem" }}>
             <div style={{ fontSize: 22, fontWeight: 800, color: BRAND.blue, fontFamily: "'DM Mono', monospace", marginBottom: 2 }}>{v}</div>
@@ -504,24 +517,24 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
             <div style={{ fontSize: 28, marginBottom: 4 }}>🏆 💎 🚀</div>
 
             <h2 style={{ fontSize: 26, fontWeight: 800, color: "#0F172A", marginBottom: 8, marginTop: 16 }}>
-              You're all set!
+              {t(lang,"dashboard.allSetTitle")}
             </h2>
             <p style={{ fontSize: 14, color: "#64748B", lineHeight: 1.7, marginBottom: 24 }}>
               {user?.status === "pending"
-                ? "Your plan is now active. Your license is still being verified — you'll get full search and review access as soon as that's approved."
-                : "Your plan is now active. You have full access to all features included with your tier — including unlimited address lookups and team management."}
+                ? t(lang,"dashboard.allSetPending")
+                : t(lang,"dashboard.allSetActive")}
             </p>
 
             {/* Plan features list */}
             <div style={{ background: "#F0FDF4", borderRadius: 14, padding: "1rem 1.25rem", marginBottom: 24, textAlign: "left" }}>
               {[
-                "✓  Unlimited address lookups",
-                "✓  Full 5-category rating breakdowns",
-                "✓  Bid Prep Summary + Would-Return rate",
-                "✓  Team logins (based on your plan)",
-                "✓  Email alerts for saved addresses",
-                "✓  Local Points of Interest",
-                "✓  Watchlist alerts before you bid",
+                t(lang,"dashboard.featLookups"),
+                t(lang,"dashboard.featRatings"),
+                t(lang,"dashboard.featBidPrep"),
+                t(lang,"dashboard.featTeamLogins"),
+                t(lang,"dashboard.featEmailAlerts"),
+                t(lang,"dashboard.featPOI"),
+                t(lang,"dashboard.featWatchlist"),
               ].map(f => (
                 <div key={f} style={{ fontSize: 13, color: "#166534", fontWeight: 600, padding: "4px 0" }}>{f}</div>
               ))}
@@ -529,10 +542,10 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
 
             <button onClick={onPaymentAck}
               style={{ width: "100%", background: "linear-gradient(135deg, #16A34A, #059669)", color: "#fff", border: "none", padding: "14px", borderRadius: 12, fontSize: 16, fontWeight: 800, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", letterSpacing: "-0.3px" }}>
-              Let's go! →
+              {t(lang,"dashboard.letsGo")}
             </button>
             <p style={{ fontSize: 11, color: "#94A3B8", marginTop: 12, marginBottom: 0 }}>
-              Thank you for supporting ProRated 🛡️
+              {t(lang,"dashboard.thankYouSupporting")}
             </p>
           </div>
         </div>
@@ -555,10 +568,10 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
         {myReviews.length > 0 && (
           <div style={{ background: "#F0FDF4", border: "1.5px solid #86EFAC", borderRadius: 14, padding: "1rem 1.25rem", marginBottom: "1rem" }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: "#166534" }}>
-              🛡️ {myReviews.length} review{myReviews.length !== 1 ? "s" : ""} submitted
+              🛡️ {myReviews.length} {t(lang,"dashboard.reviewsSubmittedCount")}
             </div>
             <div style={{ fontSize: 11, color: "#15803D", marginTop: 4 }}>
-              Your reviews help the whole community bid smarter. Keep it up.
+              {t(lang,"dashboard.reviewActivityBody")}
             </div>
           </div>
         )}
@@ -567,13 +580,13 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
       {tab === "reviews" && (
         <div>
           {loadingReviews ? (
-            <div style={{ textAlign: "center", padding: "2rem", color: BRAND.gray, fontSize: 13 }}>Loading reviews...</div>
+            <div style={{ textAlign: "center", padding: "2rem", color: BRAND.gray, fontSize: 13 }}>{t(lang,"dashboard.loadingReviews")}</div>
           ) : myReviews.length === 0 ? (
             <Card style={{ textAlign: "center", padding: "1.5rem" }}>
               <div style={{ fontSize: 32, marginBottom: 8 }}>⭐</div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: BRAND.dark, marginBottom: 4 }}>No reviews yet</div>
-              <div style={{ fontSize: 12, color: BRAND.gray, marginBottom: 16 }}>Your submitted reviews will appear here.</div>
-              <Btn onClick={() => go("review")}>+ Leave your first review</Btn>
+              <div style={{ fontSize: 14, fontWeight: 700, color: BRAND.dark, marginBottom: 4 }}>{t(lang,"dashboard.noReviewsYet")}</div>
+              <div style={{ fontSize: 12, color: BRAND.gray, marginBottom: 16 }}>{t(lang,"dashboard.noReviewsBody")}</div>
+              <Btn onClick={() => go("review")}>{t(lang,"dashboard.leaveFirstReview")}</Btn>
             </Card>
           ) : (
             myReviews.map(r => {
@@ -595,22 +608,22 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        📍 {r.address ? toTitleCase(r.address) : "Address on file"}
+                        📍 {r.address ? toTitleCase(r.address) : t(lang,"dashboard.addressOnFile")}
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                         <Stars score={score} size={12} />
                         <span style={{ fontSize: 11, color: BRAND.gray }}>
                           {tr?.icon} {tr?.label || r.trade}
-                          {date && ` · ${new Date(date).toLocaleDateString("en-US", { month: "short", year: "numeric" })}`}
+                          {date && ` · ${new Date(date).toLocaleDateString(lang === "es" ? "es-ES" : "en-US", { month: "short", year: "numeric" })}`}
                         </span>
                         {(() => {
                           const s = user?.trust_score || 0;
-                          const t = s >= 90 ? { badge: "🛡️", label: "Elite Pro",    color: "#7C3AED", bg: "#FAF5FF", border: "#DDD6FE" }
-                                  : s >= 75 ? { badge: "⭐",  label: "Verified Pro", color: "#D97706", bg: "#FFFBEB", border: "#FDE68A" }
-                                  : s >= 50 ? { badge: "🟢",  label: "Trusted",      color: "#16A34A", bg: "#F0FDF4", border: "#86EFAC" }
-                                  : s >= 25 ? { badge: "🔵",  label: "Established",  color: "#2563EB", bg: "#EFF6FF", border: "#BFDBFE" }
-                                  :           { badge: "⚪",  label: "New Member",   color: "#64748B", bg: "#F8FAFC", border: "#E2E8F0" };
-                          return <span style={{ background: t.bg, border: `1px solid ${t.border}`, color: t.color, fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 20, display: "inline-flex", alignItems: "center", gap: 3, whiteSpace: "nowrap" }}>{t.badge} {t.label}</span>;
+                          const tr = s >= 90 ? { badge: "🛡️", label: t(lang,"dashboard.tierElite"),      color: "#7C3AED", bg: "#FAF5FF", border: "#DDD6FE" }
+                                  : s >= 75 ? { badge: "⭐",  label: t(lang,"dashboard.tierVerified"),   color: "#D97706", bg: "#FFFBEB", border: "#FDE68A" }
+                                  : s >= 50 ? { badge: "🟢",  label: t(lang,"dashboard.tierTrusted"),    color: "#16A34A", bg: "#F0FDF4", border: "#86EFAC" }
+                                  : s >= 25 ? { badge: "🔵",  label: t(lang,"dashboard.tierEstablished"), color: "#2563EB", bg: "#EFF6FF", border: "#BFDBFE" }
+                                  :           { badge: "⚪",  label: t(lang,"dashboard.tierNew"),        color: "#64748B", bg: "#F8FAFC", border: "#E2E8F0" };
+                          return <span style={{ background: tr.bg, border: `1px solid ${tr.border}`, color: tr.color, fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 20, display: "inline-flex", alignItems: "center", gap: 3, whiteSpace: "nowrap" }}>{tr.badge} {tr.label}</span>;
                         })()}
                       </div>
                     </div>
@@ -639,7 +652,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                       {/* Work type */}
                       {workLabel && (
                         <div style={{ fontSize: 12, color: BRAND.gray, marginBottom: 10 }}>
-                          🔧 <strong>Work type:</strong> {workLabel}
+                          🔧 <strong>{t(lang,"dashboard.workType")}:</strong> {workLabel}
                         </div>
                       )}
 
@@ -647,8 +660,8 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                       {wouldReturn !== null && wouldReturn !== undefined && (
                         <div style={{ fontSize: 12, marginBottom: 10 }}>
                           {wouldReturn
-                            ? <span style={{ color: "#16A34A", fontWeight: 600 }}>👍 Would return to this job site</span>
-                            : <span style={{ color: "#DC2626", fontWeight: 600 }}>👎 Would not return to this job site</span>}
+                            ? <span style={{ color: "#16A34A", fontWeight: 600 }}>👍 {t(lang,"dashboard.wouldReturn")}</span>
+                            : <span style={{ color: "#DC2626", fontWeight: 600 }}>👎 {t(lang,"dashboard.wouldNotReturn")}</span>}
                         </div>
                       )}
 
@@ -671,21 +684,21 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
 
                       {/* Actions */}
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontSize: 11, color: BRAND.gray }}>👍 {r.helpful_count || r.helpfulCount || 0} found helpful</span>
+                        <span style={{ fontSize: 11, color: BRAND.gray }}>👍 {r.helpful_count || r.helpfulCount || 0} {t(lang,"dashboard.foundHelpful")}</span>
                         <div style={{ display: "flex", gap: 6 }}>
                           <button
                             onClick={() => go("home", r.address || "")}
                             style={{ background: "#EFF6FF", border: `1px solid #BFDBFE`, color: BRAND.blue, fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 7, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
-                            🏠 View
+                            🏠 {t(lang,"dashboard.view")}
                           </button>
                           <button
                             onClick={() => goReview ? goReview(r.address || "", r.id) : go("review")}
                             style={{ background: "none", border: `1px solid ${BRAND.border}`, color: BRAND.gray, fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 7, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
-                            ✏️ Edit
+                            ✏️ {t(lang,"dashboard.edit")}
                           </button>
                           <button
                             onClick={async () => {
-                              if (!window.confirm("Delete this review? This cannot be undone.")) return;
+                              if (!window.confirm(t(lang,"dashboard.confirmDeleteReview"))) return;
                               const ok = await deleteReview(r.id);
                               if (ok) setMyReviews(prev => prev.filter(x => x.id !== r.id));
                             }}
@@ -702,7 +715,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
           )}
           <div style={{ textAlign: "center", padding: "1.25rem", border: `2px dashed ${BRAND.border}`, borderRadius: 14, color: BRAND.gray, cursor: "pointer" }} onClick={() => go("review")}>
             <div style={{ fontSize: 22, marginBottom: 5 }}>+</div>
-            <div style={{ fontSize: 13, fontWeight: 600 }}>Add a review</div>
+            <div style={{ fontSize: 13, fontWeight: 600 }}>{t(lang,"dashboard.addReview")}</div>
           </div>
         </div>
       )}
@@ -713,20 +726,20 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
           {!isLoggedIn && (
             <div style={{ textAlign: "center", padding: "2rem", background: "#F8FAFC", borderRadius: 14, border: `1px solid ${BRAND.border}` }}>
               <div style={{ fontSize: 28, marginBottom: 10 }}>🔒</div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: BRAND.dark, marginBottom: 6 }}>Sign in to save addresses</div>
-              <div style={{ fontSize: 13, color: BRAND.gray, marginBottom: 16 }}>Create a free account to watch addresses and get notified of new reviews.</div>
-              <Btn onClick={() => go("signup")}>Sign up free</Btn>
+              <div style={{ fontSize: 14, fontWeight: 700, color: BRAND.dark, marginBottom: 6 }}>{t(lang,"dashboard.signInToSave")}</div>
+              <div style={{ fontSize: 13, color: BRAND.gray, marginBottom: 16 }}>{t(lang,"dashboard.signInBody")}</div>
+              <Btn onClick={() => go("signup")}>{t(lang,"dashboard.signUpFree")}</Btn>
             </div>
           )}
           {isLoggedIn && loadingSaved && (
-            <div style={{ textAlign: "center", padding: "2rem", color: BRAND.gray }}>Loading saved addresses...</div>
+            <div style={{ textAlign: "center", padding: "2rem", color: BRAND.gray }}>{t(lang,"dashboard.loadingAddresses")}</div>
           )}
           {isLoggedIn && !loadingSaved && saved.length === 0 && (
             <div style={{ textAlign: "center", padding: "2rem", background: "#F8FAFC", borderRadius: 14, border: `1px solid ${BRAND.border}` }}>
               <div style={{ fontSize: 28, marginBottom: 10 }}>📍</div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: BRAND.dark, marginBottom: 6 }}>No saved addresses yet</div>
-              <div style={{ fontSize: 13, color: BRAND.gray, marginBottom: 16 }}>Search for a job site and tap the bookmark icon to save it here.</div>
-              <Btn onClick={() => go("home")}>Search addresses</Btn>
+              <div style={{ fontSize: 14, fontWeight: 700, color: BRAND.dark, marginBottom: 6 }}>{t(lang,"dashboard.noSaved")}</div>
+              <div style={{ fontSize: 13, color: BRAND.gray, marginBottom: 16 }}>{t(lang,"dashboard.noSavedBody")}</div>
+              <Btn onClick={() => go("home")}>{t(lang,"dashboard.searchBtn")}</Btn>
             </div>
           )}
           {isLoggedIn && !loadingSaved && saved.map(addr => (
@@ -734,13 +747,13 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: BRAND.dark, marginBottom: 2 }}>📍 {toTitleCase(addr.address)}</div>
-                  <div style={{ fontSize: 12, color: BRAND.gray }}>Saved {new Date(addr.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
+                  <div style={{ fontSize: 12, color: BRAND.gray }}>{t(lang,"dashboard.savedOn")} {new Date(addr.created_at).toLocaleDateString(lang === "es" ? "es-ES" : "en-US", { month: "short", day: "numeric" })}</div>
                 </div>
                 <div style={{ display: "flex", gap: 5, alignItems: "center", flexShrink: 0 }}>
                   <Btn small onClick={() => {
                     try { sessionStorage.setItem("pr_search_query", addr.address); } catch {}
                     go("home");
-                  }}>View</Btn>
+                  }}>{t(lang,"dashboard.view")}</Btn>
                   <span style={{ fontSize: 16 }}>{addr.notify ? "🔔" : "🔕"}</span>
                   <button
                     onClick={async () => {
@@ -748,12 +761,26 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                       setSaved(prev => prev.filter(a => a.id !== addr.id));
                     }}
                     style={{ background: "#FEE2E2", color: "#991B1B", border: "none", borderRadius: 7, padding: "5px 9px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}
-                    title="Remove saved address"
+                    title={t(lang,"dashboard.removeSaved")}
                   >✕</button>
                 </div>
               </div>
             </Card>
           ))}
+          {isLoggedIn && !loadingSaved && (
+            <Card style={{ marginTop: "0.85rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: 2 }}>📧 {t(lang,"dashboard.watchlistEmailTitle")}</div>
+                  <div style={{ fontSize: 11, color: BRAND.gray }}>{t(lang,"dashboard.watchlistEmailSub")}</div>
+                </div>
+                <button onClick={handleToggleWatchlistOptIn} disabled={watchlistOptInSaving}
+                  style={{ background: user?.watchlist_email_opt_in ? "#F1F5F9" : BRAND.blue, color: user?.watchlist_email_opt_in ? BRAND.gray : "#fff", border: "none", padding: "7px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: watchlistOptInSaving ? "default" : "pointer", fontFamily: "'DM Sans', sans-serif", flexShrink: 0, opacity: watchlistOptInSaving ? 0.6 : 1 }}>
+                  {watchlistOptInSaving ? t(lang,"dashboard.saving") : user?.watchlist_email_opt_in ? t(lang,"dashboard.turnOff") : t(lang,"dashboard.turnOn")}
+                </button>
+              </div>
+            </Card>
+          )}
         </div>
       )}
 
@@ -764,26 +791,26 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
             const currentUserIsOwner = user?.company_role === "owner" || (company && company.owner_id === user?.id);
             return (
           companyLoading ? (
-            <div style={{ textAlign: "center", padding: "2rem", color: BRAND.gray, fontSize: 13 }}>Loading team data...</div>
+            <div style={{ textAlign: "center", padding: "2rem", color: BRAND.gray, fontSize: 13 }}>{t(lang,"dashboard.loadingTeam")}</div>
           ) : !company ? (
             // No company yet — only owners/paid solos see setup CTA; members shouldn't reach here
             user?.company_role === "member" ? (
               <Card>
                 <div style={{ textAlign: "center", padding: "1rem 0" }}>
                   <div style={{ fontSize: 32, marginBottom: 12 }}>⏳</div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: BRAND.dark, marginBottom: 6 }}>Team loading…</div>
-                  <div style={{ fontSize: 13, color: BRAND.gray }}>Your team info is syncing. Try refreshing in a moment.</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: BRAND.dark, marginBottom: 6 }}>{t(lang,"dashboard.teamLoadingEllipsis")}</div>
+                  <div style={{ fontSize: 13, color: BRAND.gray }}>{t(lang,"dashboard.teamSyncing")}</div>
                 </div>
               </Card>
             ) : (
             <Card>
               <div style={{ textAlign: "center", padding: "1rem 0" }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>🏗️</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: BRAND.dark, marginBottom: 6 }}>Set up your company account</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: BRAND.dark, marginBottom: 6 }}>{t(lang,"dashboard.setUpCompanyTitle")}</div>
                 <div style={{ fontSize: 13, color: BRAND.gray, marginBottom: 20, lineHeight: 1.6 }}>
-                  Create a company profile to invite your team, manage seats, and track your collective review stats.
+                  {t(lang,"dashboard.setUpCompanyBody")}
                 </div>
-                <Btn fullWidth onClick={() => go("company-setup")}>Set up company →</Btn>
+                <Btn fullWidth onClick={() => go("company-setup")}>{t(lang,"dashboard.setUpCompanyBtn")}</Btn>
               </div>
             </Card>
             )
@@ -805,30 +832,30 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                         />
                         <button onClick={handleRenameCompany} disabled={renameLoading || !newCompanyName.trim()}
                           style={{ background: BRAND.blue, color: "#fff", border: "none", borderRadius: 7, padding: "4px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
-                          {renameLoading ? "..." : "Save"}
+                          {renameLoading ? "..." : t(lang,"dashboard.save")}
                         </button>
                         <button onClick={() => { setRenamingCompany(false); setNewCompanyName(""); }}
                           style={{ background: "none", border: `1px solid ${BRAND.border}`, borderRadius: 7, padding: "4px 10px", fontSize: 11, color: BRAND.gray, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
-                          Cancel
+                          {t(lang,"dashboard.cancel")}
                         </button>
                       </div>
                     ) : (
                       <div style={{ fontSize: 16, fontWeight: 800, color: BRAND.dark }}>{company.name}</div>
                     )}
                     <div style={{ fontSize: 12, color: BRAND.gray, marginTop: 2 }}>
-                      {COMPANY_TIERS[company.plan]?.icon} {COMPANY_TIERS[company.plan]?.name} Plan
+                      {COMPANY_TIERS[company.plan]?.icon} {COMPANY_TIERS[company.plan]?.name} {t(lang,"dashboard.planWord")}
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontSize: 12, fontWeight: 700, color: BRAND.dark }}>
-                        {companyMembers.length} / {company.plan === "gold" ? "∞" : COMPANY_TIERS[company.plan]?.seatLimit} seats
+                        {companyMembers.length} / {company.plan === "gold" ? "∞" : COMPANY_TIERS[company.plan]?.seatLimit} {t(lang,"dashboard.seats")}
                       </div>
-                      <div style={{ fontSize: 10, color: BRAND.gray }}>team members</div>
+                      <div style={{ fontSize: 10, color: BRAND.gray }}>{t(lang,"dashboard.teamMembers")}</div>
                     </div>
                     {currentUserIsOwner && (
                       <button onClick={() => setShowTeamSettings(s => !s)}
-                        title="Team settings"
+                        title={t(lang,"dashboard.teamSettings")}
                         style={{ background: showTeamSettings ? "#EFF6FF" : "#F1F5F9", border: `1px solid ${showTeamSettings ? BRAND.blue : BRAND.border}`, borderRadius: 8, width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, fontSize: 14 }}>
                         ⚙️
                       </button>
@@ -849,29 +876,29 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
 
                 {company.trial_ends_at && new Date(company.trial_ends_at) > new Date() && (
                   <div style={{ background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 8, padding: "6px 10px", fontSize: 11, color: "#166534", fontWeight: 600 }}>
-                    🎁 Free trial active — billing starts {new Date(company.trial_ends_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                    🎁 {t(lang,"dashboard.trialActive")} {new Date(company.trial_ends_at).toLocaleDateString(lang === "es" ? "es-ES" : "en-US", { month: "short", day: "numeric", year: "numeric" })}
                   </div>
                 )}
 
                 {/* Team settings panel */}
                 {showTeamSettings && (
                   <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${BRAND.border}` }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: BRAND.dark, marginBottom: 10 }}>Team Settings</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: BRAND.dark, marginBottom: 10 }}>{t(lang,"dashboard.teamSettings")}</div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                       <button
                         onClick={() => { setRenamingCompany(true); setNewCompanyName(company.name); setShowTeamSettings(false); }}
                         style={{ display: "flex", alignItems: "center", gap: 8, background: "#F8FAFC", border: `1px solid ${BRAND.border}`, borderRadius: 9, padding: "9px 12px", fontSize: 12, fontWeight: 600, color: BRAND.dark, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", textAlign: "left" }}>
-                        ✏️ Rename company
+                        ✏️ {t(lang,"dashboard.renameCompany")}
                       </button>
                       <button
                         onClick={() => go("pricing")}
                         style={{ display: "flex", alignItems: "center", gap: 8, background: "#F8FAFC", border: `1px solid ${BRAND.border}`, borderRadius: 9, padding: "9px 12px", fontSize: 12, fontWeight: 600, color: BRAND.dark, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", textAlign: "left" }}>
-                        ⬆️ Upgrade / change plan
+                        ⬆️ {t(lang,"dashboard.upgradeChangePlan")}
                       </button>
                       <button
                         onClick={handleDeleteTeam}
                         style={{ display: "flex", alignItems: "center", gap: 8, background: "#FEF2F2", border: "1px solid #FCA5A5", borderRadius: 9, padding: "9px 12px", fontSize: 12, fontWeight: 600, color: "#DC2626", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", textAlign: "left" }}>
-                        🗑️ Delete team workspace
+                        🗑️ {t(lang,"dashboard.deleteTeamWorkspace")}
                       </button>
                     </div>
                   </div>
@@ -880,19 +907,19 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
 
               {/* Invite member — owners only */}
               {currentUserIsOwner && <Card style={{ marginBottom: "0.85rem" }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: 4 }}>Invite a team member</div>
-                <div style={{ fontSize: 11, color: BRAND.gray, marginBottom: 12 }}>They'll get an email to create their ProRated account and join your team.</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: 4 }}>{t(lang,"dashboard.inviteMember")}</div>
+                <div style={{ fontSize: 11, color: BRAND.gray, marginBottom: 12 }}>{t(lang,"dashboard.inviteMemberSub")}</div>
 
                 {seatError && (
                   <div style={{ background: "#FEF2F2", border: "1px solid #FCA5A5", borderRadius: 8, padding: "8px 12px", fontSize: 12, color: "#991B1B", marginBottom: 10 }}>
                     {seatError}
-                    <button onClick={() => go("pricing")} style={{ background: "none", border: "none", color: BRAND.blue, fontSize: 12, fontWeight: 700, cursor: "pointer", marginLeft: 8, fontFamily: "'DM Sans', sans-serif" }}>Upgrade →</button>
+                    <button onClick={() => go("pricing")} style={{ background: "none", border: "none", color: BRAND.blue, fontSize: 12, fontWeight: 700, cursor: "pointer", marginLeft: 8, fontFamily: "'DM Sans', sans-serif" }}>{t(lang,"dashboard.upgradeArrow")}</button>
                   </div>
                 )}
 
                 {inviteSuccess && (
                   <div style={{ background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 8, padding: "8px 12px", fontSize: 12, color: "#166534", fontWeight: 600, marginBottom: 10 }}>
-                    ✅ Invite sent! They'll receive an email shortly.
+                    {t(lang,"dashboard.inviteSent")}
                   </div>
                 )}
 
@@ -915,21 +942,21 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                     onClick={handleInvite}
                     disabled={!inviteEmail || inviteLoading}
                     style={{ padding: "10px 16px", background: BRAND.blue, color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: inviteEmail && !inviteLoading ? "pointer" : "not-allowed", opacity: inviteEmail && !inviteLoading ? 1 : 0.6, fontFamily: "'DM Sans', sans-serif", flexShrink: 0 }}>
-                    {inviteLoading ? "..." : "Invite"}
+                    {inviteLoading ? "..." : t(lang,"dashboard.invite")}
                   </button>
                 </div>
               </Card>}
 
               {/* Team members list */}
               <Card style={{ marginBottom: "0.85rem" }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: 12 }}>Team members ({companyMembers.length})</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: 12 }}>{t(lang,"dashboard.teamMembers")} ({companyMembers.length})</div>
                 {removeMemberError && (
                   <div style={{ background: "#FEF2F2", border: "1px solid #FCA5A5", borderRadius: 8, padding: "8px 12px", fontSize: 12, color: "#991B1B", marginBottom: 10 }}>
                     {removeMemberError}
                   </div>
                 )}
                 {companyMembers.length === 0 ? (
-                  <div style={{ fontSize: 13, color: BRAND.gray, textAlign: "center", padding: "1rem 0" }}>No team members yet. Send your first invite above.</div>
+                  <div style={{ fontSize: 13, color: BRAND.gray, textAlign: "center", padding: "1rem 0" }}>{t(lang,"dashboard.noTeamMembers")}</div>
                 ) : (
                   companyMembers.map(member => {
                     const trade = member.trade ? (TRADES.find(t => t.id === member.trade)?.label || member.trade) : "—";
@@ -939,7 +966,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                         <div>
                           <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark }}>
                             {member.name || "—"}
-                            {isOwner && <span style={{ fontSize: 10, background: "#EFF6FF", color: BRAND.blue, fontWeight: 700, padding: "2px 7px", borderRadius: 6, marginLeft: 6 }}>Owner</span>}
+                            {isOwner && <span style={{ fontSize: 10, background: "#EFF6FF", color: BRAND.blue, fontWeight: 700, padding: "2px 7px", borderRadius: 6, marginLeft: 6 }}>{t(lang,"dashboard.owner")}</span>}
                           </div>
                           <div style={{ fontSize: 11, color: BRAND.gray }}>{member.email} · {trade}</div>
                         </div>
@@ -947,7 +974,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                           <button
                             onClick={() => handleRemoveMember(member.id)}
                             style={{ background: "none", border: "1px solid #FCA5A5", color: "#DC2626", fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 7, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", flexShrink: 0 }}>
-                            Remove
+                            {t(lang,"dashboard.remove")}
                           </button>
                         )}
                       </div>
@@ -961,13 +988,13 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                 <div onClick={() => go("pricing")}
                   style={{ background: "linear-gradient(135deg, #0F172A, #1E3A5F)", borderRadius: 14, padding: "1rem 1.25rem", marginBottom: "0.85rem", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: "#F8FAFC", marginBottom: 2 }}>Need more seats?</div>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: "#F8FAFC", marginBottom: 2 }}>{t(lang,"dashboard.needMoreSeats")}</div>
                     <div style={{ fontSize: 11, color: "#94A3B8" }}>
-                      {company.plan === "bronze" ? "Upgrade to Silver for up to 15 team members" : "Upgrade to Gold for unlimited team members"}
+                      {company.plan === "bronze" ? t(lang,"dashboard.upgradeSilverBody") : t(lang,"dashboard.upgradeGoldBody")}
                     </div>
                   </div>
                   <button style={{ background: BRAND.blue, color: "#fff", border: "none", padding: "8px 14px", borderRadius: 9, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", flexShrink: 0 }}>
-                    Upgrade →
+                    {t(lang,"dashboard.upgradeArrow")}
                   </button>
                 </div>
               )}
@@ -986,14 +1013,14 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
               <div style={{ textAlign: "center", padding: "2rem", background: "#F8FAFC", borderRadius: 14, border: `1px solid ${BRAND.border}` }}>
                 <div style={{ fontSize: 28, marginBottom: 10 }}>{paymentSuccess ? "🎉" : "👤"}</div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: BRAND.dark, marginBottom: 6 }}>
-                  {paymentSuccess ? "Payment received! Log in to activate your plan." : "Create your trade professional profile"}
+                  {paymentSuccess ? t(lang,"dashboard.paymentReceivedLogin") : t(lang,"dashboard.loginPrompt")}
                 </div>
                 <div style={{ fontSize: 13, color: BRAND.gray, marginBottom: 16 }}>
-                  {paymentSuccess ? "Log in to your account to see your new plan and Team tab." : "Sign up to track your reviews, save addresses, and build your trust score."}
+                  {paymentSuccess ? t(lang,"dashboard.paymentReceivedBody") : t(lang,"dashboard.loginBody")}
                 </div>
                 <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-                  <Btn onClick={() => goLogin ? goLogin() : go("signup")}>Log in</Btn>
-                  {!paymentSuccess && <Btn variant="secondary" onClick={() => go("signup")}>Sign up free</Btn>}
+                  <Btn onClick={() => goLogin ? goLogin() : go("signup")}>{t(lang,"dashboard.logIn")}</Btn>
+                  {!paymentSuccess && <Btn variant="secondary" onClick={() => go("signup")}>{t(lang,"dashboard.signUpFree")}</Btn>}
                 </div>
               </div>
 
@@ -1003,14 +1030,20 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
               {/* Trust Score Card */}
               {(() => {
                 const score = user?.trust_score || 0;
+                const tierLabel = (min) =>
+                  min >= 90 ? t(lang,"dashboard.tierElite")
+                  : min >= 75 ? t(lang,"dashboard.tierVerified")
+                  : min >= 50 ? t(lang,"dashboard.tierTrusted")
+                  : min >= 25 ? t(lang,"dashboard.tierEstablished")
+                  : t(lang,"dashboard.tierNew");
                 const tiers = [
-                  { min: 90, max: 100, label: "Elite Pro",    badge: "🛡️", color: "#7C3AED", bg: "#FAF5FF" },
-                  { min: 75, max: 89,  label: "Verified Pro", badge: "⭐", color: "#D97706", bg: "#FFFBEB" },
-                  { min: 50, max: 74,  label: "Trusted",      badge: "🟢", color: "#16A34A", bg: "#F0FDF4" },
-                  { min: 25, max: 49,  label: "Established",  badge: "🔵", color: "#2563EB", bg: "#EFF6FF" },
-                  { min: 0,  max: 24,  label: "New Member",   badge: "⚪", color: "#64748B", bg: "#F8FAFC" },
+                  { min: 90, max: 100, badge: "🛡️", color: "#7C3AED", bg: "#FAF5FF" },
+                  { min: 75, max: 89,  badge: "⭐", color: "#D97706", bg: "#FFFBEB" },
+                  { min: 50, max: 74,  badge: "🟢", color: "#16A34A", bg: "#F0FDF4" },
+                  { min: 25, max: 49,  badge: "🔵", color: "#2563EB", bg: "#EFF6FF" },
+                  { min: 0,  max: 24,  badge: "⚪", color: "#64748B", bg: "#F8FAFC" },
                 ];
-                const tier = tiers.find(t => score >= t.min && score <= t.max) || tiers[4];
+                const tier = tiers.find(tr => score >= tr.min && score <= tr.max) || tiers[4];
                 const tierIdx = tiers.indexOf(tier);
                 const nextTier = tierIdx > 0 ? tiers[tierIdx - 1] : null;
                 const pct = Math.round(((score - tier.min) / Math.max(tier.max - tier.min, 1)) * 100);
@@ -1018,7 +1051,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                   <div style={{ background: tier.bg, border: `1.5px solid ${tier.color}44`, borderRadius: 16, padding: "1.25rem", marginBottom: "0.85rem" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
                       <div>
-                        <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: tier.color, marginBottom: 4 }}>Trust Score</div>
+                        <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: tier.color, marginBottom: 4 }}>{t(lang,"dashboard.trustScore")}</div>
                         <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
                           <span style={{ fontSize: 48, fontWeight: 900, color: tier.color, lineHeight: 1 }}>{score}</span>
                           <span style={{ fontSize: 16, color: tier.color, opacity: 0.5 }}>/100</span>
@@ -1026,19 +1059,19 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                       </div>
                       <div style={{ textAlign: "right" }}>
                         <div style={{ fontSize: 22 }}>{tier.badge}</div>
-                        <div style={{ fontSize: 12, fontWeight: 800, color: tier.color, marginTop: 4 }}>{tier.label}</div>
+                        <div style={{ fontSize: 12, fontWeight: 800, color: tier.color, marginTop: 4 }}>{tierLabel(tier.min)}</div>
                       </div>
                     </div>
                     <div style={{ height: 6, background: "rgba(0,0,0,0.08)", borderRadius: 3, overflow: "hidden", marginBottom: 8 }}>
                       <div style={{ height: "100%", width: `${pct}%`, background: tier.color, borderRadius: 3 }} />
                     </div>
                     <div style={{ fontSize: 11, color: tier.color, opacity: 0.8, marginBottom: 10 }}>
-                      {nextTier ? `${nextTier.min - score} pts to ${nextTier.label}` : "🏆 Maximum tier achieved"}
+                      {nextTier ? `${nextTier.min - score} ${t(lang,"dashboard.ptsToNext")} ${tierLabel(nextTier.min)}` : t(lang,"dashboard.maxTier")}
                     </div>
                     <div style={{ paddingTop: 10, borderTop: `1px solid ${tier.color}22`, display: "flex", gap: 14, fontSize: 11, color: tier.color, opacity: 0.7, flexWrap: "wrap" }}>
-                      <span>+10 first review, +5 each after</span>
-                      <span>+5 per helpful vote</span>
-                      <span>+2 pts/month account age</span>
+                      <span>{t(lang,"dashboard.scoreRuleReviews")}</span>
+                      <span>{t(lang,"dashboard.scoreRuleHelpful")}</span>
+                      <span>{t(lang,"dashboard.scoreRuleAge")}</span>
                     </div>
                   </div>
                 );
@@ -1046,15 +1079,15 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
 
               {/* Account details */}
               <Card style={{ marginBottom: "0.85rem" }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: "0.85rem" }}>Account details</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: "0.85rem" }}>{t(lang,"dashboard.accountDetails")}</div>
                 {[
-                  ["Name",    user?.name         || "—"],
-                  ["Company", user?.company_name || "—"],
-                  ["Email",   user?.email        || "—"],
-                  ["State",   user?.state        || "—"],
-                  ["Trade",   trade?.label       || "—"],
-                  ["License", user?.license      || "—"],
-                  ["Plan", (
+                  [t(lang,"dashboard.fieldName"),    user?.name         || "—"],
+                  [t(lang,"dashboard.fieldCompany"), user?.company_name || "—"],
+                  [t(lang,"dashboard.fieldEmail"),   user?.email        || "—"],
+                  [t(lang,"dashboard.fieldState"),   user?.state        || "—"],
+                  [t(lang,"dashboard.fieldTrade"),   trade?.label       || "—"],
+                  [t(lang,"dashboard.fieldLicense"), user?.license      || "—"],
+                  [t(lang,"dashboard.fieldPlan"), (
                     <>
                       {user?.plan === "bronze" ? "🥉 Bronze" :
                        user?.plan === "silver" ? "🥈 Silver" :
@@ -1064,7 +1097,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                       {user?.plan && user.plan !== "free" && (
                         <button onClick={() => go("pricing")}
                           style={{ background: "none", border: "none", color: BRAND.blue, fontSize: 11, fontWeight: 700, cursor: "pointer", marginLeft: 8, fontFamily: "'DM Sans', sans-serif" }}>
-                          Change plan →
+                          {t(lang,"dashboard.changePlan")}
                         </button>
                       )}
                     </>
@@ -1085,20 +1118,20 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                       <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: 2 }}>🏗️ {user.company_name}</div>
                       <div style={{ fontSize: 11, color: BRAND.gray }}>
                         {user.company_id
-                          ? "Your team workspace is active"
-                          : "Set up a team workspace to invite your crew"}
+                          ? t(lang,"dashboard.teamActive")
+                          : t(lang,"dashboard.teamSetupPrompt")}
                       </div>
                     </div>
                     {!user.company_id && (
                       <button onClick={() => go("company-setup")}
                         style={{ background: BRAND.blue, color: "#fff", border: "none", padding: "7px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", flexShrink: 0 }}>
-                        Set up team →
+                        {t(lang,"dashboard.setUpTeam")}
                       </button>
                     )}
                     {user.company_id && (
                       <button onClick={() => setTab("company")}
                         style={{ background: "#EFF6FF", color: BRAND.blue, border: "none", padding: "7px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", flexShrink: 0 }}>
-                        View team →
+                        {t(lang,"dashboard.viewTeam")}
                       </button>
                     )}
                   </div>
@@ -1110,12 +1143,12 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                 <Card style={{ marginBottom: "0.85rem" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark }}>⭐ Review Points</div>
-                      <div style={{ fontSize: 11, color: BRAND.gray, marginTop: 2 }}>1 point per review · $0.25/point · never expire</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark }}>⭐ {t(lang,"dashboard.reviewPoints")}</div>
+                      <div style={{ fontSize: 11, color: BRAND.gray, marginTop: 2 }}>{t(lang,"dashboard.pointsRule")}</div>
                     </div>
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontSize: 22, fontWeight: 800, color: BRAND.blue }}>{reviewPoints}</div>
-                      <div style={{ fontSize: 10, color: BRAND.gray }}>points</div>
+                      <div style={{ fontSize: 10, color: BRAND.gray }}>{t(lang,"dashboard.points")}</div>
                     </div>
                   </div>
 
@@ -1125,8 +1158,8 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                       <div style={{ height: "100%", width: `${Math.min((reviewPoints % 40) / 40 * 100, 100)}%`, background: BRAND.blue, borderRadius: 4, transition: "width 0.4s ease" }} />
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: BRAND.gray }}>
-                      <span>{reviewPoints % 40} / 40 toward next $10 reward</span>
-                      <span style={{ fontWeight: 700, color: BRAND.dark }}>Total value: ${pointsValue}</span>
+                      <span>{reviewPoints % 40} / 40 {t(lang,"dashboard.towardNextReward")}</span>
+                      <span style={{ fontWeight: 700, color: BRAND.dark }}>{t(lang,"dashboard.totalValue")}: ${pointsValue}</span>
                     </div>
                   </div>
 
@@ -1140,7 +1173,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                     ].map(m => (
                       <div key={m.pts} style={{ flex: 1, textAlign: "center", padding: "6px 4px", borderRadius: 8, background: m.reached ? "#EFF6FF" : "#F8FAFC", border: `1.5px solid ${m.reached ? BRAND.blue : BRAND.border}` }}>
                         <div style={{ fontSize: 11, fontWeight: 800, color: m.reached ? BRAND.blue : BRAND.gray }}>{m.label}</div>
-                        <div style={{ fontSize: 9, color: m.reached ? BRAND.blue : BRAND.gray }}>{m.pts} pts</div>
+                        <div style={{ fontSize: 9, color: m.reached ? BRAND.blue : BRAND.gray }}>{m.pts} {t(lang,"dashboard.points")}</div>
                       </div>
                     ))}
                   </div>
@@ -1149,11 +1182,11 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                   {reviewPoints >= 40 ? (
                     <a href={`mailto:hello@prorated.app?subject=Points%20Redemption%20Request&body=Hi%20ProRated%20Team%2C%0A%0AI%20would%20like%20to%20redeem%20my%20review%20points%20for%20merch%20store%20credit.%0A%0AAccount%20email%3A%20${encodeURIComponent(user?.email || "")}%0APoints%20balance%3A%20${reviewPoints}%20points%20($${pointsValue})%0A%0APlease%20let%20me%20know%20how%20to%20proceed!`}
                       style={{ display: "block", width: "100%", padding: "10px", background: BRAND.blue, color: "#fff", borderRadius: 10, fontSize: 13, fontWeight: 700, textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
-                      Redeem points for merch →
+                      {t(lang,"dashboard.redeemPoints")}
                     </a>
                   ) : (
                     <div style={{ background: "#F8FAFC", border: `1px solid ${BRAND.border}`, borderRadius: 10, padding: "10px 12px", fontSize: 12, color: BRAND.gray, textAlign: "center" }}>
-                      Earn {40 - reviewPoints} more point{40 - reviewPoints !== 1 ? "s" : ""} to unlock your first $10 merch reward 🎁
+                      {t(lang,"dashboard.earnPointsPrefix")} {40 - reviewPoints} {t(lang,"dashboard.earnPointsSuffix")}
                     </div>
                   )}
                 </Card>
@@ -1164,8 +1197,8 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
                   onClick={() => { setShowPwChange(s => !s); setPwError(null); setPwSuccess(false); }}>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark }}>🔑 Change Password</div>
-                    {!showPwChange && <div style={{ fontSize: 11, color: BRAND.gray, marginTop: 2 }}>Update your account password</div>}
+                    <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark }}>🔑 {t(lang,"dashboard.changePassword")}</div>
+                    {!showPwChange && <div style={{ fontSize: 11, color: BRAND.gray, marginTop: 2 }}>{t(lang,"dashboard.changePasswordSub")}</div>}
                   </div>
                   <span style={{ fontSize: 18, color: BRAND.gray, cursor: "pointer" }}>{showPwChange ? "−" : "+"}</span>
                 </div>
@@ -1173,7 +1206,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                   <div style={{ marginTop: 14, borderTop: `1px solid ${BRAND.border}`, paddingTop: 14 }}>
                     {pwSuccess ? (
                       <div style={{ background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 10, padding: "12px 14px", fontSize: 13, color: "#166534", textAlign: "center" }}>
-                        ✅ Password updated successfully!
+                        {t(lang,"dashboard.passwordUpdated")}
                       </div>
                     ) : (
                       <>
@@ -1181,9 +1214,9 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                           <div style={{ background: "#FEE2E2", color: "#991B1B", border: "1px solid #FCA5A5", borderRadius: 10, padding: "10px 14px", fontSize: 12, marginBottom: 10 }}>{pwError}</div>
                         )}
                         {[
-                          { key: "current", placeholder: "Current password" },
-                          { key: "next",    placeholder: "New password (6+ characters)" },
-                          { key: "confirm", placeholder: "Confirm new password" },
+                          { key: "current", placeholder: t(lang,"dashboard.pwCurrent") },
+                          { key: "next",    placeholder: t(lang,"dashboard.pwNext") },
+                          { key: "confirm", placeholder: t(lang,"dashboard.pwConfirm") },
                         ].map(({ key, placeholder }) => (
                           <PasswordInput
                             key={key}
@@ -1197,7 +1230,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                           onClick={handlePasswordChange}
                           disabled={!pwForm.current || !pwForm.next || !pwForm.confirm || pwLoading}
                           style={{ width: "100%", padding: "10px", background: BRAND.blue, color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: pwForm.current && pwForm.next && pwForm.confirm && !pwLoading ? "pointer" : "not-allowed", opacity: pwForm.current && pwForm.next && pwForm.confirm && !pwLoading ? 1 : 0.6, fontFamily: "'DM Sans', sans-serif" }}>
-                          {pwLoading ? "Updating..." : "Update password →"}
+                          {pwLoading ? t(lang,"dashboard.updating") : t(lang,"dashboard.updatePassword")}
                         </button>
                       </>
                     )}
@@ -1210,12 +1243,12 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
                   onClick={() => setShowMemberships(s => !s)}>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark }}>🤝 Trade Associations</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark }}>🤝 {t(lang,"dashboard.tradeAssociations")}</div>
                     {!showMemberships && (
                       <div style={{ fontSize: 11, color: BRAND.gray, marginTop: 2 }}>
                         {(user?.trade_memberships || []).length > 0
-                          ? `${user.trade_memberships.length} membership${user.trade_memberships.length !== 1 ? "s" : ""} on file`
-                          : "Let us know which associations you're a member of"}
+                          ? `${user.trade_memberships.length} ${t(lang,"dashboard.membershipsOnFile")}`
+                          : t(lang,"dashboard.membershipsPrompt")}
                       </div>
                     )}
                   </div>
@@ -1225,7 +1258,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                   <div style={{ marginTop: 14, borderTop: `1px solid ${BRAND.border}`, paddingTop: 14 }}>
                     {(!user?.trade_memberships || user.trade_memberships.length === 0) && (
                       <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 8, padding: "8px 12px", fontSize: 11, color: "#1E40AF", fontWeight: 600, marginBottom: 12 }}>
-                        🎁 Earn 5 review points for completing this section
+                        {t(lang,"dashboard.earnMembershipPoints")}
                       </div>
                     )}
                     <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12, maxHeight: 280, overflowY: "auto" }}>
@@ -1240,14 +1273,14 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                     </div>
                     {membershipsSaved ? (
                       <div style={{ background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 10, padding: "10px 14px", fontSize: 12, color: "#166534", fontWeight: 700, textAlign: "center" }}>
-                        ✅ Saved!
+                        {t(lang,"dashboard.savedExclaim")}
                       </div>
                     ) : (
                       <button
                         onClick={handleSaveMemberships}
                         disabled={membershipsSaving}
                         style={{ width: "100%", padding: "10px", background: BRAND.blue, color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: membershipsSaving ? "not-allowed" : "pointer", opacity: membershipsSaving ? 0.7 : 1, fontFamily: "'DM Sans', sans-serif" }}>
-                        {membershipsSaving ? "Saving..." : "Save →"}
+                        {membershipsSaving ? t(lang,"dashboard.saving") : t(lang,"dashboard.saveArrow")}
                       </button>
                     )}
                   </div>
@@ -1259,11 +1292,11 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                 <div onClick={() => go("pricing")} style={{ background: "linear-gradient(135deg, #0F172A, #1E3A5F)", borderRadius: 14, padding: "1rem 1.25rem", marginBottom: "0.75rem", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 800, color: "#F8FAFC", marginBottom: 2 }}>{t(lang, "upgrade.title")}</div>
-                    <div style={{ fontSize: 11, color: "#86EFAC", fontWeight: 700 }}>Bronze, Silver &amp; Gold — first 6 months free</div>
+                    <div style={{ fontSize: 11, color: "#86EFAC", fontWeight: 700 }}>{t(lang,"dashboard.freeThrough2026")}</div>
                   </div>
                   <button onClick={(e) => { e.stopPropagation(); go("pricing"); }}
                     style={{ background: BRAND.blue, color: "#fff", border: "none", padding: "8px 16px", borderRadius: 9, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", flexShrink: 0 }}>
-                    View plans →
+                    {t(lang,"dashboard.viewPlans")}
                   </button>
                 </div>
               )}
@@ -1275,12 +1308,12 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                 <Card style={{ marginBottom: "0.85rem" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: 2 }}>🔓 {bioLabel} Sign-In</div>
-                      <div style={{ fontSize: 11, color: BRAND.gray }}>Enabled — sign in without typing your password</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: 2 }}>🔓 {bioLabel} {t(lang,"dashboard.signIn")}</div>
+                      <div style={{ fontSize: 11, color: BRAND.gray }}>{t(lang,"dashboard.bioEnabled")}</div>
                     </div>
                     <button onClick={handleDisableBiometric}
                       style={{ background: "#F1F5F9", color: BRAND.gray, border: "none", padding: "7px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", flexShrink: 0, marginLeft: 10 }}>
-                      Turn off
+                      {t(lang,"dashboard.turnOff")}
                     </button>
                   </div>
                 </Card>
@@ -1291,29 +1324,29 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
                   onClick={() => setShowDeleteAccount(s => !s)}>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "#DC2626" }}>🗑️ Delete Account</div>
-                    {!showDeleteAccount && <div style={{ fontSize: 11, color: BRAND.gray, marginTop: 2 }}>Permanently remove your account and data</div>}
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#DC2626" }}>🗑️ {t(lang,"dashboard.deleteAccount")}</div>
+                    {!showDeleteAccount && <div style={{ fontSize: 11, color: BRAND.gray, marginTop: 2 }}>{t(lang,"dashboard.deleteAccountSub")}</div>}
                   </div>
                   <span style={{ fontSize: 18, color: BRAND.gray }}>{showDeleteAccount ? "−" : "+"}</span>
                 </div>
                 {showDeleteAccount && (
                   <div style={{ marginTop: 14, borderTop: `1px solid ${BRAND.border}`, paddingTop: 14 }}>
                     <div style={{ background: "#FEF2F2", border: "1px solid #FCA5A5", borderRadius: 10, padding: "10px 14px", fontSize: 12, color: "#991B1B", lineHeight: 1.6, marginBottom: 14 }}>
-                      <strong>This cannot be undone.</strong> Your account will be permanently deleted and your reviews anonymized. You'll be logged out immediately.
+                      <strong>{t(lang,"dashboard.cannotBeUndone")}</strong> {t(lang,"dashboard.deleteWarningBody")}
                     </div>
                     {user?.plan && user.plan !== "free" && (
                       <div style={{ background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 10, padding: "10px 14px", fontSize: 12, color: "#92400E", lineHeight: 1.6, marginBottom: 14 }}>
-                        <strong>This does not cancel your subscription.</strong>{" "}
+                        <strong>{t(lang,"dashboard.doesNotCancel")}</strong>{" "}
                         {user.plan_source === "revenuecat"
-                          ? "Deleting your account does not stop billing through Apple — cancel separately in Settings → [your name] → Subscriptions on your iPhone, or you'll keep being charged."
-                          : "Deleting your account does not stop billing — email hello@prorated.app to cancel your subscription, or you'll keep being charged."}
+                          ? t(lang,"dashboard.stillBilledApple")
+                          : t(lang,"dashboard.stillBilledEmail")}
                       </div>
                     )}
                     <button
                       onClick={handleDeleteAccount}
                       disabled={deleteAccountLoading}
                       style={{ width: "100%", padding: "10px", background: "#DC2626", color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: deleteAccountLoading ? "not-allowed" : "pointer", opacity: deleteAccountLoading ? 0.6 : 1, fontFamily: "'DM Sans', sans-serif" }}>
-                      {deleteAccountLoading ? "Submitting request..." : "Request account deletion →"}
+                      {deleteAccountLoading ? t(lang,"dashboard.submittingRequest") : t(lang,"dashboard.requestDeletion")}
                     </button>
                   </div>
                 )}
@@ -1323,7 +1356,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
               <div style={{ marginTop: "1rem", display: "flex", gap: 8 }}>
                 <button onClick={handleLogout}
                   style={{ background: "#FEE2E2", color: "#991B1B", border: "none", padding: "10px 18px", borderRadius: 9, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
-                  Log out
+                  {t(lang,"dashboard.logOut")}
                 </button>
               </div>
             </div>

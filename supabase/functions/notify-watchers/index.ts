@@ -60,11 +60,14 @@ serve(async (req) => {
 
     const userIds = [...new Set(savedRows.map((r: any) => r.user_id))];
 
-    // 2. Get email addresses for those watchers
+    // 2. Get email addresses for those watchers — opt-in only. Default is
+    // off (watchlist_email_opt_in defaults false on the contractors table);
+    // a saved address alone does not imply consent to be emailed.
     const { data: watchers } = await supabase
       .from("contractors")
       .select("id, email, name")
-      .in("id", userIds);
+      .in("id", userIds)
+      .eq("watchlist_email_opt_in", true);
 
     if (!watchers || watchers.length === 0) {
       return new Response(JSON.stringify({ sent: 0, message: "No watcher emails found" }));

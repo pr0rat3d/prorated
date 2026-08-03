@@ -3,7 +3,7 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../config.js";
 import { BRAND, Btn, Card } from "../components/UI";
 import Logo from "../components/Logo";
 import { useAuth } from "../hooks/useAuth";
-import { COMPANY_TIERS } from "../data/constants";
+import { COMPANY_TIERS, getTrustTier } from "../data/constants";
 
 // Bronze/Silver/Gold are free for the first 6 months — applied automatically
 // via the PRORATED2026 Stripe coupon, no user-facing promo entry. Same window
@@ -36,6 +36,7 @@ export default function CompanySetupPage({ go, goBack }) {
   // If user already has a company, fetch it
   const [existingCompany, setExistingCompany] = useState(null);
   const [members, setMembers]                 = useState([]);
+  const [lastReviewByUser, setLastReviewByUser] = useState({});
   const [companyLoading, setCompanyLoading]   = useState(true);
   const [showSettings, setShowSettings]       = useState(false);
   const [renaming, setRenaming]               = useState(false);
@@ -73,10 +74,30 @@ export default function CompanySetupPage({ go, goBack }) {
           const comp = companies[0];
           setExistingCompany(comp);
           const memRes = await fetch(
-            `${SUPABASE_URL}/rest/v1/contractors?company_id=eq.${comp.id}&select=id,name,email,trade,company_role,status,created_at`,
+            `${SUPABASE_URL}/rest/v1/contractors?company_id=eq.${comp.id}&select=id,name,email,trade,company_role,status,created_at,review_count,trust_score,helpful_count`,
             { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${token}` } }
           );
-          setMembers(await memRes.json() || []);
+          const memberRows = await memRes.json() || [];
+          setMembers(memberRows);
+
+          // Last review date per member — the "are they actually using it" signal.
+          // reviews SELECT is open to any authenticated user, so this works with no RLS change.
+          if (memberRows.length) {
+            const ids = memberRows.map(m => m.id).join(",");
+            try {
+              const revRes  = await fetch(
+                `${SUPABASE_URL}/rest/v1/reviews?user_id=in.(${ids})&select=user_id,created_at&order=created_at.desc`,
+                { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${token}` } }
+              );
+              const revRows = await revRes.json();
+              const lastByUser = {};
+              // ordered desc, so the first row seen per user_id is their most recent
+              for (const r of (Array.isArray(revRows) ? revRows : [])) {
+                if (!lastByUser[r.user_id]) lastByUser[r.user_id] = r.created_at;
+              }
+              setLastReviewByUser(lastByUser);
+            } catch { /* activity panel just shows "no reviews yet" for everyone */ }
+          }
         }
       } catch { /* ignore */ }
       setCompanyLoading(false);
@@ -415,6 +436,44 @@ export default function CompanySetupPage({ go, goBack }) {
             </div>
           ))}
         </Card>
+
+        {/* Team activity — how the team is actually using ProRated */}
+        {members.length > 0 && (
+          <Card style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: 2 }}>Team activity</div>
+            <div style={{ fontSize: 11, color: BRAND.gray, marginBottom: 12 }}>
+              {members.filter(m => (m.review_count || 0) > 0).length} of {usedSeats} members have submitted a review
+            </div>
+            {members.map(m => {
+              const tier       = getTrustTier(m.trust_score || 0);
+              const lastReview = lastReviewByUser[m.id];
+              return (
+                <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: `1px solid ${BRAND.border}` }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: BRAND.dark, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {m.name || m.email}
+                    </div>
+                    <div style={{ fontSize: 10, color: BRAND.gray }}>
+                      {tier.badge} {tier.label} · Since {new Date(m.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "center", flexShrink: 0, minWidth: 44 }}>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: BRAND.dark }}>{m.review_count || 0}</div>
+                    <div style={{ fontSize: 9, color: BRAND.gray }}>reviews</div>
+                  </div>
+                  <div style={{ textAlign: "right", flexShrink: 0, minWidth: 76 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: lastReview ? BRAND.dark : BRAND.gray }}>
+                      {lastReview
+                        ? new Date(lastReview).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                        : "No reviews yet"}
+                    </div>
+                    {lastReview && <div style={{ fontSize: 9, color: BRAND.gray }}>last review</div>}
+                  </div>
+                </div>
+              );
+            })}
+          </Card>
+        )}
 
         {/* Invite section */}
         {seatsLeft > 0 ? (

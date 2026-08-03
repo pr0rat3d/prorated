@@ -15,6 +15,7 @@ import BidIntelligenceTest from "./pages/BidIntelligenceTest";
 import BidIntelligenceWalkthrough from "./pages/BidIntelligenceWalkthrough";
 import InvitePage from "./pages/InvitePage";
 import CompanySetupPage from "./pages/CompanySetupPage";
+import TeamActivityDemo from "./pages/TeamActivityDemo";
 import PricingPage from "./pages/PricingPage";
 import VerificationPending from "./pages/VerificationPending";
 import VerificationRejected from "./pages/VerificationRejected";
@@ -64,6 +65,7 @@ export default function App() {
       if (path === "/admin" || path === "/admin/") return "admin";
       if (path === "/bid-intelligence-test" || path === "/bid-intelligence-test/") return "bid-intelligence-test";
       if (path === "/bid-intelligence-walkthrough" || path === "/bid-intelligence-walkthrough/") return "bid-intelligence-walkthrough";
+      if (path === "/team-activity-demo" || path === "/team-activity-demo/") return "team-activity-demo";
       if (path === "/verified-pros" || path === "/directory") return "verified-pro";
       if (path === "/report" || path === "/homeowner-report") return "homeowner-report";
       if (path === "/agc" || path === "/agc/") return "agc";
@@ -149,7 +151,7 @@ export default function App() {
   }, [paymentSuccess, isLoggedIn]);
 
   // Pages that are completely self-contained — no trade pro shell at all
-  const ISOLATED_PAGES = ["admin", "realtor-signup", "realtor-home", "demo", "bid-intelligence-test", "bid-intelligence-walkthrough"];
+  const ISOLATED_PAGES = ["admin", "realtor-signup", "realtor-home", "demo", "bid-intelligence-test", "bid-intelligence-walkthrough", "team-activity-demo"];
   const isIsolated = ISOLATED_PAGES.includes(page) ||
     Object.keys(PARTNERS).some(pid => page === `partner-dash-${pid}`);
   const [ndaSigned, setNdaSigned] = useState(() => { // eslint-disable-line no-unused-vars
@@ -447,6 +449,7 @@ export default function App() {
         {page === "admin"     && <AdminGate     go={go} />}
         {page === "bid-intelligence-test" && <BidIntelligenceTest go={go} />}
         {page === "bid-intelligence-walkthrough" && <BidIntelligenceWalkthrough go={go} />}
+        {page === "team-activity-demo" && <TeamActivityDemo />}
       </main>
 
       {/* Footer — not shown on isolated pages */}

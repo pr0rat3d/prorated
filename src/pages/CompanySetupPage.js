@@ -4,6 +4,7 @@ import { BRAND, Btn, Card } from "../components/UI";
 import Logo from "../components/Logo";
 import { useAuth } from "../hooks/useAuth";
 import { COMPANY_TIERS, getTrustTier } from "../data/constants";
+import { getTagById } from "../data/tradeTags";
 
 // Bronze/Silver/Gold are free for the first 6 months — applied automatically
 // via the PRORATED2026 Stripe coupon, no user-facing promo entry. Same window
@@ -37,6 +38,9 @@ export default function CompanySetupPage({ go, goBack }) {
   const [existingCompany, setExistingCompany] = useState(null);
   const [members, setMembers]                 = useState([]);
   const [lastReviewByUser, setLastReviewByUser] = useState({});
+  const [avgScoreByUser, setAvgScoreByUser]     = useState({});
+  const [teamTagTrends, setTeamTagTrends]       = useState([]);
+  const [teamStats, setTeamStats]               = useState(null); // { wouldReturnPct, slowPaymentPct }
   const [companyLoading, setCompanyLoading]   = useState(true);
   const [showSettings, setShowSettings]       = useState(false);
   const [renaming, setRenaming]               = useState(false);
@@ -80,23 +84,58 @@ export default function CompanySetupPage({ go, goBack }) {
           const memberRows = await memRes.json() || [];
           setMembers(memberRows);
 
-          // Last review date per member — the "are they actually using it" signal.
-          // reviews SELECT is open to any authenticated user, so this works with no RLS change.
+          // Per-member last review date + average score, plus team-wide tag
+          // trends (slow payment, scope creep, etc.) — reviews SELECT is open
+          // to any authenticated user, so this works with no RLS change.
           if (memberRows.length) {
             const ids = memberRows.map(m => m.id).join(",");
             try {
               const revRes  = await fetch(
-                `${SUPABASE_URL}/rest/v1/reviews?user_id=in.(${ids})&select=user_id,created_at&order=created_at.desc`,
+                `${SUPABASE_URL}/rest/v1/reviews?user_id=in.(${ids})&select=user_id,created_at,overall_score,tags,would_return&order=created_at.desc`,
                 { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${token}` } }
               );
               const revRows = await revRes.json();
+              const rows = Array.isArray(revRows) ? revRows : [];
+
               const lastByUser = {};
-              // ordered desc, so the first row seen per user_id is their most recent
-              for (const r of (Array.isArray(revRows) ? revRows : [])) {
+              const scoreSums  = {}; // user_id -> { sum, count }
+              const tagCounts  = {}; // tag id -> count, across the whole team
+              for (const r of rows) {
+                // ordered desc, so the first row seen per user_id is their most recent
                 if (!lastByUser[r.user_id]) lastByUser[r.user_id] = r.created_at;
+                if (typeof r.overall_score === "number") {
+                  const s = scoreSums[r.user_id] || { sum: 0, count: 0 };
+                  s.sum += r.overall_score; s.count += 1;
+                  scoreSums[r.user_id] = s;
+                }
+                for (const tagId of (r.tags || [])) {
+                  tagCounts[tagId] = (tagCounts[tagId] || 0) + 1;
+                }
               }
               setLastReviewByUser(lastByUser);
-            } catch { /* activity panel just shows "no reviews yet" for everyone */ }
+              setAvgScoreByUser(
+                Object.fromEntries(Object.entries(scoreSums).map(([uid, s]) => [uid, s.sum / s.count]))
+              );
+              // Trends worth flagging to an owner — non-"good" tags only (slow
+              // payment, scope creep, poor comms, etc.), top 5 by frequency.
+              setTeamTagTrends(
+                Object.entries(tagCounts)
+                  .map(([id, count]) => ({ ...getTagById(id), id, count }))
+                  .filter(t => t.label && t.severity !== "good")
+                  .sort((a, b) => b.count - a.count)
+                  .slice(0, 5)
+              );
+
+              // Same definitions used on the HBA partner dashboard, for consistency.
+              const returnAnswered = rows.filter(r => r.would_return !== null && r.would_return !== undefined);
+              const wouldReturnPct = returnAnswered.length > 0
+                ? Math.round((returnAnswered.filter(r => r.would_return).length / returnAnswered.length) * 100)
+                : null;
+              const slowPaymentPct = rows.length > 0
+                ? Math.round((rows.filter(r => Array.isArray(r.tags) && r.tags.includes("slow_payment")).length / rows.length) * 100)
+                : null;
+              setTeamStats({ wouldReturnPct, slowPaymentPct });
+            } catch { /* activity panel just shows zeros/"no reviews yet" for everyone */ }
           }
         }
       } catch { /* ignore */ }
@@ -444,9 +483,28 @@ export default function CompanySetupPage({ go, goBack }) {
             <div style={{ fontSize: 11, color: BRAND.gray, marginBottom: 12 }}>
               {members.filter(m => (m.review_count || 0) > 0).length} of {usedSeats} members have submitted a review
             </div>
+
+            {teamStats && (teamStats.wouldReturnPct != null || teamStats.slowPaymentPct != null) && (
+              <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                {teamStats.wouldReturnPct != null && (
+                  <div style={{ flex: 1, background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 10, padding: "8px 10px", textAlign: "center" }}>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: "#16A34A" }}>{teamStats.wouldReturnPct}%</div>
+                    <div style={{ fontSize: 9, color: "#166534", fontWeight: 600 }}>Would return</div>
+                  </div>
+                )}
+                {teamStats.slowPaymentPct != null && (
+                  <div style={{ flex: 1, background: teamStats.slowPaymentPct > 0 ? "#FEF2F2" : "#F8FAFC", border: `1px solid ${teamStats.slowPaymentPct > 0 ? "#FCA5A5" : BRAND.border}`, borderRadius: 10, padding: "8px 10px", textAlign: "center" }}>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: teamStats.slowPaymentPct > 0 ? "#DC2626" : BRAND.dark }}>{teamStats.slowPaymentPct}%</div>
+                    <div style={{ fontSize: 9, color: teamStats.slowPaymentPct > 0 ? "#991B1B" : BRAND.gray, fontWeight: 600 }}>Payment delays</div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {members.map(m => {
               const tier       = getTrustTier(m.trust_score || 0);
               const lastReview = lastReviewByUser[m.id];
+              const avgScore   = avgScoreByUser[m.id];
               return (
                 <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: `1px solid ${BRAND.border}` }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -461,6 +519,10 @@ export default function CompanySetupPage({ go, goBack }) {
                     <div style={{ fontSize: 14, fontWeight: 800, color: BRAND.dark }}>{m.review_count || 0}</div>
                     <div style={{ fontSize: 9, color: BRAND.gray }}>reviews</div>
                   </div>
+                  <div style={{ textAlign: "center", flexShrink: 0, minWidth: 44 }}>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: avgScore ? BRAND.dark : BRAND.gray }}>{avgScore ? avgScore.toFixed(1) : "—"}</div>
+                    <div style={{ fontSize: 9, color: BRAND.gray }}>avg ★</div>
+                  </div>
                   <div style={{ textAlign: "right", flexShrink: 0, minWidth: 76 }}>
                     <div style={{ fontSize: 10, fontWeight: 700, color: lastReview ? BRAND.dark : BRAND.gray }}>
                       {lastReview
@@ -472,6 +534,25 @@ export default function CompanySetupPage({ go, goBack }) {
                 </div>
               );
             })}
+          </Card>
+        )}
+
+        {/* Site condition trends — non-"good" tags reported across the team's reviews */}
+        {teamTagTrends.length > 0 && (
+          <Card style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: 2 }}>Trends across your team's reviews</div>
+            <div style={{ fontSize: 11, color: BRAND.gray, marginBottom: 12 }}>
+              Most-reported site conditions and customer issues
+            </div>
+            {teamTagTrends.map(t => (
+              <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: `1px solid ${BRAND.border}` }}>
+                <span style={{ fontSize: 15, flexShrink: 0 }}>{t.icon}</span>
+                <div style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 600, color: BRAND.dark }}>{t.label}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: t.severity === "bad" ? "#DC2626" : "#D97706", flexShrink: 0 }}>
+                  {t.count}× reported
+                </div>
+              </div>
+            ))}
           </Card>
         )}
 

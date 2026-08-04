@@ -134,7 +134,21 @@ export default function CompanySetupPage({ go, goBack }) {
               const slowPaymentPct = rows.length > 0
                 ? Math.round((rows.filter(r => Array.isArray(r.tags) && r.tags.includes("slow_payment")).length / rows.length) * 100)
                 : null;
-              setTeamStats({ wouldReturnPct, slowPaymentPct });
+
+              // Addresses researched before bidding — proactive vetting signal.
+              // Only ever select user_id/created_at, never `address`: this is a
+              // count, not a log of what anyone specifically looked up.
+              let totalSearches = null;
+              try {
+                const lookupRes = await fetch(
+                  `${SUPABASE_URL}/rest/v1/lookup_log?user_id=in.(${ids})&select=user_id,created_at`,
+                  { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${token}` } }
+                );
+                const lookupRows = await lookupRes.json();
+                totalSearches = Array.isArray(lookupRows) ? lookupRows.length : null;
+              } catch { /* omit the stat rather than block the rest of the panel */ }
+
+              setTeamStats({ wouldReturnPct, slowPaymentPct, totalSearches, totalReviews: rows.length });
             } catch { /* activity panel just shows zeros/"no reviews yet" for everyone */ }
           }
         }
@@ -484,8 +498,14 @@ export default function CompanySetupPage({ go, goBack }) {
               {members.filter(m => (m.review_count || 0) > 0).length} of {usedSeats} members have submitted a review
             </div>
 
-            {teamStats && (teamStats.wouldReturnPct != null || teamStats.slowPaymentPct != null) && (
+            {teamStats && (teamStats.wouldReturnPct != null || teamStats.slowPaymentPct != null || teamStats.totalSearches != null) && (
               <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                {teamStats.totalSearches != null && (
+                  <div style={{ flex: 1, background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 10, padding: "8px 10px", textAlign: "center" }}>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: BRAND.blue }}>{teamStats.totalSearches}</div>
+                    <div style={{ fontSize: 9, color: "#1E40AF", fontWeight: 600 }}>Addresses researched</div>
+                  </div>
+                )}
                 {teamStats.wouldReturnPct != null && (
                   <div style={{ flex: 1, background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 10, padding: "8px 10px", textAlign: "center" }}>
                     <div style={{ fontSize: 18, fontWeight: 800, color: "#16A34A" }}>{teamStats.wouldReturnPct}%</div>
@@ -498,6 +518,11 @@ export default function CompanySetupPage({ go, goBack }) {
                     <div style={{ fontSize: 9, color: teamStats.slowPaymentPct > 0 ? "#991B1B" : BRAND.gray, fontWeight: 600 }}>Payment delays</div>
                   </div>
                 )}
+              </div>
+            )}
+            {teamStats?.totalSearches != null && teamStats.totalReviews != null && teamStats.totalSearches > teamStats.totalReviews && (
+              <div style={{ fontSize: 10, color: BRAND.gray, marginTop: -6, marginBottom: 12 }}>
+                {teamStats.totalSearches - teamStats.totalReviews} researched but not bid — jobs your team screened out before wasting time on them
               </div>
             )}
 

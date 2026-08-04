@@ -37,7 +37,7 @@ const MEMBERS = [
 
 // Same shape/definitions as the real panel (see CompanySetupPage.js) —
 // would-return %, payment-delay %, and top non-"good" tags across the team.
-const TEAM_STATS = { wouldReturnPct: 78, slowPaymentPct: 13 };
+const TEAM_STATS = { wouldReturnPct: 78, slowPaymentPct: 13, totalSearches: 34, totalReviews: 23 };
 const TEAM_TAG_TRENDS = [
   { id: "slow_payment", label: "Slow payment",       icon: "⏰", severity: "bad", count: 3 },
   { id: "scope_creep",  label: "Scope creep",        icon: "📋", severity: "bad", count: 2 },
@@ -102,7 +102,11 @@ export default function TeamActivityDemo() {
           {MEMBERS.filter(m => m.review_count > 0).length} of {usedSeats} members have submitted a review
         </div>
 
-        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+        <div style={{ display: "flex", gap: 8, marginBottom: 6 }}>
+          <div style={{ flex: 1, background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 10, padding: "8px 10px", textAlign: "center" }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: BRAND.blue }}>{TEAM_STATS.totalSearches}</div>
+            <div style={{ fontSize: 9, color: "#1E40AF", fontWeight: 600 }}>Addresses researched</div>
+          </div>
           <div style={{ flex: 1, background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 10, padding: "8px 10px", textAlign: "center" }}>
             <div style={{ fontSize: 18, fontWeight: 800, color: "#16A34A" }}>{TEAM_STATS.wouldReturnPct}%</div>
             <div style={{ fontSize: 9, color: "#166534", fontWeight: 600 }}>Would return</div>
@@ -112,6 +116,11 @@ export default function TeamActivityDemo() {
             <div style={{ fontSize: 9, color: "#991B1B", fontWeight: 600 }}>Payment delays</div>
           </div>
         </div>
+        {TEAM_STATS.totalSearches > TEAM_STATS.totalReviews && (
+          <div style={{ fontSize: 10, color: BRAND.gray, marginBottom: 12 }}>
+            {TEAM_STATS.totalSearches - TEAM_STATS.totalReviews} researched but not bid — jobs your team screened out before wasting time on them
+          </div>
+        )}
 
         {MEMBERS.map(m => {
           const tier = getTrustTier(m.trust_score);

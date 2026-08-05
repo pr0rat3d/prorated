@@ -66,6 +66,7 @@ export default function App() {
       if (path === "/bid-intelligence-test" || path === "/bid-intelligence-test/") return "bid-intelligence-test";
       if (path === "/bid-intelligence-walkthrough" || path === "/bid-intelligence-walkthrough/") return "bid-intelligence-walkthrough";
       if (path === "/team-activity-demo" || path === "/team-activity-demo/") return "team-activity-demo";
+      if (path === "/demo" || path === "/demo/") return "demo";
       if (path === "/verified-pros" || path === "/directory") return "verified-pro";
       if (path === "/report" || path === "/homeowner-report") return "homeowner-report";
       if (path === "/agc" || path === "/agc/") return "agc";

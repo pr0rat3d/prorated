@@ -39,10 +39,12 @@ const getMilestoneMessage = (count) => {
 
 export default function ReviewPage({ go, goBack, initialAddress, editReviewId }) {
   const { user, isLoggedIn } = useAuth();
-  // Always scroll to top on mount
-  useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, []);
   const { lang } = useLang();
   const [step, setStep]                     = useState(1); // Always start at step 1
+  // Scroll to top on mount AND on every step change — otherwise advancing
+  // to a step like the star ratings leaves the user scrolled wherever the
+  // previous (often taller) step left off, well past the new step's inputs.
+  useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [step]);
   const [tooltip, setTooltip]               = useState(null);
   const tooltipTimer                         = useRef(null);
   const isEditMode = !!editReviewId;

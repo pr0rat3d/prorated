@@ -11,7 +11,7 @@ import { hasSavedBiometricLogin, clearBiometricLogin, getBiometryLabel } from ".
 
 
 import { fetchMyReviews, updateReview, deleteReview } from "../api/supabase";
-import { getSavedAddresses, unsaveAddress, signIn, updatePassword, saveTradeMemberships, saveWatchlistOptIn } from "../api/auth";
+import { getSavedAddresses, unsaveAddress, signIn, updatePassword, saveTradeMemberships, saveWatchlistOptIn, updateProfile } from "../api/auth";
 import { PARTNERS } from "./PartnerLandingPage";
 import { useLang } from "../hooks/useLang";
 import { t } from "../i18n/translations";
@@ -96,6 +96,13 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
   const [membershipsSaving, setMembershipsSaving] = useState(false);
   const [membershipsSaved, setMembershipsSaved] = useState(false);
 
+  // Profile edit — name/company/phone only. Email/state/trade/license are
+  // intentionally not editable here (tied to account identity/verification).
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [profileForm, setProfileForm]       = useState({ name: "", company_name: "", phone: "" });
+  const [profileError, setProfileError]     = useState(null);
+  const [profileSaving, setProfileSaving]   = useState(false);
+
   const handlePasswordChange = async () => {
     setPwError(null);
     if (!pwForm.current)               { setPwError(t(lang,"dashboard.errPwCurrent")); return; }
@@ -118,6 +125,26 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
     }
     setPwLoading(false);
   };
+
+  const startEditingProfile = () => {
+    setProfileForm({ name: user?.name || "", company_name: user?.company_name || "", phone: user?.phone || "" });
+    setProfileError(null);
+    setEditingProfile(true);
+  };
+
+  const handleProfileSave = async () => {
+    setProfileError(null);
+    setProfileSaving(true);
+    try {
+      await updateProfile(profileForm);
+      await refreshUser();
+      setEditingProfile(false);
+    } catch (err) {
+      setProfileError(err.message || t(lang,"dashboard.profileUpdateFailed"));
+    }
+    setProfileSaving(false);
+  };
+
   // Trade associations picker — Home Builders Assoc (isRealtor entries
   // excluded, those are for realtors, not trade contractors), sorted so
   // associations matching the user's own in-app trade come first. Not a
@@ -1079,35 +1106,75 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
 
               {/* Account details */}
               <Card style={{ marginBottom: "0.85rem" }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: "0.85rem" }}>{t(lang,"dashboard.accountDetails")}</div>
-                {[
-                  [t(lang,"dashboard.fieldName"),    user?.name         || "—"],
-                  [t(lang,"dashboard.fieldCompany"), user?.company_name || "—"],
-                  [t(lang,"dashboard.fieldEmail"),   user?.email        || "—"],
-                  [t(lang,"dashboard.fieldState"),   user?.state        || "—"],
-                  [t(lang,"dashboard.fieldTrade"),   trade?.label       || "—"],
-                  [t(lang,"dashboard.fieldLicense"), user?.license      || "—"],
-                  [t(lang,"dashboard.fieldPlan"), (
-                    <>
-                      {user?.plan === "bronze" ? "🥉 Bronze" :
-                       user?.plan === "silver" ? "🥈 Silver" :
-                       user?.plan === "gold"   ? "🥇 Gold" :
-                       user?.plan === "platinum" ? "💎 Platinum" :
-                       FREE_PLAN_LABEL}
-                      {user?.plan && user.plan !== "free" && (
-                        <button onClick={() => go("pricing")}
-                          style={{ background: "none", border: "none", color: BRAND.blue, fontSize: 11, fontWeight: 700, cursor: "pointer", marginLeft: 8, fontFamily: "'DM Sans', sans-serif" }}>
-                          {t(lang,"dashboard.changePlan")}
-                        </button>
-                      )}
-                    </>
-                  )],
-                ].map(([l, v]) => (
-                  <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: "9px 0", borderBottom: `1px solid ${BRAND.border}`, fontSize: 13 }}>
-                    <span style={{ color: BRAND.gray }}>{l}</span>
-                    <span style={{ fontWeight: 600, color: BRAND.dark }}>{v}</span>
-                  </div>
-                ))}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.85rem" }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark }}>{t(lang,"dashboard.accountDetails")}</div>
+                  {!editingProfile && (
+                    <button onClick={startEditingProfile}
+                      style={{ background: "none", border: "none", color: BRAND.blue, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+                      ✏️ {t(lang,"dashboard.edit")}
+                    </button>
+                  )}
+                </div>
+
+                {editingProfile ? (
+                  <>
+                    {[
+                      ["name", t(lang,"dashboard.fieldName")],
+                      ["company_name", t(lang,"dashboard.fieldCompany")],
+                      ["phone", t(lang,"dashboard.fieldPhone")],
+                    ].map(([key, label]) => (
+                      <div key={key} style={{ marginBottom: 10 }}>
+                        <div style={{ fontSize: 11, color: BRAND.gray, marginBottom: 4 }}>{label}</div>
+                        <input
+                          value={profileForm[key]}
+                          onChange={e => setProfileForm(f => ({ ...f, [key]: e.target.value }))}
+                          style={{ width: "100%", padding: "9px 12px", border: `1.5px solid ${BRAND.border}`, borderRadius: 9, fontSize: 13, fontFamily: "'DM Sans', sans-serif", color: BRAND.dark, outline: "none", boxSizing: "border-box" }}
+                        />
+                      </div>
+                    ))}
+                    {profileError && <div style={{ fontSize: 12, color: "#DC2626", marginBottom: 10 }}>{profileError}</div>}
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button onClick={handleProfileSave} disabled={profileSaving}
+                        style={{ flex: 1, background: BRAND.blue, color: "#fff", border: "none", borderRadius: 8, padding: "9px", fontSize: 12, fontWeight: 700, cursor: profileSaving ? "not-allowed" : "pointer", fontFamily: "'DM Sans', sans-serif", opacity: profileSaving ? 0.6 : 1 }}>
+                        {profileSaving ? "..." : t(lang,"dashboard.save")}
+                      </button>
+                      <button onClick={() => setEditingProfile(false)} disabled={profileSaving}
+                        style={{ flex: 1, background: "none", border: `1px solid ${BRAND.border}`, borderRadius: 8, padding: "9px", fontSize: 12, color: BRAND.gray, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+                        {t(lang,"dashboard.cancel")}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  [
+                    [t(lang,"dashboard.fieldName"),    user?.name         || "—"],
+                    [t(lang,"dashboard.fieldCompany"), user?.company_name || "—"],
+                    [t(lang,"dashboard.fieldPhone"),   user?.phone        || "—"],
+                    [t(lang,"dashboard.fieldEmail"),   user?.email        || "—"],
+                    [t(lang,"dashboard.fieldState"),   user?.state        || "—"],
+                    [t(lang,"dashboard.fieldTrade"),   trade?.label       || "—"],
+                    [t(lang,"dashboard.fieldLicense"), user?.license      || "—"],
+                    [t(lang,"dashboard.fieldPlan"), (
+                      <>
+                        {user?.plan === "bronze" ? "🥉 Bronze" :
+                         user?.plan === "silver" ? "🥈 Silver" :
+                         user?.plan === "gold"   ? "🥇 Gold" :
+                         user?.plan === "platinum" ? "💎 Platinum" :
+                         FREE_PLAN_LABEL}
+                        {user?.plan && user.plan !== "free" && (
+                          <button onClick={() => go("pricing")}
+                            style={{ background: "none", border: "none", color: BRAND.blue, fontSize: 11, fontWeight: 700, cursor: "pointer", marginLeft: 8, fontFamily: "'DM Sans', sans-serif" }}>
+                            {t(lang,"dashboard.changePlan")}
+                          </button>
+                        )}
+                      </>
+                    )],
+                  ].map(([l, v]) => (
+                    <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: "9px 0", borderBottom: `1px solid ${BRAND.border}`, fontSize: 13 }}>
+                      <span style={{ color: BRAND.gray }}>{l}</span>
+                      <span style={{ fontWeight: 600, color: BRAND.dark }}>{v}</span>
+                    </div>
+                  ))
+                )}
               </Card>
 
               {/* Company card — shown for paid members */}

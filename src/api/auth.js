@@ -156,6 +156,19 @@ export const saveWatchlistOptIn = async (optedIn) => {
   );
 };
 
+// ── Update the fields a contractor is allowed to self-edit ─────────────
+// Email/trade/license are intentionally excluded — those tie into
+// verification and account identity, not something to change from here.
+export const updateProfile = async ({ name, company_name, phone }) => {
+  const session = loadSession();
+  if (!session?.access_token) throw new Error("Not logged in");
+  await dbFetch(
+    `/contractors?id=eq.${session.user.id}`,
+    { method: "PATCH", prefer: "return=minimal", body: JSON.stringify({ name, company_name, phone }) },
+    session.access_token
+  );
+};
+
 // ── Check whether this device's session is still the active one ────────
 // Fails OPEN (returns true) on any network/server error — only a confirmed
 // "false" from the server should ever force a logout.

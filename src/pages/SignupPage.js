@@ -24,6 +24,10 @@ export default function SignupPage({ go, goBack, initialMode }) {
   const { login, sessionKilled, dismissSessionKilled } = useAuth();
   const [mode, setMode]    = useState(initialMode || "signup");
   const [step, setStep]    = useState(1);
+  // Same class of bug as the review form: without this, Continue/Back
+  // between steps leaves the page wherever the previous (often taller)
+  // step had scrolled to.
+  useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [step]);
   const [loading, setLoad]   = useState(false);
   const [termsAgreed, setTerms]   = useState(false);
 

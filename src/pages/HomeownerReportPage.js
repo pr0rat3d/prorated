@@ -1,5 +1,5 @@
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../config.js";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BRAND } from "../components/UI";
 import Logo from "../components/Logo";
 import AddressInput from "../components/AddressInput";
@@ -13,6 +13,7 @@ const STRIPE_LINK       = ""; // TODO: replace with live Stripe link before enab
 export default function HomeownerReportPage({ go }) {
   const [address, setAddress]   = useState("");
   const [step, setStep]         = useState(1); // 1=search, 2=preview, 3=payment
+  useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [step]);
   const [loading, setLoading]   = useState(false);
   const [preview, setPreview]   = useState(null);
   const [email, setEmail]       = useState("");

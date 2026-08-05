@@ -15,7 +15,7 @@
 // Internal tool. Not linked from product nav — reachable directly at
 // /bid-intelligence-walkthrough for demo/QA use.
 // ─────────────────────────────────────────────────────────────
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { SCENARIOS } from "./BidIntelligenceTest";
 import { buildAddressFromReviews } from "../api/supabase";
 import { AuthContext } from "../hooks/useAuth";
@@ -93,6 +93,7 @@ const PLANS = [
 
 export default function BidIntelligenceWalkthrough({ go: goApp }) {
   const [step, setStep] = useState("search"); // search | result
+  useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [step]);
   const [selectedId, setSelectedId] = useState(null);
   const [plan, setPlan] = useState("gold");
 

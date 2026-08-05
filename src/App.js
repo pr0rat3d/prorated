@@ -237,11 +237,28 @@ export default function App() {
   };
 
   // Navigate forward — tracks history for back button
+  // Reverse of the static path checks in getInitialPage() — keeps the
+  // address bar honest when navigating away from a page that has its own
+  // real URL (e.g. /demo). Anything not listed here (home, dashboard,
+  // review, blog/trade/city SEO pages, etc.) defaults to "/", matching how
+  // those pages already behave today.
+  const PATH_FOR_PAGE = {
+    beta: "/beta", privacy: "/privacy", terms: "/terms", dmca: "/dmca",
+    pricing: "/pricing", contact: "/contact", signup: "/signup", admin: "/admin",
+    "bid-intelligence-test": "/bid-intelligence-test",
+    "bid-intelligence-walkthrough": "/bid-intelligence-walkthrough",
+    "team-activity-demo": "/team-activity-demo",
+    demo: "/demo", "verified-pro": "/verified-pros", "homeowner-report": "/report",
+    agc: "/agc", "realtor-signup": "/realtor", "company-setup": "/company-setup",
+    dashboard: "/dashboard",
+  };
+
   const go = (p, query = "") => {
     if (query) setSearchQuery(query);
     if (p === "signup") setLoginMode("signup");
     setPage(p);
     setHistory(h => [...h, p]);
+    try { window.history.replaceState({}, "", PATH_FOR_PAGE[p] || "/"); } catch {}
     window.scrollTo({ top: 0, behavior: "smooth" });
     // Pick up admin actions (license approval, plan changes) that happened
     // in another tab/device — otherwise status only refreshes on next login.

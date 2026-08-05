@@ -391,7 +391,7 @@ p.sub {
 
 <script>
 let cur = 0, audioOn = false;
-const S = document.querySelectorAll('.scene');
+const S = Array.from(document.querySelectorAll('.scene'));
 const N = S.length;
 const synth = window.speechSynthesis;
 
@@ -428,9 +428,16 @@ function speak(txt) {
   if (!audioOn || !synth) return;
   synth.cancel();
   const u = new SpeechSynthesisUtterance(txt);
-  u.rate = 0.9; u.pitch = 0.94; u.volume = 1.0;
+  // Natural rate/pitch — the previous 0.9/0.94 pulled the voice below its
+  // trained range, which flattens inflection rather than adding warmth.
+  // Web Speech API has no real prosody control beyond this, so voice choice
+  // matters more than tuning: Google's network voices read far more
+  // naturally than the local Microsoft SAPI ones (David/Mark/Zira).
+  u.rate = 0.98; u.pitch = 1.0; u.volume = 1.0;
   const v = synth.getVoices();
-  const pick = v.find(x => x.name.includes('Google') && x.lang==='en-US')
+  const pick = v.find(x => x.name === 'Google US English')
+             || v.find(x => x.name.includes('Google') && x.lang==='en-US')
+             || v.find(x => x.lang==='en-US' && !x.localService)
              || v.find(x => x.lang==='en-US') || v[0];
   if (pick) u.voice = pick;
   synth.speak(u);

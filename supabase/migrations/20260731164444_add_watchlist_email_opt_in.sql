@@ -1,0 +1,1 @@
+alter table contractors add column watchlist_email_opt_in boolean not null default false;

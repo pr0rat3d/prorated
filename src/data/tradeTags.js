@@ -121,6 +121,13 @@ const TRADE_SPECIFIC = {
     { id: "pool_dispute",    label: "Disputed scope",        severity: "bad",   icon: "📋", desc: "Homeowner disputed agreed scope or added work after job started." },
     { id: "unsafe_pool",     label: "Unsafe conditions",     severity: "bad",   icon: "⚠️", desc: "Electrical, structural, or chemical hazard present on site." },
   ],
+  water_mitigation: [
+    { id: "standing_water",    label: "Standing water",        severity: "warn",  icon: "💧", desc: "Standing water present requiring extraction before other work can begin." },
+    { id: "mold_extensive",    label: "Extensive mold growth",  severity: "alert", icon: "🦠", desc: "Mold growth beyond a minor, contained surface area." },
+    { id: "asbestos_suspected", label: "Suspected asbestos",   severity: "alert", icon: "☠️", desc: "Suspected asbestos-containing materials — requires ADEM-certified abatement before other work proceeds." },
+    { id: "structural_damage", label: "Structural damage",     severity: "alert", icon: "🏚️", desc: "Water damage affecting framing, subfloor, or foundation." },
+    { id: "odor_persistent",   label: "Persistent musty odor", severity: "warn",  icon: "👃", desc: "Lingering musty odor suggesting hidden moisture or mold behind walls/flooring." },
+  ],
 };
 
 // All tags across every trade, deduplicated by id — used to resolve a bare tag id

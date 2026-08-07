@@ -63,6 +63,7 @@ export const TRADES = [
   { id: "fencing",           label: "Fencing",            icon: "🪧" },
   { id: "pool_service",      label: "Pool Service",        icon: "🏊" },
   { id: "pressure_washing",  label: "Pressure Washing",   icon: "💦" },
+  { id: "water_mitigation",  label: "Water Mitigation / Restoration", icon: "💧" },
 ];
 
 export const RATING_CATEGORIES = [
@@ -708,6 +709,13 @@ export const TRADE_LICENSE_REQUIREMENTS = {
   fencing:      { tier: 2, required: true,  label: "Business License #",             hint: "Enter your city or county business license number",  example: "BL-12345"  },
   pool_service:      { tier: 2, required: true,  label: "Business License #",                     hint: "Enter your city or county business license number",              example: "BL-12345"  },
   pressure_washing:  { tier: 2, required: true,  label: "Business License # or GC License #",     hint: "Enter your business license or general contractor license number", example: "BL-12345"  },
+
+  // Business license covers the general scope (water removal, mold removal,
+  // basement reconstruction), but asbestos abatement specifically requires
+  // real ADEM accreditation in Alabama — not just a city/county business
+  // license — so the hint calls that out rather than implying one license
+  // covers all of it.
+  water_mitigation:  { tier: 2, required: true,  label: "Business License #",                     hint: "Enter your business license number. Asbestos abatement work also requires ADEM accreditation.", example: "BL-12345"  },
 };
 
 // Helper — get requirement for a trade

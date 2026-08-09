@@ -3,6 +3,16 @@
 // VITE_ prefix = safe to be in frontend (anon key is designed to be public)
 // Non-VITE_ vars = server-side only (service key, admin password)
 
+// Native builds (Capacitor) serve the bundled app from a local WebView origin
+// (capacitor://localhost on iOS, https://localhost on Android) — there is no
+// server.url override in capacitor.config.json. A relative fetch("/api/...")
+// resolves against that local origin, not the deployed site, and never reaches
+// the Vercel serverless functions. Any fetch to our own /api/* routes must use
+// this absolute origin so it works identically in the PWA and in native builds.
+// (The corresponding /api/* handler must send Access-Control-Allow-Origin, since
+// this becomes a cross-origin request from native.)
+export const API_BASE = "https://prorated.app";
+
 export const SUPABASE_URL     = import.meta.env.VITE_SUPABASE_URL     || "https://wsdrbdojnzmtwndswpwr.supabase.co";
 // Fallback anon key mirrors the URL fallback above — this is the public anon key
 // (already shipped in the live web bundle), not a secret. Without this fallback,

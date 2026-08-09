@@ -1,4 +1,4 @@
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../config.js";
+import { SUPABASE_URL, SUPABASE_ANON_KEY, API_BASE } from "../config.js";
 import { useState, useEffect } from "react";
 import { BRAND } from "./UI";
 import { useAuth } from "../hooks/useAuth";
@@ -24,7 +24,7 @@ async function fetchNearby(address, trade, radiusMiles) {
   const radiusMeters = Math.round(radiusMiles * 1609.34);
 
   // Step 1: Geocode address
-  const geoRes = await fetch(`/api/places?endpoint=geocode&address=${encodeURIComponent(address)}`);
+  const geoRes = await fetch(`${API_BASE}/api/places?endpoint=geocode&address=${encodeURIComponent(address)}`);
   const geoData = await geoRes.json();
   const loc = geoData.results?.[0]?.geometry?.location;
   if (!loc) return { suppliers: [], restaurants: [], lat: null, lng: null };
@@ -45,7 +45,7 @@ async function fetchNearby(address, trade, radiusMiles) {
 
   // Step 2: Search in parallel
   const search = (keyword) =>
-    fetch(`/api/places?endpoint=nearby&location=${lat},${lng}&radius=${radiusMeters}&keyword=${encodeURIComponent(keyword)}`)
+    fetch(`${API_BASE}/api/places?endpoint=nearby&location=${lat},${lng}&radius=${radiusMeters}&keyword=${encodeURIComponent(keyword)}`)
       .then(r => r.json())
       .then(d => (d.results || []).slice(0, 4))
       .catch(() => []);

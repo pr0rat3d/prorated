@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../config.js"; // still used in handleAccept PATCH
+import { SUPABASE_URL, SUPABASE_ANON_KEY, API_BASE } from "../config.js"; // still used in handleAccept PATCH
 import { BRAND } from "../components/UI";
 import { Btn, Card } from "../components/UI";
 import Logo from "../components/Logo";
@@ -28,7 +28,7 @@ export default function InvitePage({ go, goLogin }) {
 
   const fetchInvite = async () => {
     try {
-      const res = await fetch(`/api/invite-lookup?token=${token}`);
+      const res = await fetch(`${API_BASE}/api/invite-lookup?token=${token}`);
 
       if (res.status === 404) { setStatus("invalid"); return; }
       if (!res.ok) { setStatus("invalid"); return; }
@@ -65,7 +65,7 @@ export default function InvitePage({ go, goLogin }) {
       const session = JSON.parse(localStorage.getItem("prorated_session") || "{}");
       const tok     = session.access_token;
 
-      const res  = await fetch("/api/accept-invite", {
+      const res  = await fetch(`${API_BASE}/api/accept-invite`, {
         method:  "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${tok}` },
         body:    JSON.stringify({ token }),

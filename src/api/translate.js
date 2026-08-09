@@ -1,4 +1,4 @@
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../config.js";
+import { SUPABASE_URL, SUPABASE_ANON_KEY, API_BASE } from "../config.js";
 // ─────────────────────────────────────────────────────────────
 // ProRated — Translation Service
 // 3-layer caching: Supabase → localStorage → Session memory
@@ -110,7 +110,7 @@ export const translateText = async (text, targetLang) => {
   // Call our Vercel proxy (keeps API key server-side)
   try {
     sessionApiCalls++;
-    const response = await fetch("/api/translate", {
+    const response = await fetch(`${API_BASE}/api/translate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text, targetLang }),

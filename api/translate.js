@@ -32,7 +32,7 @@ export default async function handler(req, res) {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model:      "claude-sonnet-4-20250514",
+        model:      "claude-sonnet-5",
         max_tokens: 500,
         system:     "You are a translation API for a contractor job site rating app. Translate the given text to the target language. Return ONLY the translated text — no quotes, no explanations. Keep contractor-specific terms natural. Preserve numbers and addresses as-is.",
         messages:   [{ role: "user", content: `Translate to ${targetLang === "es" ? "Spanish" : targetLang}:\n\n${text}` }],

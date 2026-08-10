@@ -4,21 +4,6 @@ import { rateLimit, getIP } from "./_rateLimit.js";
 // Keeps API key server-side, adds rate limiting
 // ─────────────────────────────────────────────────────────────
 
-const RATE_LIMIT_WINDOW = 60 * 1000;
-const RATE_LIMIT_MAX    = 30; // translations allowed per IP per minute
-const ipCounts          = new Map();
-
-function getRateLimit(ip) {
-  const now  = Date.now();
-  const data = ipCounts.get(ip) || { count: 0, window: now };
-  if (now - data.window > RATE_LIMIT_WINDOW) {
-    data.count = 0; data.window = now;
-  }
-  data.count++;
-  ipCounts.set(ip, data);
-  return data.count;
-}
-
 export default async function handler(req, res) {
   const ip = getIP(req);
   const rl = rateLimit(ip, { max: 60, windowMs: 60000 });
@@ -29,12 +14,6 @@ export default async function handler(req, res) {
 
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST")    return res.status(405).json({ error: "Method not allowed" });
-
-  const ip    = req.headers["x-forwarded-for"]?.split(",")[0] || "unknown";
-  const count = getRateLimit(ip);
-  if (count > RATE_LIMIT_MAX) {
-    return res.status(429).json({ error: "Too many translation requests" });
-  }
 
   const { text, targetLang } = req.body || {};
   if (!text || !targetLang) {

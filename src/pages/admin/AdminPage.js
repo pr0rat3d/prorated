@@ -436,6 +436,7 @@ export default function AdminPage({ go }) {
   const [ownershipFlags, setOwnershipFlags] = useState([]);
   const [allInvites, setAllInvites]     = useState([]);
   const [featureFlags, setFeatureFlags] = useState([]);
+  const [automatedEmails, setAutomatedEmails] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [userFilter, setUserFilter] = useState("all");
   const [reviewFilter, setReviewFilter] = useState("all");
@@ -469,7 +470,7 @@ export default function AdminPage({ go }) {
   const loadData = async () => {
     setLoading(true);
     const safe = async (path) => { try { const r = await sb(path); return Array.isArray(r) ? r : []; } catch { return []; } };
-    const [[co0, priv, re, rv, er, fb, rp, nd, rl, cm, cmem, rd, sup, of_, inv, ff], authUsers] = await Promise.all([
+    const [[co0, priv, re, rv, er, fb, rp, nd, rl, cm, cmem, rd, sup, of_, inv, ff, ae], authUsers] = await Promise.all([
       Promise.all([
         safe("/contractors?select=*&order=created_at.desc&limit=500"),
         safe("/contractor_private?select=*"),
@@ -487,6 +488,7 @@ export default function AdminPage({ go }) {
         safe("/ownership_flags?select=*&order=created_at.desc&limit=100"),
         safe("/invites?select=*&order=created_at.desc&limit=200"),
         safe("/feature_flags?select=*&order=name.asc"),
+        safe("/automated_emails?select=*&order=key.asc"),
       ]),
       fetchAuthUsers(),
     ]);
@@ -501,7 +503,7 @@ export default function AdminPage({ go }) {
     setReported(rp); setNdaSigs(nd);
     setCompanies(cm); setCompanyMembers(cmem);
     setRedemptions(rd); setSuppliers(sup); setOwnershipFlags(of_); setAllInvites(inv);
-    setFeatureFlags(ff);
+    setFeatureFlags(ff); setAutomatedEmails(ae);
     // Enrich realtor rows with lookup counts
     const lookupCounts = rl.reduce((acc, l) => { acc[l.user_id] = (acc[l.user_id] || 0) + 1; return acc; }, {});
     setRealtors(re.map(r => ({ ...r, lookup_count: lookupCounts[r.user_id] || 0 })));
@@ -741,6 +743,16 @@ export default function AdminPage({ go }) {
     flash(true, `${flag.name} — Disabled`);
   };
 
+  // ── Automated Emails ─────────────────────────────────────────
+  const toggleAutomatedEmail = async (email) => {
+    const turningOn = !email.enabled;
+    if (!window.confirm(`${turningOn ? "Enable" : "Disable"} "${email.label}"? ${turningOn ? "It will start sending on the next daily run." : "It will stop sending immediately."}`)) return;
+    const payload = { enabled: turningOn };
+    await adminPatch("/automated_emails", payload, { id: `eq.${email.id}` });
+    setAutomatedEmails(es => es.map(e => e.id === email.id ? { ...e, ...payload } : e));
+    flash(true, `${email.label} — ${turningOn ? "Enabled" : "Disabled"}`);
+  };
+
   // ── Contractor admin notes / force-remove from company ───────
   const saveAdminNotes = async (id, notes) => {
     await adminPatch("/contractor_private", { admin_notes: notes }, { id: `eq.${id}` });
@@ -829,6 +841,7 @@ export default function AdminPage({ go }) {
     { id: "reported",     label: `Reports${(openReports.length + openOwnershipFlags.length) > 0 ? ` (${openReports.length + openOwnershipFlags.length})` : ""}`, icon: "🚩" },
     { id: "nda",          label: `NDA (${ndaSigs.length})`, icon: "📄" },
     { id: "flags",        label: "🚩 Feature Flags", icon: "🚩" },
+    { id: "emails",       label: "📧 Automated Emails", icon: "📧" },
     { id: "announce",     label: "📢 Announce", icon: "📢" },
   ];
 
@@ -1591,6 +1604,59 @@ export default function AdminPage({ go }) {
                     <Btn small color="#F59E0B" onClick={() => enableEarlyAccess(flag)}>⚡ Enable Early Access</Btn>
                     <Btn small color="#16A34A" onClick={() => fullLaunchFlag(flag)}>🚀 Full Launch</Btn>
                     <Btn small color="#64748B" onClick={() => disableFlag(flag)}>⏸️ Disable</Btn>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ── AUTOMATED EMAILS ── */}
+        {!loading && tab === "emails" && (
+          <div>
+            <SectionHead title="Automated Emails" count={automatedEmails.length} />
+            <div style={{ background: "#1E3A5F", border: "1px solid #2563EB", borderRadius: 12, padding: "0.75rem 1rem", margin: "1rem 0", fontSize: 12, color: "#93C5FD", lineHeight: 1.6 }}>
+              Scheduled sends run daily and check this toggle before sending anything — flip it off any time to pause a job instantly, no deploy needed.
+            </div>
+            {automatedEmails.length === 0 ? <Empty msg="No automated emails configured yet" /> : automatedEmails.map(email => {
+              // Same 1-day UTC window the send-reengagement-nudge edge
+              // function targets: signed up exactly 3 days ago, never nudged.
+              let eligibleToday = null;
+              if (email.key === "day3_reengagement") {
+                const now = new Date();
+                const windowStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 3));
+                const windowEnd = new Date(windowStart.getTime() + 86400000);
+                eligibleToday = contractors.filter(c =>
+                  c.status === "approved" &&
+                  !c.reengagement_sent_at &&
+                  new Date(c.created_at) >= windowStart &&
+                  new Date(c.created_at) < windowEnd
+                ).length;
+              }
+              return (
+                <div key={email.id} style={{ background: "#fff", border: `1px solid ${BRAND.border}`, borderRadius: 14, padding: "16px 18px", marginBottom: 12 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                        <span style={{ fontSize: 15, fontWeight: 800, color: BRAND.dark }}>{email.label}</span>
+                        <Badge color={email.enabled ? "#DCFCE7" : "#F1F5F9"} text={email.enabled ? "#166534" : "#64748B"}>
+                          {email.enabled ? "✅ Enabled" : "⏸️ Disabled"}
+                        </Badge>
+                      </div>
+                      {email.description && (
+                        <div style={{ fontSize: 11, color: BRAND.gray, marginTop: 4 }}>{email.description}</div>
+                      )}
+                      {eligibleToday !== null && (
+                        <div style={{ fontSize: 11, color: "#B45309", marginTop: 6, fontWeight: 700 }}>
+                          {eligibleToday} contractor{eligibleToday === 1 ? "" : "s"} eligible on the next run
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <Btn small color={email.enabled ? "#64748B" : "#16A34A"} onClick={() => toggleAutomatedEmail(email)}>
+                      {email.enabled ? "⏸️ Disable" : "✅ Enable"}
+                    </Btn>
                   </div>
                 </div>
               );

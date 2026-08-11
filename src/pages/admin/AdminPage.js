@@ -1663,17 +1663,20 @@ export default function AdminPage({ go }) {
               const functionSlug = { day3_reengagement: "send-reengagement-nudge" }[email.key];
               // Same 1-day UTC window the send-reengagement-nudge edge
               // function targets: signed up exactly 3 days ago, never nudged.
-              let eligibleToday = null;
+              let eligibleContractors = null;
               if (email.key === "day3_reengagement") {
                 const now = new Date();
                 const windowStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 3));
                 const windowEnd = new Date(windowStart.getTime() + 86400000);
-                eligibleToday = contractors.filter(c =>
+                eligibleContractors = contractors.filter(c =>
                   c.status === "approved" &&
                   !c.reengagement_sent_at &&
                   new Date(c.created_at) >= windowStart &&
                   new Date(c.created_at) < windowEnd
-                ).length;
+                ).map(c => ({
+                  ...c,
+                  hasReview: reviews.some(r => r.user_id === c.id),
+                }));
               }
               return (
                 <div key={email.id} style={{ background: "#fff", border: `1px solid ${BRAND.border}`, borderRadius: 14, padding: "16px 18px", marginBottom: 12 }}>
@@ -1688,13 +1691,30 @@ export default function AdminPage({ go }) {
                       {email.description && (
                         <div style={{ fontSize: 11, color: BRAND.gray, marginTop: 4 }}>{email.description}</div>
                       )}
-                      {eligibleToday !== null && (
+                      {eligibleContractors !== null && (
                         <div style={{ fontSize: 11, color: "#B45309", marginTop: 6, fontWeight: 700 }}>
-                          {eligibleToday} contractor{eligibleToday === 1 ? "" : "s"} eligible on the next run
+                          {eligibleContractors.length} contractor{eligibleContractors.length === 1 ? "" : "s"} eligible on the next run
                         </div>
                       )}
                     </div>
                   </div>
+
+                  {eligibleContractors?.length > 0 && (
+                    <div style={{ background: "#F8FAFC", border: `1px solid ${BRAND.border}`, borderRadius: 10, padding: "10px 12px", marginBottom: 12 }}>
+                      {eligibleContractors.map(c => (
+                        <div key={c.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "5px 0", fontSize: 12, borderBottom: `1px solid ${BRAND.border}` }}>
+                          <div>
+                            <span style={{ fontWeight: 700, color: BRAND.dark }}>{c.name || "(no name)"}</span>
+                            <span style={{ color: BRAND.gray }}> · {c.email}</span>
+                            {c.trade && <span style={{ color: BRAND.gray }}> · {c.trade}</span>}
+                          </div>
+                          <Badge color={c.hasReview ? "#DBEAFE" : "#F1F5F9"} text={c.hasReview ? "#1E40AF" : "#64748B"}>
+                            {c.hasReview ? "left a review" : "no review yet"}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     <Btn small color={email.enabled ? "#64748B" : "#16A34A"} onClick={() => toggleAutomatedEmail(email)}>
                       {email.enabled ? "⏸️ Disable" : "✅ Enable"}

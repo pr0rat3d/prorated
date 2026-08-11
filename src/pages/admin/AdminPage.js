@@ -752,6 +752,45 @@ export default function AdminPage({ go }) {
     setAutomatedEmails(es => es.map(e => e.id === email.id ? { ...e, ...payload } : e));
     flash(true, `${email.label} — ${turningOn ? "Enabled" : "Disabled"}`);
   };
+  const [emailActionBusy, setEmailActionBusy] = useState(null); // functionSlug being run, for a disabled/spinner state
+  const testSendAutomatedEmail = async (functionSlug, label) => {
+    const to = window.prompt(`Send all 3 "${label}" variants to which address?`, "canaan.farris@gmail.com");
+    if (!to) return;
+    setEmailActionBusy(functionSlug);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/${functionSlug}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
+        body: JSON.stringify({ testEmail: to }),
+      });
+      const data = await res.json();
+      if (!res.ok) { flash(false, data.error || "Test send failed"); return; }
+      flash(true, `Sent ${data.sent}/${data.sent + data.failed} test variant(s) to ${to}`);
+    } catch {
+      flash(false, "Test send failed — check your connection");
+    } finally {
+      setEmailActionBusy(null);
+    }
+  };
+  const triggerAutomatedEmailNow = async (functionSlug, label) => {
+    if (!window.confirm(`Send "${label}" to every real eligible contractor right now? This is the same send the daily cron would do — real emails, real users.`)) return;
+    setEmailActionBusy(functionSlug + "-real");
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/${functionSlug}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
+        body: JSON.stringify({ trigger: true }),
+      });
+      const data = await res.json();
+      if (!res.ok) { flash(false, data.error || "Send failed"); return; }
+      flash(true, data.message || `Sent ${data.sent || 0}/${data.candidates || 0} — ${data.failed || 0} failed`);
+      loadData(); // refresh so "eligible today" reflects the send that just happened
+    } catch {
+      flash(false, "Send failed — check your connection");
+    } finally {
+      setEmailActionBusy(null);
+    }
+  };
 
   // ── Contractor admin notes / force-remove from company ───────
   const saveAdminNotes = async (id, notes) => {
@@ -1619,6 +1658,9 @@ export default function AdminPage({ go }) {
               Scheduled sends run daily and check this toggle before sending anything — flip it off any time to pause a job instantly, no deploy needed.
             </div>
             {automatedEmails.length === 0 ? <Empty msg="No automated emails configured yet" /> : automatedEmails.map(email => {
+              // key -> deployed edge function slug. Add a row here whenever
+              // a new automated email job ships.
+              const functionSlug = { day3_reengagement: "send-reengagement-nudge" }[email.key];
               // Same 1-day UTC window the send-reengagement-nudge edge
               // function targets: signed up exactly 3 days ago, never nudged.
               let eligibleToday = null;
@@ -1657,6 +1699,18 @@ export default function AdminPage({ go }) {
                     <Btn small color={email.enabled ? "#64748B" : "#16A34A"} onClick={() => toggleAutomatedEmail(email)}>
                       {email.enabled ? "⏸️ Disable" : "✅ Enable"}
                     </Btn>
+                    {functionSlug && (
+                      <>
+                        <Btn small color="#2563EB" disabled={emailActionBusy === functionSlug}
+                          onClick={() => testSendAutomatedEmail(functionSlug, email.label)}>
+                          {emailActionBusy === functionSlug ? "Sending…" : "📨 Send test to my email"}
+                        </Btn>
+                        <Btn small color="#B45309" disabled={emailActionBusy === functionSlug + "-real"}
+                          onClick={() => triggerAutomatedEmailNow(functionSlug, email.label)}>
+                          {emailActionBusy === functionSlug + "-real" ? "Sending…" : "▶️ Send Now (real users)"}
+                        </Btn>
+                      </>
+                    )}
                   </div>
                 </div>
               );

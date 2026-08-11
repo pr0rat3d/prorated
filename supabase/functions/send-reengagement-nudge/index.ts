@@ -7,6 +7,17 @@
 // they actually did on day 1. Gated behind the `automated_emails`
 // admin toggle (key = 'day3_reengagement') — a no-op when disabled.
 //
+// Manual invocation (from Admin → Automated Emails):
+//   POST { trigger: true }              — real send, bypasses the
+//                                          toggle for this one run only
+//   POST { testEmail: "you@..." }       — sends all 3 variants to one
+//                                          address with fake sample
+//                                          data, using the exact same
+//                                          renderEmail()/buildVariant()
+//                                          code path as a real send.
+//                                          Never touches contractors/
+//                                          notification_log.
+//
 // Deploy with: supabase functions deploy send-reengagement-nudge
 //
 // Set secrets with:
@@ -32,22 +43,46 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // 1. Respect the admin kill switch — off by default, Canaan/Tommy
-    // control this from Admin → Automated Emails, no deploy needed.
-    const { data: setting } = await supabase
-      .from("automated_emails")
-      .select("enabled")
-      .eq("key", "day3_reengagement")
-      .single();
-
-    if (!setting?.enabled) {
-      return new Response(JSON.stringify({ sent: 0, reason: "disabled" }));
-    }
-
     const resendKey = Deno.env.get("RESEND_API_KEY");
     if (!resendKey) {
       console.log("[ProRated] send-reengagement-nudge — no RESEND_API_KEY, skipping");
       return new Response(JSON.stringify({ sent: 0, reason: "no-resend-key" }));
+    }
+
+    const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
+
+    // ── Test mode: send all 3 variants to one address, sample data only.
+    // Identical rendering path to a real send — just skips the DB
+    // targeting query and never writes to contractors/notification_log.
+    if (body.testEmail) {
+      const samples = [
+        buildVariant("Canaan", true, false, 0),           // reviewed, never searched
+        buildVariant("Canaan", false, true, 3),            // searched 3x, never reviewed
+        buildVariant("Canaan", false, false, 0),           // did neither
+      ];
+      let sent = 0, failed = 0;
+      for (const variant of samples) {
+        const ok = await sendOne(resendKey, body.testEmail, `[TEST] ${variant.subject}`, variant.bodyHtml, variant.ctaLabel);
+        if (ok) sent++; else failed++;
+      }
+      return new Response(JSON.stringify({ mode: "test", sent, failed, to: body.testEmail }));
+    }
+
+    // 1. Respect the admin kill switch — off by default, Canaan/Tommy
+    // control this from Admin → Automated Emails, no deploy needed.
+    // `trigger: true` (the manual "Send Now" button) bypasses this one
+    // check for this run only — everything else (targeting, idempotency)
+    // still applies, so it can't double-send anyone.
+    if (!body.trigger) {
+      const { data: setting } = await supabase
+        .from("automated_emails")
+        .select("enabled")
+        .eq("key", "day3_reengagement")
+        .single();
+
+      if (!setting?.enabled) {
+        return new Response(JSON.stringify({ sent: 0, reason: "disabled" }));
+      }
     }
 
     // 2. Target: signed up exactly 3 days ago, never nudged before.
@@ -90,50 +125,7 @@ serve(async (req) => {
       const firstName = (contractor.name || "").trim().split(" ")[0] || "there";
 
       const { subject, bodyHtml, ctaLabel } = buildVariant(firstName, hasReview, hasLookup, lookupCount || 0);
-
-      const html = `
-        <div style="font-family: 'DM Sans', Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px; background: #F8FAFC;">
-          <div style="background: #0F172A; border-radius: 16px; padding: 32px; text-align: center; margin-bottom: 24px;">
-            <h1 style="color: #F8FAFC; font-size: 24px; font-weight: 800; margin: 0 0 8px;">ProRated</h1>
-            <p style="color: #94A3B8; font-size: 13px; margin: 0;">Built by Pros, Built for Pros</p>
-          </div>
-          <div style="background: #fff; border-radius: 16px; padding: 32px; border: 1px solid #E2E8F0;">
-            <p style="color: #64748B; font-size: 14px; line-height: 1.65; margin: 0 0 24px;">
-              ${bodyHtml}
-            </p>
-            <div style="text-align: center;">
-              <a href="https://prorated.app"
-                style="display: inline-block; background: #2563EB; color: #fff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-size: 15px; font-weight: 700;">
-                ${ctaLabel}
-              </a>
-            </div>
-          </div>
-          <p style="text-align: center; color: #94A3B8; font-size: 11px; margin-top: 20px;">
-            ProRated · You're getting this because you're a verified Trade Pro member.
-            <a href="https://prorated.app/dashboard" style="color: #2563EB;">Manage email preferences</a>
-          </p>
-        </div>
-      `;
-
-      let ok = false;
-      try {
-        const emailRes = await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${resendKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            from:    "ProRated <hello@prorated.app>",
-            to:      [contractor.email],
-            subject,
-            html,
-          }),
-        });
-        ok = emailRes.ok;
-      } catch {
-        ok = false;
-      }
+      const ok = await sendOne(resendKey, contractor.email, subject, bodyHtml, ctaLabel);
 
       if (ok) sent++; else failed++;
 
@@ -165,6 +157,53 @@ serve(async (req) => {
     return new Response(JSON.stringify({ error: err.message }), { status: 500 });
   }
 });
+
+// Single source of truth for the rendered email — both the real send loop
+// and test mode call this, so a test send is byte-identical to a real one.
+async function sendOne(resendKey: string, to: string, subject: string, bodyHtml: string, ctaLabel: string): Promise<boolean> {
+  const html = `
+    <div style="font-family: 'DM Sans', Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px; background: #F8FAFC;">
+      <div style="background: #0F172A; border-radius: 16px; padding: 32px; text-align: center; margin-bottom: 24px;">
+        <h1 style="color: #F8FAFC; font-size: 24px; font-weight: 800; margin: 0 0 8px;">ProRated</h1>
+        <p style="color: #94A3B8; font-size: 13px; margin: 0;">Built by Pros, Built for Pros</p>
+      </div>
+      <div style="background: #fff; border-radius: 16px; padding: 32px; border: 1px solid #E2E8F0;">
+        <p style="color: #64748B; font-size: 14px; line-height: 1.65; margin: 0 0 24px;">
+          ${bodyHtml}
+        </p>
+        <div style="text-align: center;">
+          <a href="https://prorated.app"
+            style="display: inline-block; background: #2563EB; color: #fff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-size: 15px; font-weight: 700;">
+            ${ctaLabel}
+          </a>
+        </div>
+      </div>
+      <p style="text-align: center; color: #94A3B8; font-size: 11px; margin-top: 20px;">
+        ProRated · You're getting this because you're a verified Trade Pro member.
+        <a href="https://prorated.app/dashboard" style="color: #2563EB;">Manage email preferences</a>
+      </p>
+    </div>
+  `;
+
+  try {
+    const emailRes = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${resendKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "ProRated <hello@prorated.app>",
+        to:   [to],
+        subject,
+        html,
+      }),
+    });
+    return emailRes.ok;
+  } catch {
+    return false;
+  }
+}
 
 function buildVariant(firstName: string, hasReview: boolean, hasLookup: boolean, lookupCount: number) {
   if (hasReview && !hasLookup) {

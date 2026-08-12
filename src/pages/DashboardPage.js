@@ -11,8 +11,9 @@ import { hasSavedBiometricLogin, clearBiometricLogin, getBiometryLabel } from ".
 
 
 import { fetchMyReviews, updateReview, deleteReview } from "../api/supabase";
-import { getSavedAddresses, unsaveAddress, signIn, updatePassword, saveTradeMemberships, saveWatchlistOptIn, updateProfile } from "../api/auth";
+import { getSavedAddresses, unsaveAddress, toggleAddressNotify, signIn, updatePassword, saveTradeMemberships, saveWatchlistOptIn, updateProfile } from "../api/auth";
 import { enrollTotp, confirmEnrollment, unenrollFactor, getOwnFactors } from "../api/mfa";
+import { requestPushPermission, getPushToken, savePushToken } from "../api/push";
 import { PARTNERS } from "./PartnerLandingPage";
 import { useLang } from "../hooks/useLang";
 import { t } from "../i18n/translations";
@@ -281,6 +282,30 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
   const [loadingSaved, setLS]   = useState(false);
   const [myReviews, setMyReviews] = useState([]);
   const [loadingReviews, setLR]   = useState(false);
+  const [notifyBusyId, setNotifyBusyId] = useState(null);
+
+  // Contextual permission prompt: the first time a user turns alerts ON
+  // for a saved address, not at onboarding, when it's tied to a moment
+  // they actually understand. Native-only — on web/PWA the in-app
+  // AnnouncementBanner already covers "push updates into the app."
+  const handleToggleNotify = async (addr) => {
+    const next = !addr.notify;
+    setNotifyBusyId(addr.id);
+    setSaved(prev => prev.map(a => a.id === addr.id ? { ...a, notify: next } : a));
+    await toggleAddressNotify(addr.id, next);
+    if (next && isNativeApp() && user?.id) {
+      try {
+        const permission = await requestPushPermission();
+        if (permission === "granted") {
+          const token = await getPushToken();
+          if (token) await savePushToken(user.id, token, /iPad|iPhone|iPod/.test(navigator.userAgent) ? "ios" : "android");
+        }
+      } catch (err) {
+        console.warn("[ProRated] Push permission/token flow failed:", err.message);
+      }
+    }
+    setNotifyBusyId(null);
+  };
 
   useEffect(() => {
     if (isLoggedIn && tab === "company" && !companyDeletedRef.current) {
@@ -843,7 +868,12 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                     try { sessionStorage.setItem("pr_search_query", addr.address); } catch {}
                     go("home");
                   }}>{t(lang,"dashboard.view")}</Btn>
-                  <span style={{ fontSize: 16 }}>{addr.notify ? "🔔" : "🔕"}</span>
+                  <button
+                    onClick={() => handleToggleNotify(addr)}
+                    disabled={notifyBusyId === addr.id}
+                    title={addr.notify ? "Alerts on — tap to turn off" : "Alerts off — tap to turn on"}
+                    style={{ background: "none", border: "none", fontSize: 16, cursor: notifyBusyId === addr.id ? "not-allowed" : "pointer", padding: 4, opacity: notifyBusyId === addr.id ? 0.5 : 1 }}
+                  >{addr.notify ? "🔔" : "🔕"}</button>
                   <button
                     onClick={async () => {
                       await unsaveAddress(addr.address);

@@ -356,6 +356,25 @@ export const saveAddress = async (address) => {
   }
 };
 
+// ── Toggle alerts for a saved address (email + push are both gated on
+// this same flag; push additionally needs a registered device token —
+// see DashboardPage.js's handler, which requests permission the first
+// time this flips on) ──────────────────────────────────────────
+export const toggleAddressNotify = async (addressId, notify) => {
+  const session = loadSession();
+  if (!session) return { success: false, error: "Not logged in" };
+  try {
+    await dbFetch(
+      `/saved_addresses?id=eq.${addressId}`,
+      { method: "PATCH", prefer: "return=minimal", body: JSON.stringify({ notify }) },
+      session.access_token
+    );
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+};
+
 // ── Unsave / remove a saved address ──────────────────────────
 export const unsaveAddress = async (address) => {
   const session = loadSession();

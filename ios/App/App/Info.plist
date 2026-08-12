@@ -55,5 +55,9 @@
 	<string>ProRated uses your location to help find the job site address faster when you're leaving a review.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>ProRated uses your location to help find the job site address faster when you're leaving a review.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 </dict>
 </plist>

@@ -1,1 +1,1 @@
-{"appId":"app.prorated","appName":"ProRated","webDir":"build"} 
+{"appId":"app.prorated","appName":"ProRated","webDir":"build","experimental":{"ios":{"spm":{"packageOptions":{"@capacitor-firebase/messaging":{"symlink":true}}}}}}

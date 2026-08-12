@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1097831183751",
+    "project_id": "prorated-4021d",
+    "storage_bucket": "prorated-4021d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1097831183751:android:0813d83d99c88c8ef0cf22",
+        "android_client_info": {
+          "package_name": "app.prorated"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDeRQX-K8Myi6ECIgy_IH7WH8kZPeqTQVY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

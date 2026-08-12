@@ -40,6 +40,28 @@ export const getMonthlyLookupCount = async (userId) => {
   } catch { return 0; }
 };
 
+// ── Get how many reviews user has left this calendar month ────
+// Reviews have no month_year column (unlike lookup_log), so filter by
+// created_at against the first of the current month directly.
+const getMonthlyReviewCount = async (userId) => {
+  if (!userId) return 0;
+  try {
+    const now = new Date();
+    const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/reviews?user_id=eq.${userId}&created_at=gte.${firstOfMonth}&select=id`,
+      {
+        headers: {
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${authToken()}`,
+        },
+      }
+    );
+    const rows = await res.json();
+    return Array.isArray(rows) ? rows.length : 0;
+  } catch { return 0; }
+};
+
 // ── Log a lookup ──────────────────────────────────────────────
 export const logLookup = async (userId, address) => {
   if (!userId) return;
@@ -74,9 +96,12 @@ export const canDoLookup = async () => {
   // Demo accounts — unlimited
   if (user.email === "demo@prorated.io" || user.email === "demo@prorated.app") return { allowed: true, reason: "demo", remaining: null };
 
-  // Pending users get a tighter limit until their license is verified
+  // Pending users get a tighter limit until their license is verified —
+  // no review bonus here, this cap exists to restrict unverified accounts
+  // specifically, not to be a general free-tier lever.
   const isPending = user.status === "pending";
-  const limit     = isPending ? PENDING_MONTHLY_LOOKUPS : FREE_MONTHLY_LOOKUPS;
+  const reviewBonus = isPending ? 0 : await getMonthlyReviewCount(user.id);
+  const limit     = (isPending ? PENDING_MONTHLY_LOOKUPS : FREE_MONTHLY_LOOKUPS) + reviewBonus;
 
   const count     = await getMonthlyLookupCount(user.id);
   const remaining = limit - count;
@@ -93,7 +118,9 @@ export const getRemainingLookups = async () => {
   const session = loadSession();
   if (!session?.user) return null;
   if (PAID_PLANS.includes(session.user.plan)) return null; // unlimited
-  const limit = session.user.status === "pending" ? PENDING_MONTHLY_LOOKUPS : FREE_MONTHLY_LOOKUPS;
+  const isPending = session.user.status === "pending";
+  const reviewBonus = isPending ? 0 : await getMonthlyReviewCount(session.user.id);
+  const limit = (isPending ? PENDING_MONTHLY_LOOKUPS : FREE_MONTHLY_LOOKUPS) + reviewBonus;
   const count = await getMonthlyLookupCount(session.user.id);
   return Math.max(0, limit - count);
 };

@@ -56,9 +56,10 @@ serve(async (req) => {
     // targeting query and never writes to contractors/notification_log.
     if (body.testEmail) {
       const samples = [
-        buildVariant("Canaan", true, false, 0),           // reviewed, never searched
-        buildVariant("Canaan", false, true, 3),            // searched 3x, never reviewed
-        buildVariant("Canaan", false, false, 0),           // did neither
+        buildVariant("Canaan", true, false, 0, "free"),            // reviewed, never searched
+        buildVariant("Canaan", false, true, 3, "free"),            // searched 3x, never reviewed — free plan (earn-a-search framing)
+        buildVariant("Canaan", false, true, 3, "bronze"),          // searched 3x, never reviewed — paid plan (unlimited lookups already, no earn framing)
+        buildVariant("Canaan", false, false, 0, "free"),           // did neither
       ];
       let sent = 0, failed = 0;
       for (const variant of samples) {
@@ -96,7 +97,7 @@ serve(async (req) => {
 
     const { data: candidates, error } = await supabase
       .from("contractors")
-      .select("id, name, email")
+      .select("id, name, email, plan")
       .eq("status", "approved")
       .is("reengagement_sent_at", null)
       .gte("created_at", windowStart.toISOString())
@@ -124,7 +125,7 @@ serve(async (req) => {
       const hasLookup = (lookupCount || 0) > 0;
       const firstName = (contractor.name || "").trim().split(" ")[0] || "there";
 
-      const { subject, bodyHtml, ctaLabel } = buildVariant(firstName, hasReview, hasLookup, lookupCount || 0);
+      const { subject, bodyHtml, ctaLabel } = buildVariant(firstName, hasReview, hasLookup, lookupCount || 0, contractor.plan);
       const ok = await sendOne(resendKey, contractor.email, subject, bodyHtml, ctaLabel);
 
       if (ok) sent++; else failed++;
@@ -205,7 +206,10 @@ async function sendOne(resendKey: string, to: string, subject: string, bodyHtml:
   }
 }
 
-function buildVariant(firstName: string, hasReview: boolean, hasLookup: boolean, lookupCount: number) {
+function buildVariant(firstName: string, hasReview: boolean, hasLookup: boolean, lookupCount: number, plan: string | null) {
+  const PAID_PLANS = ["bronze", "silver", "gold", "platinum"];
+  const isFreePlan = !PAID_PLANS.includes(plan || "free");
+
   if (hasReview && !hasLookup) {
     return {
       subject: "You've already helped one crew — see who could help you",
@@ -221,18 +225,36 @@ function buildVariant(firstName: string, hasReview: boolean, hasLookup: boolean,
     };
   }
 
-  if (hasLookup && !hasReview) {
+  if (hasLookup && !hasReview && isFreePlan) {
     const plural = lookupCount === 1 ? "address" : "addresses";
     return {
-      subject: "You're only seeing half of what ProRated shows",
+      subject: "Get an extra free search this month",
+      ctaLabel: "Leave a review, earn a search →",
+      bodyHtml: `
+        Hey ${firstName} — you've searched ${lookupCount} ${plural} since joining ProRated.
+        Your free plan includes 5 searches a month, but every review you leave adds one
+        more for that month — no limit, and it resets fresh next month.
+        <br><br>
+        Leave one review — 60 seconds, five quick ratings — and it not only helps another
+        pro before their bid, it buys you another search right now.
+      `,
+    };
+  }
+
+  if (hasLookup && !hasReview) {
+    // Paid plan (Bronze+) already has unlimited lookups, so no "earn a
+    // search" framing — encourage the review on its own merits instead.
+    const plural = lookupCount === 1 ? "address" : "addresses";
+    return {
+      subject: "Other pros are relying on reviews like yours",
       ctaLabel: "Leave your first review →",
       bodyHtml: `
         Hey ${firstName} — you've searched ${lookupCount} ${plural} since joining ProRated,
-        but until you leave your first review, you're only seeing a locked card: address,
-        photo, nothing else.
+        which means you've already seen how much a real review from another licensed pro
+        can tell you before you bid.
         <br><br>
-        Leave one review — 60 seconds, five quick ratings — and every address you search
-        from then on shows full scores, tags, and reviewer notes from other licensed pros.
+        Leave one on a site you've worked — 60 seconds, five quick ratings — and you're
+        doing the same for the next pro who searches it.
       `,
     };
   }

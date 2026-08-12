@@ -2,7 +2,7 @@
 // ProRated — Configurable Plan Limits
 // Change these values here to update across the entire app
 // ─────────────────────────────────────────────────────────────
-export const FREE_MONTHLY_LOOKUPS = 10;   // ← free tier monthly limit
+export const FREE_MONTHLY_LOOKUPS = 5;   // ← free tier monthly limit — each review left this month adds +1, uncapped, but resets with the rest of the count next month (see lookupCounter.js)
 export const PENDING_MONTHLY_LOOKUPS = 3;    // ← limit during verification period
 
 // ── Company pricing tiers ─────────────────────────────────────

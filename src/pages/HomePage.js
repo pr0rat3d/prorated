@@ -34,6 +34,7 @@ export default function HomePage({ go, goLogin, goReview, initialQuery, onQueryU
   const [savingQuery, setSavingQuery] = useState(false);
   const [lookupBlocked, setBlocked] = useState(false);
   const [remaining, setRemaining]   = useState(null);
+  const [usedLimit, setUsedLimit]   = useState(FREE_MONTHLY_LOOKUPS);
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState(null);
@@ -71,7 +72,7 @@ export default function HomePage({ go, goLogin, goReview, initialQuery, onQueryU
     const chargeLookup = async () => {
       if (isDemoAddress) return true;
       const check = await canDoLookup();
-      if (!check.allowed) { setBlocked(true); setLoading(false); return false; }
+      if (!check.allowed) { setBlocked(true); if (check.limit != null) setUsedLimit(check.limit); setLoading(false); return false; }
       const session = loadSession();
       if (session?.user) logLookup(session.user.id, trimmed);
       setRemaining(check.remaining != null ? check.remaining - 1 : null);
@@ -235,7 +236,7 @@ export default function HomePage({ go, goLogin, goReview, initialQuery, onQueryU
               <div style={{ fontSize: 40, marginBottom: 10 }}>🔒</div>
               <h2 style={{ fontSize: 18, fontWeight: 800, color: "#FEF2F2", marginBottom: 8 }}>Monthly lookup limit reached</h2>
               <p style={{ fontSize: 13, color: "#FECACA", lineHeight: 1.65 }}>
-                You've used all {FREE_MONTHLY_LOOKUPS} free lookups this month. Upgrade to a paid plan for unlimited access.
+                You've used all {usedLimit} free lookups this month{usedLimit > FREE_MONTHLY_LOOKUPS ? ` (${FREE_MONTHLY_LOOKUPS} base + ${usedLimit - FREE_MONTHLY_LOOKUPS} earned by leaving reviews)` : ""}. Upgrade to a paid plan for unlimited access.
               </p>
             </div>
             <div style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: 10, alignItems: "center" }}>

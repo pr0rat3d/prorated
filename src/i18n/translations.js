@@ -164,7 +164,6 @@ export const translations = {
       signUpFree:   "Sign up free",
       accountDetails: "Account details",
       editProfile:  "Edit profile",
-      freePlan:     "Free · 25 lookups/month",
       loginPrompt:  "Create your trade professional profile",
       loginBody:    "Sign up to track your reviews, save addresses, and build your trust score.",
 
@@ -716,7 +715,6 @@ export const translations = {
       signUpFree:   "Regístrate gratis",
       accountDetails: "Datos de cuenta",
       editProfile:  "Editar perfil",
-      freePlan:     "Plan gratis · 3 búsquedas/mes",
       loginPrompt:  "Crea tu perfil de contratista",
       loginBody:    "Regístrate para rastrear tus reseñas, guardar direcciones y construir tu puntaje.",
 

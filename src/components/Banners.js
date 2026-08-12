@@ -3,6 +3,7 @@ import Logo from "./Logo";
 import { Btn, BRAND } from "./UI";
 import { useLang } from "../hooks/useLang";
 import { t } from "../i18n/translations";
+import { dbGet } from "../api/db";
 
 export function OfflineBanner() {
   const { lang } = useLang();
@@ -36,6 +37,47 @@ export function InstallBanner({ onInstall, onDismiss }) {
           {t(lang, "banners.notNow")}
         </button>
         <Btn small onClick={onInstall}>{t(lang, "banners.installBtn")}</Btn>
+      </div>
+    </div>
+  );
+}
+
+const DISMISSED_KEY = "dismissed_announcements";
+
+export function AnnouncementBanner() {
+  const [announcement, setAnnouncement] = useState(null);
+
+  useEffect(() => {
+    dbGet("/announcements", { select: "*", active: "eq.true", order: "created_at.desc", limit: "1" })
+      .then((rows) => {
+        const a = Array.isArray(rows) ? rows[0] : null;
+        if (!a) return;
+        let dismissed = [];
+        try { dismissed = JSON.parse(localStorage.getItem(DISMISSED_KEY) || "[]"); } catch {}
+        if (!dismissed.includes(a.id)) setAnnouncement(a);
+      })
+      .catch(() => {});
+  }, []);
+
+  const dismiss = () => {
+    let dismissed = [];
+    try { dismissed = JSON.parse(localStorage.getItem(DISMISSED_KEY) || "[]"); } catch {}
+    localStorage.setItem(DISMISSED_KEY, JSON.stringify([...dismissed, announcement.id]));
+    setAnnouncement(null);
+  };
+
+  if (!announcement) return null;
+  return (
+    <div style={{ background: BRAND.dark, borderBottom: "1px solid #1E293B", padding: "12px 1.25rem" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+        <div style={{ display: "flex", gap: 10 }}>
+          <Logo size={32} />
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#F8FAFC", marginBottom: 4 }}>{announcement.title}</div>
+            <div style={{ fontSize: 12, color: "#94A3B8", lineHeight: 1.6 }}>{announcement.body}</div>
+          </div>
+        </div>
+        <button onClick={dismiss} style={{ background: "none", border: "none", color: "#475569", fontSize: 20, cursor: "pointer", lineHeight: 1 }}>×</button>
       </div>
     </div>
   );

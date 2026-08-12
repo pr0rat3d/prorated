@@ -453,6 +453,7 @@ export default function AdminPage({ go }) {
   const [announceMessage, setAnnounceMessage] = useState("");
   const [announceSending, setAnnounceSending] = useState(false);
   const [announceResult, setAnnounceResult]   = useState(null); // { sent, failed, total }
+  const [announceChannel, setAnnounceChannel] = useState("email"); // "email" | "inapp" | "both"
 
   useEffect(() => { loadData(); }, []);
 
@@ -685,19 +686,35 @@ export default function AdminPage({ go }) {
 
   const sendAnnouncement = async () => {
     if (!announceSubject.trim() || !announceMessage.trim()) return;
-    if (!window.confirm(`Send this email to all ${activeContractorCount} active trade pros? This can't be undone.`)) return;
+    const sendsEmail = announceChannel === "email" || announceChannel === "both";
+    const sendsInApp = announceChannel === "inapp" || announceChannel === "both";
+    const confirmParts = [
+      sendsEmail && `email all ${activeContractorCount} active trade pros`,
+      sendsInApp && "post an in-app banner for all logged-in users",
+    ].filter(Boolean).join(" and ");
+    if (!window.confirm(`This will ${confirmParts}. This can't be undone. Continue?`)) return;
+
     setAnnounceSending(true);
     setAnnounceResult(null);
     try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/send-announcement`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
-        body: JSON.stringify({ adminPass: getAdminPass(), subject: announceSubject, message: announceMessage }),
-      });
-      const data = await res.json();
-      if (!res.ok) { flash(false, data.error || "Send failed"); return; }
-      setAnnounceResult(data);
-      flash(true, `Sent to ${data.sent}/${data.total} trade pros${data.failed ? ` — ${data.failed} failed` : ""}`);
+      let emailData = null;
+      if (sendsEmail) {
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/send-announcement`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
+          body: JSON.stringify({ adminPass: getAdminPass(), subject: announceSubject, message: announceMessage }),
+        });
+        emailData = await res.json();
+        if (!res.ok) { flash(false, emailData.error || "Email send failed"); return; }
+      }
+      if (sendsInApp) {
+        const result = await adminPost("/announcements", { title: announceSubject, body: announceMessage, active: true });
+        if (result?.error) { flash(false, "In-app banner failed to post"); return; }
+      }
+      setAnnounceResult(emailData);
+      flash(true, emailData
+        ? `Sent to ${emailData.sent}/${emailData.total} trade pros${emailData.failed ? ` — ${emailData.failed} failed` : ""}${sendsInApp ? " — banner posted" : ""}`
+        : "In-app banner posted ✓");
     } catch {
       flash(false, "Send failed — check your connection");
     } finally {
@@ -1771,9 +1788,26 @@ export default function AdminPage({ go }) {
           <div>
             <SectionHead title="Send Announcement" />
             <div style={{ background: "#1E3A5F", border: "1px solid #2563EB", borderRadius: 12, padding: "0.75rem 1rem", margin: "1rem 0", fontSize: 12, color: "#93C5FD", lineHeight: 1.6 }}>
-              Sends one email per recipient (never a shared "to" list, so no one sees anyone else's address) to every <strong>approved, active</strong> trade pro — currently <strong>{activeContractorCount}</strong>. You'll get a confirmation prompt before anything sends.
+              {announceChannel !== "inapp" && <>Sends one email per recipient (never a shared "to" list, so no one sees anyone else's address) to every <strong>approved, active</strong> trade pro — currently <strong>{activeContractorCount}</strong>. </>}
+              {announceChannel !== "email" && <>Posts a dismissible in-app banner every logged-in user sees until they close it. </>}
+              You'll get a confirmation prompt before anything sends.
             </div>
             <div style={{ background: "#fff", border: `1px solid ${BRAND.border}`, borderRadius: 14, padding: "1.25rem" }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: BRAND.dark, display: "block", marginBottom: 6 }}>Send as</label>
+              <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+                {[["email", "📧 Email"], ["inapp", "📱 In-app banner"], ["both", "Both"]].map(([val, label]) => (
+                  <button key={val} onClick={() => setAnnounceChannel(val)}
+                    style={{
+                      flex: 1, padding: "9px 10px", borderRadius: 9, fontSize: 12, fontWeight: 700, cursor: "pointer",
+                      border: `1.5px solid ${announceChannel === val ? BRAND.blue : BRAND.border}`,
+                      background: announceChannel === val ? BRAND.blue : "#fff",
+                      color: announceChannel === val ? "#fff" : BRAND.gray,
+                    }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+
               <label style={{ fontSize: 12, fontWeight: 700, color: BRAND.dark, display: "block", marginBottom: 6 }}>Subject</label>
               <input value={announceSubject} onChange={e => setAnnounceSubject(e.target.value)}
                 placeholder="e.g. New features just shipped"
@@ -1786,7 +1820,8 @@ export default function AdminPage({ go }) {
                 style={{ width: "100%", padding: "10px 12px", border: `1.5px solid ${BRAND.border}`, borderRadius: 9, fontSize: 13, outline: "none", fontFamily: "'DM Sans', sans-serif", boxSizing: "border-box", marginBottom: 14, color: BRAND.dark, resize: "vertical", lineHeight: 1.6 }} />
 
               <Btn onClick={sendAnnouncement} disabled={!announceSubject.trim() || !announceMessage.trim() || announceSending}>
-                {announceSending ? "Sending..." : `📢 Send to ${activeContractorCount} Trade Pros`}
+                {announceSending ? "Sending..." : announceChannel === "email" ? `📢 Send to ${activeContractorCount} Trade Pros`
+                  : announceChannel === "inapp" ? "📱 Post In-App Banner" : `📢 Send Email + Post Banner`}
               </Btn>
 
               {announceResult && (

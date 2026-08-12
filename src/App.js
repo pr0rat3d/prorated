@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { isNativeIOS, isNativeApp } from "./utils/platform";
 import Nav from "./components/Nav";
 import BottomNav from "./components/BottomNav";
-import { OfflineBanner, InstallBanner, IOSInstallBanner } from "./components/Banners";
+import { OfflineBanner, InstallBanner, IOSInstallBanner, AnnouncementBanner } from "./components/Banners";
 import StoreBadges from "./components/StoreBadges";
 import PasswordInput from "./components/PasswordInput";
 import HomePage from "./pages/HomePage";
@@ -322,6 +322,7 @@ export default function App() {
 
       {!isIsolated && showBetaWelcome && <BetaWelcome onDone={completeBetaWelcome} />}
       {!isIsolated && <OfflineBanner />}
+      {!isIsolated && isLoggedIn && <AnnouncementBanner />}
       {!isIsolated && showIOS     && <IOSInstallBanner onDismiss={() => setShowIOS(false)} />}
       {!isIsolated && showInstall && !showIOS && (
         <InstallBanner onInstall={handleInstall} onDismiss={() => setShowInstall(false)} />

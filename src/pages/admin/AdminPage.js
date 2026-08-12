@@ -75,7 +75,7 @@ const Empty = ({ msg = "Nothing here yet" }) => (
 );
 
 // ── User Row (contractors) ───────────────────────────────────
-function UserRow({ user: u, onApprove, onReject, onCompleteDelete, onAdminDelete, onChangePlan, onResendWelcome, onSaveNotes, onForceRemoveCompany, onViewReviews, reviewCount = 0, companies = [] }) {
+function UserRow({ user: u, onApprove, onReject, onCompleteDelete, onAdminDelete, onChangePlan, onResendWelcome, onSaveNotes, onForceRemoveCompany, onRemoveMfa, onViewReviews, reviewCount = 0, companies = [] }) {
   const [expanded, setExpanded] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [rejecting, setRejecting] = useState(false);
@@ -164,6 +164,13 @@ function UserRow({ user: u, onApprove, onReject, onCompleteDelete, onAdminDelete
                   <button onClick={() => onForceRemoveCompany(u.id, u.name || u.email)}
                     style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 6, border: "1px solid #FCA5A5", background: "#FEF2F2", color: "#DC2626", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
                     🏗️ Force-remove from company
+                  </button>
+                )}
+                {onRemoveMfa && (
+                  <button onClick={() => onRemoveMfa(u.id, u.name || u.email)}
+                    title="Locked out of 2FA (lost authenticator device)? This clears it so they can sign in with just their password again."
+                    style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 6, border: "1px solid #FCA5A5", background: "#FEF2F2", color: "#DC2626", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+                    🔐 Clear 2FA lockout
                   </button>
                 )}
               </div>
@@ -806,6 +813,27 @@ export default function AdminPage({ go }) {
     flash(true, `${name || "User"} removed from company`);
   };
 
+  // ── 2FA lockout recovery — Supabase's TOTP MFA has no backup codes, and
+  // unenrolling a verified factor requires AAL2 (confirmed live: a
+  // password-only session gets a hard 422 trying to self-remove). This is
+  // the only way a locked-out user gets back in. Safe to click even if the
+  // user doesn't have 2FA enabled — the underlying RPC just deletes 0 rows.
+  const removeMfaFactor = async (id, name) => {
+    if (!window.confirm(`Clear 2FA for ${name || "this user"}? Use this only if they're locked out (lost their authenticator device) — they'll be able to sign in with just their password again, and can re-enable 2FA from their account settings whenever they want.`)) return;
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-remove-mfa`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
+        body: JSON.stringify({ userId: id, adminPass: getAdminPass() }),
+      });
+      const data = await res.json();
+      if (!res.ok) { flash(false, data.error || "Failed to clear 2FA"); return; }
+      flash(true, data.removed > 0 ? `2FA cleared for ${name || "user"}` : `${name || "User"} didn't have 2FA enabled — nothing to clear`);
+    } catch {
+      flash(false, "Failed to clear 2FA — check your connection");
+    }
+  };
+
   // ── Reviews: dispute flag ─────────────────────────────────────
   const toggleDisputed = async (id, current) => {
     await adminPatch("/reviews", { disputed: !current }, { id: `eq.${id}` });
@@ -1124,7 +1152,7 @@ export default function AdminPage({ go }) {
                 const reviewCountByUser = reviews.reduce((acc, r) => { acc[r.user_id] = (acc[r.user_id] || 0) + 1; return acc; }, {});
                 return filteredContractors.map(c => (
                   <UserRow key={c.id} user={c} onApprove={approveContractor} onReject={rejectContractor} onCompleteDelete={completeDelete} onAdminDelete={deleteUser} onChangePlan={changePlan} onResendWelcome={resendWelcome}
-                    onSaveNotes={saveAdminNotes} onForceRemoveCompany={forceRemoveFromCompany}
+                    onSaveNotes={saveAdminNotes} onForceRemoveCompany={forceRemoveFromCompany} onRemoveMfa={removeMfaFactor}
                     onViewReviews={(id, name) => { setReviewUserFilter({ id, name }); setReviewFilter("user"); setTab("reviews"); }}
                     reviewCount={reviewCountByUser[c.id] || 0}
                     companies={companies} />

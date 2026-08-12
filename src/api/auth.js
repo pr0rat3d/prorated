@@ -1,4 +1,5 @@
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../config.js";
+import { challengeFactor, verifyFactor } from "./mfa.js";
 // ─────────────────────────────────────────────────────────────
 // ProRated — Supabase Auth
 // Handles trade professional signup, login, logout and session management
@@ -202,7 +203,52 @@ export const fetchContractorPrivate = async (userId, token) => {
   } catch { return {}; }
 };
 
+// ── Shared post-auth finalization — fetches the contractor profile and
+// stores the real session. Used both by a normal (no 2FA) sign-in and by
+// completeMfaLogin() once a 2FA code has been verified — the verify
+// endpoint returns a complete new (aal2) session in the same shape as a
+// plain password grant, so this is the single source of truth for turning
+// "we have a token response" into "the user is actually logged in". ────
+const finalizeLogin = async (data, fallbackEmail) => {
+  await killOtherSessions(data.access_token);
+
+  // Fetch trade professional profile — retry once if first attempt returns empty
+  const fetchProfile = () => dbFetch(
+    `/contractors?id=eq.${data.user.id}&select=*`,
+    { method: "GET" },
+    data.access_token
+  ).catch(() => []);
+
+  let profile = await fetchProfile();
+  // Retry after short delay if empty (RLS timing on fresh token)
+  if (!profile?.[0]) {
+    await new Promise(r => setTimeout(r, 800));
+    profile = await fetchProfile();
+  }
+
+  const contractor = profile?.[0] || {};
+  const privateFields = await fetchContractorPrivate(data.user.id, data.access_token);
+  saveSession({
+    access_token:  data.access_token,
+    refresh_token: data.refresh_token,
+    expires_at:    data.expires_at,
+    user: {
+      ...data.user,
+      ...contractor,
+      ...privateFields,
+      // Preserve critical fields even if contractor row fetch failed
+      email: contractor.email || fallbackEmail,
+      status: contractor.status || "pending",
+      plan:   contractor.plan   || "free",
+    },
+  });
+};
+
 // ── Log in an existing contractor ─────────────────────────────
+// If the account has a verified 2FA factor, the password grant alone is
+// NOT enough to log in — returns { requires2FA, factorId, tempAccessToken }
+// instead of a session. The UI must challenge+verify that factor (see
+// completeMfaLogin below) before the session actually gets saved.
 export const signIn = async ({ email, password }) => {
   const data = await authFetch("/token?grant_type=password", {
     method: "POST",
@@ -210,40 +256,27 @@ export const signIn = async ({ email, password }) => {
   });
 
   if (data.access_token) {
-    await killOtherSessions(data.access_token);
-
-    // Fetch trade professional profile — retry once if first attempt returns empty
-    const fetchProfile = () => dbFetch(
-      `/contractors?id=eq.${data.user.id}&select=*`,
-      { method: "GET" },
-      data.access_token
-    ).catch(() => []);
-
-    let profile = await fetchProfile();
-    // Retry after short delay if empty (RLS timing on fresh token)
-    if (!profile?.[0]) {
-      await new Promise(r => setTimeout(r, 800));
-      profile = await fetchProfile();
+    // factors lives on data.user.factors, NOT data.factors — confirmed by
+    // parsing a real login response with a verified factor (2026-08-11);
+    // an earlier grep-based check couldn't tell top-level from nested and
+    // gave a false pass here, caught only by an actual browser login test.
+    const verifiedFactor = (data.user?.factors || []).find(f => f.status === "verified" && f.factor_type === "totp");
+    if (verifiedFactor) {
+      return { requires2FA: true, factorId: verifiedFactor.id, tempAccessToken: data.access_token };
     }
-
-    const contractor = profile?.[0] || {};
-    const privateFields = await fetchContractorPrivate(data.user.id, data.access_token);
-    saveSession({
-      access_token:  data.access_token,
-      refresh_token: data.refresh_token,
-      expires_at:    data.expires_at,
-      user: {
-        ...data.user,
-        ...contractor,
-        ...privateFields,
-        // Preserve critical fields even if contractor row fetch failed
-        email: contractor.email || email,
-        status: contractor.status || "pending",
-        plan:   contractor.plan   || "free",
-      },
-    });
+    await finalizeLogin(data, email);
   }
 
+  return data;
+};
+
+// ── Complete a login that required 2FA — challenges the factor, verifies
+// the code, and finalizes the session from the resulting elevated (aal2)
+// token response. Throws on a wrong/expired code (surface to the user). ──
+export const completeMfaLogin = async (factorId, tempAccessToken, code) => {
+  const challenge = await challengeFactor(tempAccessToken, factorId);
+  const data = await verifyFactor(tempAccessToken, factorId, challenge.id, code);
+  await finalizeLogin(data, data.email);
   return data;
 };
 

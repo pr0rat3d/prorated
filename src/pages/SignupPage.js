@@ -4,7 +4,7 @@ import { TRADES, BRAND, COMPANY_TIERS } from "../data/constants";
 import { Btn, Card } from "../components/UI";
 import Logo from "../components/Logo";
 import PasswordInput from "../components/PasswordInput";
-import { signUp, signIn } from "../api/auth";
+import { signUp, signIn, completeMfaLogin } from "../api/auth";
 import { useAuth } from "../hooks/useAuth";
 import { useLang } from "../hooks/useLang";
 import { t } from "../i18n/translations";
@@ -59,6 +59,14 @@ export default function SignupPage({ go, goBack, initialMode }) {
   const [bioLabel, setBioLabel]         = useState("Face ID or Touch ID");
   const [showBioEnable, setShowBioEnable] = useState(false);
   const [pendingBio, setPendingBio]     = useState(null); // { email, password } — held only until enable/skip
+
+  // 2FA (TOTP) — set when signIn() reports a verified factor exists. The
+  // password grant alone is aal1; tempAccessToken is only good enough to
+  // challenge/verify that one factor, never saved as the real session.
+  const [pending2FA, setPending2FA]     = useState(null); // { factorId, tempAccessToken }
+  const [mfaCode, setMfaCode]           = useState("");
+  const [mfaError, setMfaError]         = useState(null);
+  const [mfaLoading, setMfaLoading]     = useState(false);
 
   useEffect(() => {
     if (!nativeApp) return;
@@ -263,6 +271,11 @@ export default function SignupPage({ go, goBack, initialMode }) {
     setLoad(true); setError(null);
     try {
       const data = await signIn({ email: form.email, password: form.password });
+      if (data.requires2FA) {
+        setPending2FA({ factorId: data.factorId, tempAccessToken: data.tempAccessToken });
+        setLoad(false);
+        return;
+      }
       if (data.user) {
         // signIn() fetches the full contractor profile and saves to localStorage
         // Read it back so we get name, plan, status, license etc — not just auth fields
@@ -288,6 +301,11 @@ export default function SignupPage({ go, goBack, initialMode }) {
     if (!creds) { setLoad(false); return; } // cancelled/failed — silently fall back to the manual form
     try {
       const data = await signIn({ email: creds.username, password: creds.password });
+      if (data.requires2FA) {
+        setPending2FA({ factorId: data.factorId, tempAccessToken: data.tempAccessToken });
+        setLoad(false);
+        return;
+      }
       if (data.user) {
         const session = JSON.parse(localStorage.getItem("prorated_session") || "{}");
         login(session.user || data.user);
@@ -300,6 +318,28 @@ export default function SignupPage({ go, goBack, initialMode }) {
       setBioSaved(false);
       setError(`${bioLabel} sign-in failed — the saved password may be out of date. Please sign in below.`);
     } finally { setLoad(false); }
+  };
+
+  const handleMfaSubmit = async () => {
+    if (!pending2FA || mfaCode.trim().length !== 6) return;
+    setMfaLoading(true); setMfaError(null);
+    try {
+      const data = await completeMfaLogin(pending2FA.factorId, pending2FA.tempAccessToken, mfaCode.trim());
+      if (data.user) {
+        const session = JSON.parse(localStorage.getItem("prorated_session") || "{}");
+        login(session.user || data.user);
+        setPending2FA(null); setMfaCode("");
+        if (nativeApp && bioAvailable && !bioSaved) {
+          setPendingBio({ email: form.email, password: form.password });
+          setShowBioEnable(true);
+          setMfaLoading(false);
+          return;
+        }
+        completeLoginNav();
+      }
+    } catch (err) {
+      setMfaError(err.message.includes("Invalid") ? "Incorrect code — check your authenticator app and try again." : err.message);
+    } finally { setMfaLoading(false); }
   };
 
   return (
@@ -353,8 +393,37 @@ export default function SignupPage({ go, goBack, initialMode }) {
         </Card>
       )}
 
+      {/* 2FA code entry — shown after a correct password when the account
+          has a verified TOTP factor. The password grant alone (aal1) isn't
+          enough to finish logging in. */}
+      {mode === "login" && pending2FA && (
+        <Card style={{ animation: "fadeUp 0.2s ease both", textAlign: "center" }}>
+          <div style={{ fontSize: 32, marginBottom: 10 }}>🔐</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: BRAND.dark, marginBottom: 6 }}>Enter your 2FA code</div>
+          <p style={{ fontSize: 12.5, color: BRAND.gray, lineHeight: 1.6, marginBottom: 18 }}>
+            Open your authenticator app and enter the 6-digit code for ProRated.
+          </p>
+          {mfaError && <div style={{ background: "#FEE2E2", color: "#991B1B", border: "1px solid #FCA5A5", borderRadius: 10, padding: "10px 14px", fontSize: 13, marginBottom: 12, textAlign: "left" }}>{mfaError}</div>}
+          <input
+            type="text" inputMode="numeric" pattern="[0-9]*" maxLength={6} placeholder="000000"
+            value={mfaCode}
+            onChange={e => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+            onKeyDown={e => { if (e.key === "Enter") handleMfaSubmit(); }}
+            style={{ ...inp, textAlign: "center", fontSize: 22, letterSpacing: 6, fontWeight: 700 }}
+            autoFocus
+          />
+          <Btn fullWidth onClick={handleMfaSubmit} disabled={mfaCode.length !== 6 || mfaLoading} style={{ marginTop: 12 }}>
+            {mfaLoading ? "Verifying…" : "Verify →"}
+          </Btn>
+          <button onClick={() => { setPending2FA(null); setMfaCode(""); setMfaError(null); }}
+            style={{ background: "none", border: "none", color: BRAND.gray, fontSize: 12, cursor: "pointer", marginTop: 10, fontFamily: "'DM Sans', sans-serif" }}>
+            Back to sign in
+          </button>
+        </Card>
+      )}
+
       {/* Login */}
-      {mode === "login" && !resetMode && !showBioEnable && (
+      {mode === "login" && !resetMode && !showBioEnable && !pending2FA && (
         <Card style={{ animation: "fadeUp 0.2s ease both" }}>
           {sessionKilled && (
             <div style={{ background: "#FFFBEB", border: "1px solid #FCD34D", borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 12, color: "#92400E" }}>

@@ -12,6 +12,7 @@ import { hasSavedBiometricLogin, clearBiometricLogin, getBiometryLabel } from ".
 
 import { fetchMyReviews, updateReview, deleteReview } from "../api/supabase";
 import { getSavedAddresses, unsaveAddress, signIn, updatePassword, saveTradeMemberships, saveWatchlistOptIn, updateProfile } from "../api/auth";
+import { enrollTotp, confirmEnrollment, unenrollFactor, getOwnFactors } from "../api/mfa";
 import { PARTNERS } from "./PartnerLandingPage";
 import { useLang } from "../hooks/useLang";
 import { t } from "../i18n/translations";
@@ -45,6 +46,67 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
   const handleDisableBiometric = async () => {
     await clearBiometricLogin();
     setBioSaved(false);
+  };
+
+  // 2FA (TOTP) — fully opt-in. Nothing here forces anyone into it; this is
+  // just the settings screen for whoever chooses to turn it on. Enrollment
+  // is a 3-step flow: start (get QR/secret) -> scan -> confirm with a code.
+  const [mfaFactor, setMfaFactor]         = useState(null); // existing verified factor, if any
+  const [mfaChecking, setMfaChecking]     = useState(true);
+  const [mfaEnrollData, setMfaEnrollData] = useState(null); // { id, totp: {qr_code, secret} } — mid-enrollment only
+  const [mfaEnrollCode, setMfaEnrollCode] = useState("");
+  const [mfaError, setMfaError]           = useState(null);
+  const [mfaBusy, setMfaBusy]             = useState(false);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    const session = JSON.parse(localStorage.getItem("prorated_session") || "{}");
+    if (!session.access_token) { setMfaChecking(false); return; }
+    getOwnFactors(session.access_token)
+      .then(factors => setMfaFactor(factors.find(f => f.status === "verified" && f.factor_type === "totp") || null))
+      .catch(() => {})
+      .finally(() => setMfaChecking(false));
+  }, [isLoggedIn]);
+
+  const handleStartMfaEnroll = async () => {
+    setMfaBusy(true); setMfaError(null);
+    try {
+      const session = JSON.parse(localStorage.getItem("prorated_session") || "{}");
+      const data = await enrollTotp(session.access_token, `ProRated (${user?.email || "account"})`);
+      setMfaEnrollData(data);
+    } catch (err) {
+      setMfaError(err.message);
+    } finally { setMfaBusy(false); }
+  };
+
+  const handleConfirmMfaEnroll = async () => {
+    if (!mfaEnrollData || mfaEnrollCode.trim().length !== 6) return;
+    setMfaBusy(true); setMfaError(null);
+    try {
+      const session = JSON.parse(localStorage.getItem("prorated_session") || "{}");
+      await confirmEnrollment(session.access_token, mfaEnrollData.id, mfaEnrollCode.trim());
+      setMfaFactor({ id: mfaEnrollData.id, status: "verified", factor_type: "totp" });
+      setMfaEnrollData(null); setMfaEnrollCode("");
+    } catch (err) {
+      setMfaError(err.message.includes("Invalid") ? "Incorrect code — check your authenticator app and try again." : err.message);
+    } finally { setMfaBusy(false); }
+  };
+
+  const handleCancelMfaEnroll = () => {
+    setMfaEnrollData(null); setMfaEnrollCode(""); setMfaError(null);
+  };
+
+  const handleDisableMfa = async () => {
+    if (!mfaFactor) return;
+    if (!window.confirm("Turn off 2FA? You'll only need your password to sign in after this.")) return;
+    setMfaBusy(true); setMfaError(null);
+    try {
+      const session = JSON.parse(localStorage.getItem("prorated_session") || "{}");
+      await unenrollFactor(session.access_token, mfaFactor.id);
+      setMfaFactor(null);
+    } catch (err) {
+      setMfaError(err.message);
+    } finally { setMfaBusy(false); }
   };
 
   // On payment success: refresh immediately then again after 4s for webhook lag
@@ -1383,6 +1445,74 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                       {t(lang,"dashboard.turnOff")}
                     </button>
                   </div>
+                </Card>
+              )}
+
+              {/* 2FA (TOTP) — fully opt-in, never required to sign in */}
+              {!mfaChecking && (
+                <Card style={{ marginBottom: "0.85rem" }}>
+                  {mfaError && (
+                    <div style={{ background: "#FEE2E2", color: "#991B1B", border: "1px solid #FCA5A5", borderRadius: 10, padding: "10px 14px", fontSize: 12, marginBottom: 12 }}>{mfaError}</div>
+                  )}
+
+                  {/* Already enrolled — status + turn off */}
+                  {mfaFactor && !mfaEnrollData && (
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: 2 }}>🔐 Two-factor authentication</div>
+                        <div style={{ fontSize: 11, color: BRAND.gray }}>Enabled — a code from your authenticator app is required to sign in.</div>
+                      </div>
+                      <button onClick={handleDisableMfa} disabled={mfaBusy}
+                        style={{ background: "#F1F5F9", color: BRAND.gray, border: "none", padding: "7px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", flexShrink: 0, marginLeft: 10 }}>
+                        {mfaBusy ? "…" : t(lang,"dashboard.turnOff")}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Not enrolled, not mid-flow — offer to enable */}
+                  {!mfaFactor && !mfaEnrollData && (
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: 2 }}>🔐 Two-factor authentication</div>
+                        <div style={{ fontSize: 11, color: BRAND.gray }}>Optional — add an authenticator-app code as a second sign-in step.</div>
+                      </div>
+                      <button onClick={handleStartMfaEnroll} disabled={mfaBusy}
+                        style={{ background: BRAND.blue, color: "#fff", border: "none", padding: "7px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", flexShrink: 0, marginLeft: 10 }}>
+                        {mfaBusy ? "…" : "Enable"}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Mid-enrollment — QR + secret + confirm code */}
+                  {mfaEnrollData && (
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: BRAND.dark, marginBottom: 10 }}>🔐 Scan with your authenticator app</div>
+                      <div
+                        style={{ width: 180, height: 180, margin: "0 auto 12px", background: "#fff", border: `1px solid ${BRAND.border}`, borderRadius: 10, padding: 8 }}
+                        dangerouslySetInnerHTML={{ __html: mfaEnrollData.totp?.qr_code || "" }}
+                      />
+                      <div style={{ fontSize: 11, color: BRAND.gray, textAlign: "center", marginBottom: 4 }}>Can't scan? Enter this code manually:</div>
+                      <div style={{ fontSize: 12, fontFamily: "ui-monospace, monospace", textAlign: "center", background: "#F1F5F9", borderRadius: 8, padding: "8px 10px", marginBottom: 14, wordBreak: "break-all" }}>
+                        {mfaEnrollData.totp?.secret}
+                      </div>
+                      <div style={{ fontSize: 11, color: BRAND.gray, marginBottom: 6 }}>Then enter the 6-digit code it shows:</div>
+                      <input
+                        type="text" inputMode="numeric" pattern="[0-9]*" maxLength={6} placeholder="000000"
+                        value={mfaEnrollCode}
+                        onChange={e => setMfaEnrollCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                        style={{ width: "100%", boxSizing: "border-box", textAlign: "center", fontSize: 20, letterSpacing: 6, fontWeight: 700, padding: "10px", borderRadius: 8, border: `1px solid ${BRAND.border}`, fontFamily: "'DM Sans', sans-serif", marginBottom: 10 }}
+                      />
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <Btn fullWidth onClick={handleConfirmMfaEnroll} disabled={mfaEnrollCode.length !== 6 || mfaBusy}>
+                          {mfaBusy ? "Verifying…" : "Confirm →"}
+                        </Btn>
+                      </div>
+                      <button onClick={handleCancelMfaEnroll}
+                        style={{ background: "none", border: "none", color: BRAND.gray, fontSize: 12, cursor: "pointer", marginTop: 10, fontFamily: "'DM Sans', sans-serif", width: "100%" }}>
+                        Cancel
+                      </button>
+                    </div>
+                  )}
                 </Card>
               )}
 

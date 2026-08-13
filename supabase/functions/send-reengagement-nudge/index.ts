@@ -6,6 +6,9 @@
 // reviews row), and emails a nudge whose content branches on what
 // they actually did on day 1. Gated behind the `automated_emails`
 // admin toggle (key = 'day3_reengagement') — a no-op when disabled.
+// Also sends a push to any registered device (push_tokens) for that
+// contractor, additive to the email — a registered device token is
+// its own consent signal, independent of the email toggle.
 //
 // Manual invocation (from Admin → Automated Emails):
 //   POST { trigger: true }              — real send, bypasses the
@@ -26,6 +29,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendPush, getServiceAccount } from "../_shared/fcm.ts";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -128,6 +132,12 @@ serve(async (req) => {
       const { subject, bodyHtml, ctaLabel } = buildVariant(firstName, hasReview, hasLookup, lookupCount || 0, contractor.plan);
       const ok = await sendOne(resendKey, contractor.email, subject, bodyHtml, ctaLabel);
 
+      // Push if this contractor has a registered device — additive to
+      // email, not a replacement. A registered token means OS permission
+      // was already granted, which is its own consent signal (separate
+      // from the automated_emails toggle governing the email side).
+      await sendPushIfRegistered(supabase, contractor.id, subject, bodyHtml);
+
       if (ok) sent++; else failed++;
 
       // Stamp regardless of outcome — the 1-day targeting window means a
@@ -203,6 +213,31 @@ async function sendOne(resendKey: string, to: string, subject: string, bodyHtml:
     return emailRes.ok;
   } catch {
     return false;
+  }
+}
+
+// Best-effort — a push failure never affects the email send/counts this
+// function already returns. Missing GOOGLE_SERVICE_ACCOUNT_JSON is a
+// silent no-op here (fail soft), same pattern as the RESEND_API_KEY guard.
+async function sendPushIfRegistered(supabase: any, userId: string, subject: string, bodyHtml: string) {
+  try {
+    const { data: tokenRow } = await supabase
+      .from("push_tokens")
+      .select("token")
+      .eq("user_id", userId)
+      .limit(1)
+      .maybeSingle();
+    if (!tokenRow?.token) return;
+
+    const sa = getServiceAccount();
+    const pushBody = bodyHtml.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 140);
+    const result = await sendPush(sa, tokenRow.token, { title: subject, body: pushBody });
+
+    if (!result.ok && result.deadToken) {
+      await supabase.from("push_tokens").delete().eq("token", tokenRow.token);
+    }
+  } catch (err) {
+    console.warn("[ProRated] Push send skipped:", (err as Error).message);
   }
 }
 

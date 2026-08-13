@@ -444,6 +444,9 @@ export default function AdminPage({ go }) {
   const [allInvites, setAllInvites]     = useState([]);
   const [featureFlags, setFeatureFlags] = useState([]);
   const [automatedEmails, setAutomatedEmails] = useState([]);
+  const [pushDeviceCount, setPushDeviceCount] = useState(0);
+  const [testPushEmail, setTestPushEmail] = useState("canaan.farris@gmail.com");
+  const [testPushBusy, setTestPushBusy] = useState(false);
   const [loading, setLoading]   = useState(true);
   const [userFilter, setUserFilter] = useState("all");
   const [reviewFilter, setReviewFilter] = useState("all");
@@ -478,7 +481,7 @@ export default function AdminPage({ go }) {
   const loadData = async () => {
     setLoading(true);
     const safe = async (path) => { try { const r = await sb(path); return Array.isArray(r) ? r : []; } catch { return []; } };
-    const [[co0, priv, re, rv, er, fb, rp, nd, rl, cm, cmem, rd, sup, of_, inv, ff, ae], authUsers] = await Promise.all([
+    const [[co0, priv, re, rv, er, fb, rp, nd, rl, cm, cmem, rd, sup, of_, inv, ff, ae, pt], authUsers] = await Promise.all([
       Promise.all([
         safe("/contractors?select=*&order=created_at.desc&limit=500"),
         safe("/contractor_private?select=*"),
@@ -497,6 +500,7 @@ export default function AdminPage({ go }) {
         safe("/invites?select=*&order=created_at.desc&limit=200"),
         safe("/feature_flags?select=*&order=name.asc"),
         safe("/automated_emails?select=*&order=key.asc"),
+        safe("/push_tokens?select=id"),
       ]),
       fetchAuthUsers(),
     ]);
@@ -511,7 +515,7 @@ export default function AdminPage({ go }) {
     setReported(rp); setNdaSigs(nd);
     setCompanies(cm); setCompanyMembers(cmem);
     setRedemptions(rd); setSuppliers(sup); setOwnershipFlags(of_); setAllInvites(inv);
-    setFeatureFlags(ff); setAutomatedEmails(ae);
+    setFeatureFlags(ff); setAutomatedEmails(ae); setPushDeviceCount(pt.length);
     // Enrich realtor rows with lookup counts
     const lookupCounts = rl.reduce((acc, l) => { acc[l.user_id] = (acc[l.user_id] || 0) + 1; return acc; }, {});
     setRealtors(re.map(r => ({ ...r, lookup_count: lookupCounts[r.user_id] || 0 })));
@@ -813,6 +817,32 @@ export default function AdminPage({ go }) {
       flash(false, "Send failed — check your connection");
     } finally {
       setEmailActionBusy(null);
+    }
+  };
+
+  // Push doesn't need its own on/off toggle beyond the two triggers
+  // (day-3 nudge, new-review-on-watched-address) — a registered device
+  // token is its own consent gate. This just sends a real test push to
+  // whichever contractor email you give it, same spirit as "Send test
+  // to my email" but there's no single "admin's own device" concept
+  // since admin auth is password-based, not tied to a contractor login.
+  const sendTestPush = async () => {
+    if (!testPushEmail.trim()) return;
+    setTestPushBusy(true);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/send-test-push`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
+        body: JSON.stringify({ adminPass: getAdminPass(), email: testPushEmail.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) { flash(false, data.error || "Test push failed"); return; }
+      if (data.deviceCount === 0) { flash(false, data.message); return; }
+      flash(true, `Pushed to ${data.sent}/${data.deviceCount} device(s) for ${testPushEmail.trim()}`);
+    } catch {
+      flash(false, "Test push failed — check your connection");
+    } finally {
+      setTestPushBusy(false);
     }
   };
 
@@ -1780,6 +1810,24 @@ export default function AdminPage({ go }) {
                 </div>
               );
             })}
+
+            <div style={{ background: "#fff", border: `1px solid ${BRAND.border}`, borderRadius: 14, padding: "16px 18px", marginTop: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                <span style={{ fontSize: 15, fontWeight: 800, color: BRAND.dark }}>🔔 Push Notifications</span>
+                <Badge color="#DBEAFE" text="#1E40AF">{pushDeviceCount} device{pushDeviceCount === 1 ? "" : "s"} registered</Badge>
+              </div>
+              <div style={{ fontSize: 11, color: BRAND.gray, marginBottom: 12 }}>
+                No separate on/off switch — a registered device is its own consent gate, feeding both the day-3 nudge and new-review-on-watched-address triggers above. Send a real test push to a specific contractor's device(s) below.
+              </div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <input value={testPushEmail} onChange={e => setTestPushEmail(e.target.value)}
+                  placeholder="contractor@email.com"
+                  style={{ flex: 1, minWidth: 200, padding: "9px 12px", border: `1.5px solid ${BRAND.border}`, borderRadius: 9, fontSize: 13, outline: "none", fontFamily: "'DM Sans', sans-serif", color: BRAND.dark }} />
+                <Btn small color="#2563EB" disabled={testPushBusy} onClick={sendTestPush}>
+                  {testPushBusy ? "Sending…" : "🔔 Send test push"}
+                </Btn>
+              </div>
+            </div>
           </div>
         )}
 

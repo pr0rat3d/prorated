@@ -7,14 +7,22 @@
 // real path to deliver inside the native iOS/Android apps (no
 // APNs/FCM integration, browser-only Push API).
 //
+// Now also sends a real push (via _shared/fcm.ts, real APNs/FCM this
+// time) to any watcher with a registered device token — independent
+// of email: a registered token means OS permission was already
+// granted, which is its own consent signal, separate from
+// watchlist_email_opt_in.
+//
 // Deploy with: supabase functions deploy notify-watchers
 //
 // Set secrets with:
 //   supabase secrets set RESEND_API_KEY=your_resend_key
+//   supabase secrets set GOOGLE_SERVICE_ACCOUNT_JSON=...
 // ─────────────────────────────────────────────────────────────
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendPush, getServiceAccount } from "../_shared/fcm.ts";
 
 serve(async (req) => {
   // Handle CORS
@@ -40,12 +48,6 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const resendKey = Deno.env.get("RESEND_API_KEY");
-    if (!resendKey) {
-      console.log("[ProRated] notify-watchers — no RESEND_API_KEY, skipping");
-      return new Response(JSON.stringify({ sent: 0, reason: "no-resend-key" }));
-    }
-
     // 1. Find all users who saved this address
     const normalizedAddress = address.toLowerCase().trim();
     const { data: savedRows } = await supabase
@@ -59,10 +61,43 @@ serve(async (req) => {
     }
 
     const userIds = [...new Set(savedRows.map((r: any) => r.user_id))];
+    const streetName = address.split(",")[0]?.trim() || address;
+    const subject = `🛡️ New review on ${streetName}`;
 
-    // 2. Get email addresses for those watchers — opt-in only. Default is
-    // off (watchlist_email_opt_in defaults false on the contractors table);
+    // 2. Push path — independent of email opt-in. Any watcher with a
+    // registered device gets pushed; a token existing at all means OS
+    // permission was already granted, which is its own consent gate.
+    let pushSent = 0, pushFailed = 0;
+    try {
+      const { data: tokenRows } = await supabase
+        .from("push_tokens")
+        .select("token")
+        .in("user_id", userIds);
+
+      if (tokenRows && tokenRows.length > 0) {
+        const sa = getServiceAccount();
+        const pushBody = `${streetName} just got a new verified trade professional review${reviewData?.trade ? ` (${reviewData.trade})` : ""}. Take a look before you bid.`;
+        for (const row of tokenRows) {
+          const result = await sendPush(sa, row.token, { title: subject, body: pushBody });
+          if (result.ok) pushSent++; else {
+            pushFailed++;
+            if (result.deadToken) await supabase.from("push_tokens").delete().eq("token", row.token);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("[ProRated] Push path skipped:", (err as Error).message);
+    }
+
+    // 3. Email path — opt-in only. Default is off
+    // (watchlist_email_opt_in defaults false on the contractors table);
     // a saved address alone does not imply consent to be emailed.
+    const resendKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendKey) {
+      console.log("[ProRated] notify-watchers — no RESEND_API_KEY, skipping email");
+      return new Response(JSON.stringify({ sent: 0, pushSent, pushFailed, reason: "no-resend-key" }));
+    }
+
     const { data: watchers } = await supabase
       .from("contractors")
       .select("id, email, name")
@@ -70,12 +105,8 @@ serve(async (req) => {
       .eq("watchlist_email_opt_in", true);
 
     if (!watchers || watchers.length === 0) {
-      return new Response(JSON.stringify({ sent: 0, message: "No watcher emails found" }));
+      return new Response(JSON.stringify({ sent: 0, pushSent, pushFailed, message: "No watcher emails found" }));
     }
-
-    // 3. Build the email
-    const streetName = address.split(",")[0]?.trim() || address;
-    const subject = `🛡️ New review on ${streetName}`;
     const html = `
       <div style="font-family: 'DM Sans', Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px; background: #F8FAFC;">
         <div style="background: #0F172A; border-radius: 16px; padding: 32px; text-align: center; margin-bottom: 24px;">
@@ -132,15 +163,15 @@ serve(async (req) => {
     await supabase.from("notification_log").insert({
       type:    "new_review",
       title:   subject,
-      body:    `Emailed ${sent} watcher(s) for ${streetName}`,
+      body:    `Emailed ${sent} watcher(s), pushed ${pushSent} device(s), for ${streetName}`,
       address: normalizedAddress,
-      success: sent > 0,
+      success: sent > 0 || pushSent > 0,
     });
 
-    console.log(`[ProRated] Watcher emails sent: ${sent} success, ${failed} failed`);
+    console.log(`[ProRated] Watchers: ${sent} emailed (${failed} failed), ${pushSent} pushed (${pushFailed} failed)`);
 
     return new Response(
-      JSON.stringify({ sent, failed, watchers: userIds.length }),
+      JSON.stringify({ sent, failed, pushSent, pushFailed, watchers: userIds.length }),
       { headers: { "Content-Type": "application/json" } }
     );
 

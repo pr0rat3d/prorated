@@ -56,6 +56,7 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
   const [mfaChecking, setMfaChecking]     = useState(true);
   const [mfaEnrollData, setMfaEnrollData] = useState(null); // { id, totp: {qr_code, secret} } — mid-enrollment only
   const [mfaEnrollCode, setMfaEnrollCode] = useState("");
+  const [mfaSecretCopied, setMfaSecretCopied] = useState(false);
   const [mfaError, setMfaError]           = useState(null);
   const [mfaBusy, setMfaBusy]             = useState(false);
 
@@ -1521,9 +1522,27 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
                         style={{ width: 180, height: 180, margin: "0 auto 12px", background: "#fff", border: `1px solid ${BRAND.border}`, borderRadius: 10, padding: 8 }}
                         dangerouslySetInnerHTML={{ __html: mfaEnrollData.totp?.qr_code || "" }}
                       />
-                      <div style={{ fontSize: 11, color: BRAND.gray, textAlign: "center", marginBottom: 4 }}>Can't scan? Enter this code manually:</div>
-                      <div style={{ fontSize: 12, fontFamily: "ui-monospace, monospace", textAlign: "center", background: "#F1F5F9", borderRadius: 8, padding: "8px 10px", marginBottom: 14, wordBreak: "break-all" }}>
-                        {mfaEnrollData.totp?.secret}
+                      <div style={{ background: "#EFF6FF", border: `1px solid #BFDBFE`, borderRadius: 10, padding: "10px 12px", marginBottom: 14 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: "#1E40AF", marginBottom: 6 }}>
+                          On this same phone? You can't scan a code it's also displaying — enter this instead:
+                        </div>
+                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                          <div style={{ flex: 1, fontSize: 12, fontFamily: "ui-monospace, monospace", background: "#fff", border: "1px solid #BFDBFE", borderRadius: 8, padding: "8px 10px", wordBreak: "break-all" }}>
+                            {mfaEnrollData.totp?.secret}
+                          </div>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard?.writeText(mfaEnrollData.totp?.secret || "");
+                              setMfaSecretCopied(true);
+                              setTimeout(() => setMfaSecretCopied(false), 2000);
+                            }}
+                            style={{ background: BRAND.blue, color: "#fff", border: "none", borderRadius: 8, padding: "8px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", flexShrink: 0 }}>
+                            {mfaSecretCopied ? "Copied ✓" : "Copy"}
+                          </button>
+                        </div>
+                        <div style={{ fontSize: 10, color: "#1E40AF", marginTop: 6 }}>
+                          Open your authenticator app (Google Authenticator, Authy, etc.), choose "Enter a setup key" instead of scanning, and paste this in.
+                        </div>
                       </div>
                       <div style={{ fontSize: 11, color: BRAND.gray, marginBottom: 6 }}>Then enter the 6-digit code it shows:</div>
                       <input

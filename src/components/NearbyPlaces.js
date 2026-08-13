@@ -156,7 +156,7 @@ export default function NearbyPlaces({ address, trade, go }) {
   const [loading, setLoading]     = useState(false);
   const [error, setError]         = useState(false);
 
-  const isPro = user?.plan === "pro";
+  const isPro = user?.plan && user.plan !== "free";
 
   // Reload when radius changes while expanded
   useEffect(() => {

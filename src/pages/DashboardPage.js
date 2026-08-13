@@ -13,7 +13,7 @@ import { hasSavedBiometricLogin, clearBiometricLogin, getBiometryLabel } from ".
 import { fetchMyReviews, updateReview, deleteReview } from "../api/supabase";
 import { getSavedAddresses, unsaveAddress, toggleAddressNotify, signIn, updatePassword, saveTradeMemberships, saveWatchlistOptIn, updateProfile } from "../api/auth";
 import { enrollTotp, confirmEnrollment, unenrollFactor, getOwnFactors } from "../api/mfa";
-import { requestPushPermission, getPushToken, savePushToken } from "../api/push";
+import { requestPushPermission, getPushToken, savePushToken, onPushTokenReceived } from "../api/push";
 import { PARTNERS } from "./PartnerLandingPage";
 import { useLang } from "../hooks/useLang";
 import { t } from "../i18n/translations";
@@ -284,6 +284,33 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
   const [myReviews, setMyReviews] = useState([]);
   const [loadingReviews, setLR]   = useState(false);
   const [notifyBusyId, setNotifyBusyId] = useState(null);
+  const [pushSetupMsg, setPushSetupMsg] = useState(null);
+
+  // registerPushToken() is called from two places: the tokenReceived
+  // listener (the reliable path — fires whenever native APNs<->FCM
+  // registration actually finishes, which is NOT synchronous with the
+  // permission prompt resolving) and, as a fast-path, directly after
+  // requestPermissions() in case a token is already cached. iOS in
+  // particular can still be completing native registration at the
+  // moment the JS permission promise resolves, so calling getToken()
+  // immediately after can silently fail — the listener is what makes
+  // this reliable rather than racy.
+  const platformFor = () => /iPad|iPhone|iPod/.test(navigator.userAgent) ? "ios" : "android";
+  const registerPushToken = async (token) => {
+    if (!token || !user?.id) return;
+    await savePushToken(user.id, token, platformFor());
+  };
+
+  useEffect(() => {
+    if (!isLoggedIn || !isNativeApp()) return;
+    // addListener resolves to the handle asynchronously — can't rely on
+    // the return value synchronously, so capture it for cleanup instead.
+    let handle;
+    onPushTokenReceived((token) => { registerPushToken(token).catch(() => {}); })
+      .then((h) => { handle = h; });
+    return () => { handle?.remove?.(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoggedIn, user?.id]);
 
   // Contextual permission prompt: the first time a user turns alerts ON
   // for a saved address, not at onboarding, when it's tied to a moment
@@ -298,11 +325,24 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
       try {
         const permission = await requestPushPermission();
         if (permission === "granted") {
-          const token = await getPushToken();
-          if (token) await savePushToken(user.id, token, /iPad|iPhone|iPod/.test(navigator.userAgent) ? "ios" : "android");
+          setPushSetupMsg("Registering this device…");
+          try {
+            const token = await getPushToken();
+            if (token) await registerPushToken(token);
+          } catch {
+            // Fast path failed — normal on iOS if native APNs<->FCM
+            // registration hasn't finished yet. The tokenReceived
+            // listener above will still catch it once it does.
+          }
+          setTimeout(() => setPushSetupMsg(null), 2500);
+        } else if (permission === "denied") {
+          setPushSetupMsg("Notifications blocked — enable them in your phone's Settings app to get alerts.");
+          setTimeout(() => setPushSetupMsg(null), 4000);
         }
       } catch (err) {
         console.warn("[ProRated] Push permission/token flow failed:", err.message);
+        setPushSetupMsg("Couldn't set up notifications — try again in a moment.");
+        setTimeout(() => setPushSetupMsg(null), 4000);
       }
     }
     setNotifyBusyId(null);
@@ -838,6 +878,11 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
       {/* Saved Addresses */}
       {tab === "saved" && (
         <div>
+          {pushSetupMsg && (
+            <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 10, padding: "8px 12px", marginBottom: 12, fontSize: 12, color: "#1E40AF", textAlign: "center" }}>
+              {pushSetupMsg}
+            </div>
+          )}
           {!isLoggedIn && (
             <div style={{ textAlign: "center", padding: "2rem", background: "#F8FAFC", borderRadius: 14, border: `1px solid ${BRAND.border}` }}>
               <div style={{ fontSize: 28, marginBottom: 10 }}>🔒</div>

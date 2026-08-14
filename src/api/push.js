@@ -51,17 +51,16 @@ export const onPushTokenReceived = (callback) =>
 // changing owners (rare — this app is one-trade-pro-per-device in
 // practice) would hit the update-own RLS policy as the NEW user, which
 // can't pass auth.uid() = user_id against the OLD owner's row; that write
-// fails and is swallowed here rather than left to error the caller, since
-// forcing reassignment would need a service-role path for what's an edge
-// case, not a real one.
+// would fail as a genuine error, which is correct — forcing reassignment
+// would need a service-role path for what's an edge case, not a real one.
+//
+// Deliberately propagates errors (does NOT swallow them) — the caller
+// (DashboardPage.js's registerPushToken) is what decides whether to
+// surface or fail-soft this, and needs the real error to do that.
 export const savePushToken = async (userId, token, platform) => {
-  try {
-    await sb(`/push_tokens?on_conflict=token`, {
-      method: "POST",
-      headers: { Prefer: "resolution=merge-duplicates" },
-      body: JSON.stringify({ user_id: userId, token, platform, updated_at: new Date().toISOString() }),
-    });
-  } catch (err) {
-    console.warn("[ProRated] Could not save push token:", err.message);
-  }
+  await sb(`/push_tokens?on_conflict=token`, {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates" },
+    body: JSON.stringify({ user_id: userId, token, platform, updated_at: new Date().toISOString() }),
+  });
 };

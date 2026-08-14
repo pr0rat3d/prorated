@@ -295,24 +295,13 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
   // moment the JS permission promise resolves, so calling getToken()
   // immediately after can silently fail — the listener is what makes
   // this reliable rather than racy.
-  //
-  // TEMPORARY DIAGNOSTIC BUILD (2026-08-14): a real TestFlight test hit
-  // OS permission = granted, but no push_tokens row ever saved, and
-  // there's no device console access to see why. Every step below now
-  // surfaces its actual result/error in pushSetupMsg (persistent, not
-  // auto-dismissed) instead of failing silently, so the phone screen
-  // itself becomes the debug output. Revert to quiet fail-soft once the
-  // real cause is found — this is deliberately noisy, not the intended
-  // permanent UX.
   const platformFor = () => /iPad|iPhone|iPod/.test(navigator.userAgent) ? "ios" : "android";
-  const registerPushToken = async (token, source) => {
-    if (!token) { setPushSetupMsg(`[${source}] got empty token`); return; }
-    if (!user?.id) { setPushSetupMsg(`[${source}] got token but no user.id`); return; }
+  const registerPushToken = async (token) => {
+    if (!token || !user?.id) return;
     try {
       await savePushToken(user.id, token, platformFor());
-      setPushSetupMsg(`✅ Device registered (via ${source}), token ${token.slice(0, 12)}…`);
     } catch (err) {
-      setPushSetupMsg(`[${source}] savePushToken failed: ${err.message}`);
+      console.warn("[ProRated] Could not save push token:", err.message);
     }
   };
 
@@ -321,9 +310,9 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
     // addListener resolves to the handle asynchronously — can't rely on
     // the return value synchronously, so capture it for cleanup instead.
     let handle;
-    onPushTokenReceived((token) => { registerPushToken(token, "listener"); })
+    onPushTokenReceived((token) => { registerPushToken(token); })
       .then((h) => { handle = h; })
-      .catch((err) => setPushSetupMsg(`tokenReceived listener failed to register: ${err.message}`));
+      .catch(() => {});
     return () => { handle?.remove?.(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoggedIn, user?.id]);
@@ -340,20 +329,25 @@ export default function DashboardPage({ go, goBack, goLogin, goReview, paymentSu
     if (next && isNativeApp() && user?.id) {
       try {
         const permission = await requestPushPermission();
-        setPushSetupMsg(`Permission result: "${permission}"`);
         if (permission === "granted") {
+          setPushSetupMsg("Registering this device…");
           try {
             const token = await getPushToken();
-            await registerPushToken(token, "direct");
-          } catch (err) {
-            setPushSetupMsg(`getToken() threw: ${err.message} — waiting on listener…`);
+            if (token) await registerPushToken(token);
+          } catch {
+            // Fast path failed — normal on iOS if native APNs<->FCM
+            // registration hasn't finished yet. The tokenReceived
+            // listener above will still catch it once it does.
           }
+          setTimeout(() => setPushSetupMsg(null), 2500);
         } else if (permission === "denied") {
           setPushSetupMsg("Notifications blocked — enable them in your phone's Settings app to get alerts.");
+          setTimeout(() => setPushSetupMsg(null), 4000);
         }
       } catch (err) {
         console.warn("[ProRated] Push permission/token flow failed:", err.message);
-        setPushSetupMsg(`requestPermissions() threw: ${err.message}`);
+        setPushSetupMsg("Couldn't set up notifications — try again in a moment.");
+        setTimeout(() => setPushSetupMsg(null), 4000);
       }
     }
     setNotifyBusyId(null);

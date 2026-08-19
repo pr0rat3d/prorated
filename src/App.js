@@ -69,11 +69,20 @@ export default function App() {
       if (path === "/demo" || path === "/demo/") return "demo";
       if (path === "/verified-pros" || path === "/directory") return "verified-pro";
       if (path === "/report" || path === "/homeowner-report") return "homeowner-report";
-      if (path === "/agc" || path === "/agc/") return "agc";
-      // Trade association partner pages
+      // Public partner landing pages (AGC's dedicated page + the generic
+      // PartnerLandingPage ones) are taken down as of 2026-08-19 — zero
+      // real signups ever came through any partner code, and the HBA one
+      // specifically was found to overstate the relationship ("official
+      // partnership") and offer nothing a code-less signup doesn't already
+      // get. Routes fall through to "home" instead of 404ing. Code and
+      // content are untouched (AGCLandingPage.js, PartnerLandingPage.js,
+      // the PARTNERS config) — only the routing that exposes them
+      // publicly is disabled. Re-enable by restoring the two lines below
+      // once there's a real partnership + a real differentiated offer.
+      // if (path === "/agc" || path === "/agc/") return "agc";
       const partnerPaths = ["acca","phcc","iec","nrca","pca","nalp","aar","abc","hba","neca","bar"];
       for (const pid of ["agc", ...partnerPaths]) {
-        if (path === `/${pid}` || path === `/${pid}/`) return `partner-${pid}`;
+        // if (path === `/${pid}` || path === `/${pid}/`) return `partner-${pid}`;
         if (path === `/${pid}/dashboard` || path === `/${pid}/dashboard/`) return `partner-dash-${pid}`;
       }
       if (path === "/realtor" || path === "/realtor/") return "realtor-signup";

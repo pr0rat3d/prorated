@@ -141,14 +141,24 @@ export default function useAddressAutocomplete(inputRef, { locationBias = false 
       },
       (predictions, status) => {
         setLoading(false);
-        if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
+        const { OK, ZERO_RESULTS } = window.google.maps.places.PlacesServiceStatus;
+        if (status === OK && predictions) {
+          setError(null);
           setSuggestions(predictions.map(p => ({
             placeId:     p.place_id,
             description: p.description,
             mainText:    p.structured_formatting.main_text,
             secondaryText: p.structured_formatting.secondary_text,
           })));
+        } else if (status === ZERO_RESULTS) {
+          // A real "no matches" result, not a failure — don't show the error state for this.
+          setError(null);
+          setSuggestions([]);
         } else {
+          // REQUEST_DENIED, OVER_QUERY_LIMIT, INVALID_REQUEST, UNKNOWN_ERROR, etc.
+          // — the app previously failed silently here with no visible signal at all.
+          console.error(`Places Autocomplete request failed: ${status}`);
+          setError("request-failed");
           setSuggestions([]);
         }
       }
@@ -166,7 +176,7 @@ export default function useAddressAutocomplete(inputRef, { locationBias = false 
     return suggestion.description;
   }, []);
 
-  const clearSuggestions = useCallback(() => setSuggestions([]), []);
+  const clearSuggestions = useCallback(() => { setSuggestions([]); setError(null); }, []);
 
   return {
     suggestions,

@@ -31,7 +31,7 @@ export default function AddressInput({
   const dropdownRef                                        = useRef(null);
   const [focused, setFocused]                              = useState(false);
   const [activeIndex, setActiveIndex]                      = useState(-1);
-  const { suggestions, loading, fetchSuggestions, selectSuggestion, clearSuggestions } =
+  const { suggestions, loading, error, fetchSuggestions, selectSuggestion, clearSuggestions } =
     useAddressAutocomplete(inputRef, { locationBias });
   const [recentAddresses, setRecentAddresses] = useState(() => getRecentAddresses());
   const [showRecent, setShowRecent]           = useState(false);
@@ -98,6 +98,7 @@ export default function AddressInput({
   };
 
   const showDropdown = focused && suggestions.length > 0;
+  const showError    = focused && !!error && !showDropdown;
 
   return (
     <div style={{ position: "relative", width: "100%", zIndex: 500, ...style }}>
@@ -222,6 +223,20 @@ export default function AddressInput({
               style={{ height: 16, opacity: 0.7 }}
             />
           </div>
+        </div>
+      )}
+
+      {/* Error state — address search failed (e.g. Places API misconfigured/denied).
+          Non-blocking: the input still accepts a manually-typed address either way. */}
+      {showError && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 6px)", left: -14, right: -14,
+          background: "#FFFBEB", border: `2px solid #F59E0B`, borderRadius: 12,
+          boxShadow: "0 16px 48px rgba(0,0,0,0.2)", zIndex: 99999,
+          padding: "10px 14px", fontSize: 12, color: "#92400E",
+          fontFamily: "'DM Sans', sans-serif", lineHeight: 1.4,
+        }}>
+          Address suggestions aren't available right now — you can still type the full address and continue.
         </div>
       )}
     </div>

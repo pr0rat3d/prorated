@@ -1,6 +1,6 @@
 # ProRated — Claude Code Context
 
-_Last updated: 2026-07-09_
+_Last updated: 2026-08-25_
 
 ## What this is
 ProRated ("Built by Pros, Built for Pros") is a verified job site intelligence PWA for licensed trade professionals (contractors, GCs, plumbers, electricians, etc.). Pros search any residential address to see verified reviews from other licensed contractors before bidding.
@@ -9,9 +9,8 @@ ProRated ("Built by Pros, Built for Pros") is a verified job site intelligence P
 **Admin:** https://prorated.app/admin (password: LittlePigs6969!)  
 **Support:** hello@prorated.app → pr0rat3d@gmail.com
 
-## Current status (2026-07-09)
-- **iOS:** build 26 submitted to App Store, **in review** (Guideline 5.1.1v fix — unauthenticated search — plus 2 prior build fixes: Google Maps key fallback, demo-account auth). See "iOS/Android Build & Store Status" below for full build history.
-- **Android:** submitted to Google Play, **in review**.
+## Current status (2026-08-25)
+- **iOS:** build 52 (v1.4) is **live** on the App Store (confirmed 2026-08-20). **Android:** versionCode 23 (v1.0) is **live** on Google Play (confirmed 2026-08-18). Both platforms fully out of review — see "iOS/Android Build & Store Status" below for full build history.
 - Beta language fully removed from user-facing copy app-wide. App is out of beta.
 - Bronze/Silver/Gold are **free through Dec 31, 2026** (Stripe coupon auto-applied, card still collected).
 - Bid Intelligence is built and deployed but **feature-flagged off** in production — not yet enabled for any user.
@@ -27,9 +26,11 @@ ProRated ("Built by Pros, Built for Pros") is a verified job site intelligence P
 - **Bid Intelligence** (2026-07-06) — AI-generated (Claude) bid-prep report per address for Gold/Platinum, built and verified end-to-end but **gated behind `feature_flags` and currently disabled** in production. Full in-app UI walkthrough with a real paid account still pending. See "Feature Flags" below.
 - **Free-through-2026 pricing** (2026-07-06) — Bronze/Silver/Gold subscriptions are $0 until Jan 1, 2027 via an auto-applied Stripe coupon (`PRORATED2026`); card is still collected at signup.
 - **SEO landing pages** — Birmingham + 4 other AL city pages (`LocalPage.js`: Huntsville, Mobile, Montgomery, Tuscaloosa), 5 trade landing pages (`TradePage.js`: roofing, electrical, plumbing, HVAC, general), and a blog (`BlogPage.js`) with several articles — all routed in `App.js`.
-- **App Store / Google Play badges** — `StoreBadges.js`, platform-aware, shown on HomePage/LocalPage/footer. **Links are still placeholder** (`https://prorated.app`) pending both store listings going live — swap the two URL constants once approved.
+- **App Store / Google Play badges** — `StoreBadges.js`, platform-aware, shown on HomePage/LocalPage/footer. Both store listings are now live (2026-08-18/20) — **links are still placeholder** (`https://prorated.app`); swap the two URL constants for the real App Store / Play Store listing URLs (not yet captured in this doc).
 - **Beta language removed** (2026-07-09) — all "beta" copy stripped from onboarding, homepage, FAQ, and partner/AGC landing pages. Left alone (not user-visible): the `/beta` route slug, `beta_signups`/`beta_feedback` table names, internal `useOnboarding.js` variable/localStorage names.
 - **Native platform gating** — `isNativeIOS()` (`src/utils/platform.js`, wraps `Capacitor.isNativePlatform() && getPlatform() === "ios"`) hides all Stripe payment links and the Merch nav item on iOS (App Store policy — no external payment links in-app). A separate `isNativeApp()` covers both iOS+Android for hiding "download our app" prompts.
+- **Realtor Portal** (undocumented until 2026-08-25 — built and committed since the initial commit, just never written up here) — a separate product line at `/realtor` (`RealtorSignupPage.js` → `RealtorHomePage.js`, isolated pages, own SEO metadata, own PWA install prompt) letting real estate agents search any residential address for contractor work history/payment ratings to support home showings and disclosures. Own signup flow (agency, license, state), own free-lookup limit (5, separate from the main app's cap), free/pro plan toggle manageable from Admin. **Intentionally not promoted yet** — per Canaan, the plan is to launch this once ProRated has more service-record data density in the system (same rationale as Bid Intelligence's review-volume gating, but this one isn't wired to `feature_flags` — it's just not linked from nav/marketing). As of 2026-08-25: 1 real signup in `realtor_subscriptions`, 0 rows in `realtor_lookups` (no lookups performed yet).
+- **Ownership-change detection** (`src/api/ownershipDetection.js`, undocumented until 2026-08-25) — age-weighted review scoring so a review from a prior homeowner matters less after the property changes hands (full weight ≤12mo, decaying to 20% at 48+mo); backed by an `ownership_flags` table. Worth a deeper look/write-up if this becomes active work.
 
 ---
 
@@ -88,6 +89,7 @@ src/
     supabase.js             ← fetchReviews, saveReview, updateReview, deleteReview
     lookupCounter.js        ← lookup limits per plan
     db.js                   ← frontend fetch helper → routes through /api/db
+    ownershipDetection.js   ← age-weighted review scoring for property ownership changes — see "Ownership-change detection" above
   hooks/
     useAuth.js              ← AuthContext, user state, background sync
     useFeatureFlag.js       ← reads feature_flags table by plan
@@ -107,6 +109,8 @@ src/
     TradePage.js            ← SEO trade landing pages (roofing/electrical/plumbing/HVAC/general)
     BlogPage.js              ← Blog list + article permalinks
     PartnerDashboardPage.js  ← /agc/dashboard etc., shares admin auth
+    RealtorSignupPage.js    ← /realtor signup/login (agency, license, state) — see "Realtor Portal" above
+    RealtorHomePage.js      ← Realtor address lookup portal, own 5-lookup free cap
     admin/
       AdminPage.js          ← Internal admin console (incl. Feature Flags tab)
   components/
@@ -143,6 +147,16 @@ public/
 - `saved_addresses` — watchlist
 - `nda_signatures` — NDA acceptance log
 - `lookup_log` — search usage tracking
+- `contractor_private` — split off `contractors` for privacy-sensitive fields (not previously documented here — verify exact column split in Supabase before relying on it)
+- `realtor_subscriptions`, `realtor_lookups` — Realtor Portal signups and address-lookup log. See "Realtor Portal" above.
+- `ownership_flags` — backs the ownership-change detection scoring in `ownershipDetection.js`. See "Ownership-change detection" above.
+- `push_tokens`, `notification_log` — push notification device tokens and send log
+- `announcements` — in-app announcement banners (admin-authored)
+- `automated_emails` — tracks the day-3 re-engagement email send
+- `points_redemptions` — rewards/points-leaderboard redemptions
+- `review_edit_requests`, `reported_reviews` — pending review edits and moderation reports awaiting admin action
+- `featured_suppliers` — sponsored/featured local-supplier listings (`NearbyPlaces.js`)
+- `beta_feedback` — legacy feedback table, name predates the beta-copy removal (see "Beta language removed" above)
 
 ---
 
@@ -211,13 +225,14 @@ supabase link --project-ref wsdrbdojnzmtwndswpwr
 
 ---
 
-## iOS/Android Build & Store Status (as of 2026-07-09)
+## iOS/Android Build & Store Status (as of 2026-08-25)
 **Treat build numbers and store review status as a snapshot — verify against App Store Connect / Google Play Console directly before relying on them, they change outside this repo.**
 
-- **iOS:** build 26 submitted, **in review**. Build history this resubmission cycle: 22 (rejected — Guideline 5.1.1v, search required login), 23 (uploaded, shipped with broken Maps autocomplete), 24 (fixed Maps key, upload succeeded despite Codemagic reporting failure), 25 (confirmed live in ASC/TestFlight), 26 (current — carries the guest-search DB privacy fix + beta-copy removal).
-- **Android:** submitted to Google Play, **in review**. Codemagic workflow builds APK/AAB with release signing configured; versionCode auto-increments.
+- **iOS:** build 52, marketing version **1.4**, confirmed **live** 2026-08-20 (submitted 2026-08-17). Feature scope since the prior live build (47/v1.3): push notifications (confirmed working end-to-end on a real device), in-app announcements, opt-in 2FA (TOTP), free-tier lookup cap 10→5 + review bonus, a NearbyPlaces `isPro` bug fix (Gold/Silver were incorrectly capped at 3 listings), plus backend-only security/performance hardening. The 1.4 pre-release train is now **closed** (same as 1.3 before it) — any future iOS build needs marketing version 1.5+ in addition to a higher build number.
+- **Android:** versionCode 23, versionName 1.0, confirmed **live** 2026-08-18 (same feature scope as iOS build 52 above). Play Console flagged a native-debug-symbols warning on this upload — non-blocking, but queued as a fix for the next build (add debug symbol upload to `build.gradle`).
 - **Tommy's Mac is broken** — not used for builds. Codemagic.io handles archive + store submission for both platforms.
 - `npx cap sync ios` keeps the Xcode project current on the PC for Codemagic/Tommy builds.
+- Committed version files (`build.gradle`, etc.) are **not trustworthy** as the source of truth for the last-shipped build — always verify against App Store Connect / Google Play Console directly, or against the release ledger in memory, before bumping for a new build.
 
 ---
 
@@ -238,6 +253,6 @@ ANTHROPIC_API_KEY=...          # Supabase secret, used by bid-intelligence edge 
 ---
 
 ## Co-founders
-- Canaan Farris — product, public health/epi background (MPH, UAB)
-- Tommy — iOS/Mac builds, App Store submission
+- Canaan Farris — Chief Operating Officer. Background in Data and Analytics, mostly in the healthcare field (MPH, UAB), focused on using data to drive change. His father has been a contractor for 50+ years — the direct personal motivation behind ProRated's core premise.
+- Tommy Ford — Owner. iOS/Mac builds, App Store submission.
  

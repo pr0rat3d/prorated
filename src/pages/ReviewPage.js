@@ -24,6 +24,8 @@ const TRADE_TO_CATEGORY = {
   landscaping: "landscaping", concrete: "concrete", garage_door: "garage_door",
   pool_service: "pool_service", fencing: "fencing",
   pressure_washing: "pressure_washing",
+  audio_video: "audio_video", security_services: "security_services",
+  internet: "internet",
 };
 
 const getMilestoneMessage = (count) => {

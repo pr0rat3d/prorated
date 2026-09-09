@@ -64,6 +64,9 @@ export const TRADES = [
   { id: "pool_service",      label: "Pool Service",        icon: "🏊" },
   { id: "pressure_washing",  label: "Pressure Washing",   icon: "💦" },
   { id: "water_mitigation",  label: "Water Mitigation / Restoration", icon: "💧" },
+  { id: "audio_video",       label: "Audio/Video",         icon: "🎬" },
+  { id: "security_services", label: "Security Services",   icon: "🔒" },
+  { id: "internet",          label: "Internet",            icon: "📶" },
 ];
 
 export const RATING_CATEGORIES = [
@@ -662,6 +665,49 @@ export const WORK_CATEGORIES = [
       { id: "pw_gutters",    label: "Gutter flush / exterior" },
       { id: "pw_commercial", label: "Commercial / fleet wash" },
       { id: "pw_prep",       label: "Pre-paint prep wash" },
+    ]
+  },
+  {
+    id: "audio_video",
+    label: "Audio/Video",
+    icon: "🎬",
+    items: [
+      { id: "av_tv_mount",    label: "TV mounting" },
+      { id: "av_theater",     label: "Home theater install" },
+      { id: "av_surround",    label: "Surround sound / speaker install" },
+      { id: "av_whole_home",  label: "Whole-home audio" },
+      { id: "av_wiring",      label: "Structured / low-voltage wiring" },
+      { id: "av_smart_home",  label: "Smart home integration" },
+      { id: "av_projector",   label: "Projector / screen install" },
+      { id: "av_repair",      label: "Repair / troubleshoot" },
+    ]
+  },
+  {
+    id: "security_services",
+    label: "Security Services",
+    icon: "🔒",
+    items: [
+      { id: "sec_camera",     label: "Camera system install" },
+      { id: "sec_alarm",      label: "Alarm system install" },
+      { id: "sec_access",     label: "Access control (keypad / doorbell)" },
+      { id: "sec_smart_lock", label: "Smart lock install" },
+      { id: "sec_monitoring", label: "Monitoring setup" },
+      { id: "sec_gate",       label: "Gate / entry system" },
+      { id: "sec_repair",     label: "Repair / troubleshoot" },
+    ]
+  },
+  {
+    id: "internet",
+    label: "Internet",
+    icon: "📶",
+    items: [
+      { id: "net_install",      label: "New service install" },
+      { id: "net_wifi",         label: "Wi-Fi / mesh setup" },
+      { id: "net_wiring",       label: "Ethernet / structured wiring" },
+      { id: "net_router",       label: "Router & modem setup" },
+      { id: "net_upgrade",      label: "Speed upgrade / equipment swap" },
+      { id: "net_business",     label: "Business line install" },
+      { id: "net_repair",       label: "Repair / troubleshoot" },
     ]
   },
   {

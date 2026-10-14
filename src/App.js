@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { isNativeIOS, isNativeApp } from "./utils/platform";
+import { REF_SOURCES } from "./data/constants";
 import Nav from "./components/Nav";
 import BottomNav from "./components/BottomNav";
 import { OfflineBanner, InstallBanner, IOSInstallBanner, AnnouncementBanner } from "./components/Banners";
@@ -139,6 +140,17 @@ export default function App() {
     }
     catch { return false; }
   });
+  // Capture ?ref= attribution (first touch wins) so it survives browsing
+  // before signup — SignupPage reads pending_ref_source into pro_source.
+  useEffect(() => {
+    try {
+      const ref = new URLSearchParams(window.location.search).get("ref")?.trim().toLowerCase();
+      if (ref && REF_SOURCES.includes(ref) && !localStorage.getItem("pending_ref_source")) {
+        localStorage.setItem("pending_ref_source", ref);
+      }
+    } catch {}
+  }, []);
+
   const [showInstall, setShowInstall] = useState(false);
   const [showIOS, setShowIOS]         = useState(false);
   const { installPrompt, isInstalled, promptInstall } = usePWA();

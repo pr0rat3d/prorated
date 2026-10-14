@@ -9,7 +9,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useLang } from "../hooks/useLang";
 import { t } from "../i18n/translations";
 import { validateLicense, getLicensePlaceholder } from "../data/licenseValidation";
-import { getLicenseRequirement } from "../data/constants";
+import { getLicenseRequirement, REF_SOURCES } from "../data/constants";
 import { isNativeApp } from "../utils/platform";
 import { isBiometricAvailable, hasSavedBiometricLogin, saveBiometricLogin, getBiometricLogin, clearBiometricLogin, getBiometryLabel } from "../utils/biometricAuth";
 import { isNativeIAPReady } from "../lib/revenuecat";
@@ -114,6 +114,15 @@ export default function SignupPage({ go, goBack, initialMode }) {
     return match ? match[0] : null;
   };
 
+  // ?ref= attribution captured in App.js (e.g. "flyer") — used only when
+  // no partner code matched.
+  const pendingRefSource = () => {
+    try {
+      const ref = localStorage.getItem("pending_ref_source");
+      return REF_SOURCES.includes(ref) ? ref : null;
+    } catch { return null; }
+  };
+
   // Check for pending invite — skip plan step, inherit company plan
   const inviteContext = (() => {
     try { return JSON.parse(localStorage.getItem("pending_invite_context") || "null"); }
@@ -188,10 +197,11 @@ export default function SignupPage({ go, goBack, initialMode }) {
         plan:         signupPlan,
         promoCode:    (selectedTier && selectedTier !== "platinum") ? FREE_2026_COUPON : null,
         status:       isInviteSignup ? "approved" : "pending",
-        proSource:    isInviteSignup ? null : resolvePartnerSource(partnerCode),
+        proSource:    isInviteSignup ? null : (resolvePartnerSource(partnerCode) || pendingRefSource()),
       });
 
       try { localStorage.removeItem("pending_partner_code"); } catch {}
+      try { localStorage.removeItem("pending_ref_source"); } catch {}
 
       if (data.user) {
         login({

@@ -30,6 +30,12 @@ export const APP_NAME   = "ProRated";
 export const APP_DOMAIN = "prorated.io";
 export const TAGLINE    = "Built by Pros, Built for Pros";
 
+// Offline-channel attribution codes accepted via ?ref= (e.g. the supply-house
+// flyer QR → prorated.app/?ref=flyer). Saved to contractors.pro_source at
+// signup when no partner code applies. Allowlisted so junk params never land
+// in the DB.
+export const REF_SOURCES = ["flyer"];
+
 export const BRAND = {
   blue:    "#2563EB",
   blueLt:  "#3B82F6",

@@ -12,7 +12,7 @@ ProRated ("Built by Pros, Built for Pros") is a verified job site intelligence P
 ## Current status (2026-08-25)
 - **iOS:** build 52 (v1.4) is **live** on the App Store (confirmed 2026-08-20). **Android:** versionCode 23 (v1.0) is **live** on Google Play (confirmed 2026-08-18). Both platforms fully out of review — see "iOS/Android Build & Store Status" below for full build history.
 - Beta language fully removed from user-facing copy app-wide. App is out of beta.
-- Bronze/Silver/Gold are **free through Dec 31, 2026** (Stripe coupon auto-applied, card still collected).
+- Bronze/Silver/Gold are **free for each subscriber's first 6 months** (rolling, no end date — Stripe coupon auto-applied, card still collected). Switched from "free through Dec 31, 2026" copy on 2026-10-14.
 - Bid Intelligence is built and deployed but **feature-flagged off** in production — not yet enabled for any user.
 
 ---
@@ -24,7 +24,7 @@ ProRated ("Built by Pros, Built for Pros") is a verified job site intelligence P
 - **Team / company accounts** — company workspaces, seat-based plans, email invites with auto-approve for invited members.
 - **Unauthenticated search** (2026-07-09, Apple 5.1.1v requirement) — guests can search any address without logging in; results are heavily minimized (address + Street View + lock card only, no ratings/tags/text). Enforced at the DB layer via column-level RLS grants, not just the UI — see "Known Issues" and "iOS/Android Build & Store Status" below.
 - **Bid Intelligence** (2026-07-06) — AI-generated (Claude) bid-prep report per address for Gold/Platinum, built and verified end-to-end but **gated behind `feature_flags` and currently disabled** in production. Full in-app UI walkthrough with a real paid account still pending. See "Feature Flags" below.
-- **Free-through-2026 pricing** (2026-07-06) — Bronze/Silver/Gold subscriptions are $0 until Jan 1, 2027 via an auto-applied Stripe coupon (`PRORATED2026`); card is still collected at signup.
+- **First-6-months-free pricing** (2026-07-06, reworded 2026-10-14) — Bronze/Silver/Gold subscriptions are $0 for 6 months from signup via an auto-applied Stripe coupon (`PRORATED2026`); card is still collected at signup.
 - **SEO landing pages** — Birmingham + 4 other AL city pages (`LocalPage.js`: Huntsville, Mobile, Montgomery, Tuscaloosa), 5 trade landing pages (`TradePage.js`: roofing, electrical, plumbing, HVAC, general), and a blog (`BlogPage.js`) with several articles — all routed in `App.js`.
 - **App Store / Google Play badges** — `StoreBadges.js`, platform-aware, shown on HomePage/LocalPage/footer. Both store listings are now live (2026-08-18/20) — **links are still placeholder** (`https://prorated.app`); swap the two URL constants for the real App Store / Play Store listing URLs (not yet captured in this doc).
 - **Beta language removed** (2026-07-09) — all "beta" copy stripped from onboarding, homepage, FAQ, and partner/AGC landing pages. Left alone (not user-visible): the `/beta` route slug, `beta_signups`/`beta_feedback` table names, internal `useOnboarding.js` variable/localStorage names.
@@ -73,9 +73,7 @@ ProRated ("Built by Pros, Built for Pros") is a verified job site intelligence P
 - Silver: price_1TjR08C1rxqA9InBl5Pl127t
 - Gold: price_1TjR2QC1rxqA9InB6TMOOS5L
 
-**Promo:** ProRated2026 = 2 months free (100% off, repeating 2 months, one use per customer)
-
-**Free through 2026 (2026-07-06):** Bronze/Silver/Gold are currently $0 through Dec 31, 2026 to accelerate data collection ahead of Bid Intelligence's launch thresholds. Card is still collected via Stripe checkout; the `PRORATED2026` 100%-off coupon is auto-applied via `prefilled_promo_code` on the checkout URL — no manual entry. First real charge lands January 2027. Platinum is unaffected (no Stripe link).
+**First 6 months free (verified in Stripe 2026-10-14):** the `PRORATED2026` coupon is **100% off, repeating 6 months, no redeem-by date** — so it's rolling from each signup, not a fixed cutoff. Auto-applied via `prefilled_promo_code` on the checkout URL; card still collected. User-facing copy was changed from "free through Dec 31, 2026" to "first 6 months free" on 2026-10-14 (Canaan's call — no cliff, matches the Apple/Google 6-month intro offers). As of 2026-10-14 there are **0 active Stripe subscriptions** (all 9 canceled), even though one `contractors` row still shows plan=bronze / plan_source=stripe. Platinum is unaffected (no Stripe link).
 
 ---
 

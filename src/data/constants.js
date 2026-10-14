@@ -13,10 +13,6 @@ export const COMPANY_TIERS = {
   platinum: { name: "Platinum", price: null,  seatLimit: 999, icon: "💎", contact: true },
 };
 
-export const PROMO_CODES = {
-  PRORATED2026: { days: 60, label: "2 months free applied!" },
-};
-
 // Anniversary reward threshold (reviews per 52 weeks)
 export const ANNIVERSARY_REVIEW_THRESHOLD = 156; // 3/week × 52 weeks
 export const PRO_MONTHLY_PRICE    = 19.99; // ← Bronze monthly price

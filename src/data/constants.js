@@ -30,7 +30,7 @@ export const TAGLINE    = "Built by Pros, Built for Pros";
 // flyer QR → prorated.app/?ref=flyer). Saved to contractors.pro_source at
 // signup when no partner code applies. Allowlisted so junk params never land
 // in the DB.
-export const REF_SOURCES = ["flyer", "reddit", "facebook"];
+export const REF_SOURCES = ["flyer", "reddit", "facebook", "google"];
 
 export const BRAND = {
   blue:    "#2563EB",
